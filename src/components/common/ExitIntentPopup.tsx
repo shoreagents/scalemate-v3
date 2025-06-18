@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { X, Target, Calendar, Star, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, Target, Calendar, Star, CheckCircle2, ArrowRight, ChevronDown } from 'lucide-react';
 
 interface ExitIntentPopupProps {
   isVisible: boolean;
@@ -127,16 +127,17 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto"
           onClick={onClose}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-lg w-full max-h-[90vh] overflow-y-auto"
-          >
+          <div className="flex min-h-full items-center justify-center p-4 sm:p-6 lg:p-8">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg my-8 sm:my-4"
+            >
             <Card className="p-6 relative">
               {/* Close Button */}
               <button
@@ -165,7 +166,7 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
               </div>
 
               {/* Benefits */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <Target className="w-6 h-6 text-blue-600 mx-auto mb-2" />
                   <div className="text-sm font-medium text-blue-900">Free Strategy Call</div>
@@ -184,8 +185,8 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
               </div>
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       First Name *
@@ -227,7 +228,7 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Number
@@ -258,41 +259,39 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Implementation Timeline
                   </label>
-                  <select
-                    value={formData.urgency}
-                    onChange={(e) => handleInputChange('urgency', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="ASAP - Need to start within 2 weeks">ASAP - Need to start within 2 weeks</option>
-                    <option value="Next Month - Planning for 30-day start">Next Month - Planning for 30-day start</option>
-                    <option value="Next Quarter - 60-90 day timeline">Next Quarter - 60-90 day timeline</option>
-                    <option value="Just Exploring - Future consideration">Just Exploring - Future consideration</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.urgency}
+                      onChange={(e) => handleInputChange('urgency', e.target.value)}
+                      className="w-full px-3 py-2 pr-8 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white appearance-none cursor-pointer"
+                    >
+                      <option value="ASAP - Need to start within 2 weeks">ASAP - Need to start within 2 weeks</option>
+                      <option value="Next Month - Planning for 30-day start">Next Month - Planning for 30-day start</option>
+                      <option value="Next Quarter - 60-90 day timeline">Next Quarter - 60-90 day timeline</option>
+                      <option value="Just Exploring - Future consideration">Just Exploring - Future consideration</option>
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neural-blue-400 pointer-events-none" />
+                  </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="quantum-outline"
+                    size="neural-md"
                     onClick={onClose}
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                   >
                     Maybe Later
                   </Button>
                   <Button
                     type="submit"
-                    variant="primary"
+                    variant="neural-primary"
+                    size="neural-md"
                     disabled={isSubmitting || !formData.firstName || !formData.email}
-                    className="flex-1 flex items-center justify-center gap-2"
+                    className="flex-1 min-w-0"
                   >
-                    {isSubmitting ? (
-                      'Submitting...'
-                    ) : (
-                      <>
-                        Get My Strategy Call
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
+                    {isSubmitting ? 'Submitting...' : 'Get My Strategy Call'}
                   </Button>
                 </div>
               </form>
@@ -315,7 +314,8 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
                 </div>
               </div>
             </Card>
-          </motion.div>
+            </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

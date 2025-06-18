@@ -277,7 +277,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         className="flex justify-center"
       >
         <div className="bg-white/80 backdrop-blur-sm border border-neural-blue-100 rounded-xl p-1 shadow-lg">
-          <div className="flex gap-1">
+          <div className="flex">
             <button
               onClick={() => setActiveTab('overview')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
@@ -289,6 +289,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               <BarChart3 className="w-4 h-4" />
               Overview & Analysis
             </button>
+            
+            {/* Divider */}
+            <div className="w-px bg-neural-blue-200 mx-1 my-2"></div>
+            
             <button
               onClick={() => setActiveTab('implementation')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
@@ -300,6 +304,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               <ClipboardList className="w-4 h-4" />
               Implementation Plan
             </button>
+            
+            {/* Divider */}
+            <div className="w-px bg-neural-blue-200 mx-1 my-2"></div>
+            
             <button
               onClick={() => setActiveTab('pitch')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
