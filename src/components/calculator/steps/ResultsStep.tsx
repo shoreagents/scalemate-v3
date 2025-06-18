@@ -6,7 +6,7 @@ import { CalculationResult, FormData, RoleId } from '@/types';
 import { ROLES } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-
+import { useImplementationPlan } from '@/hooks/useImplementationPlan';
 import { 
   TrendingUp, 
   DollarSign, 
