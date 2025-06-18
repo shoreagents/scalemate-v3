@@ -99,36 +99,36 @@ export function ExitIntentProvider({ children, enabled = true }: ExitIntentProvi
     reset
   };
 
-  if (!isClient) {
-    return <>{children}</>;
-  }
-
   return (
     <ExitIntentContext.Provider value={contextValue}>
       {children}
       
-      {/* Global Exit Intent Popup */}
-      <ExitIntentPopup
-        isVisible={showExitPopup}
-        onClose={hidePopup}
-        onSubmit={handleLeadSubmit}
-        calculationResult={calculationResult}
-      />
-      
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 bg-black/80 text-white p-3 rounded-lg text-xs z-50">
-          <div><strong>🎯 Exit Intent:</strong> {hasShown ? 'Shown' : 'Waiting'}</div>
-          <div><strong>👁️ Popup:</strong> {showExitPopup ? 'Visible' : 'Hidden'}</div>
-          <div><strong>📍 Page:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'Unknown'}</div>
-          <div><strong>📊 Session:</strong> {analytics.getSessionId()?.slice(-8) || 'None'}</div>
-          <button 
-            onClick={showPopup}
-            className="mt-2 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
-          >
-            🚨 Test Popup
-          </button>
-        </div>
+      {/* Global Exit Intent Popup - only render on client */}
+      {isClient && (
+        <>
+          <ExitIntentPopup
+            isVisible={showExitPopup}
+            onClose={hidePopup}
+            onSubmit={handleLeadSubmit}
+            calculationResult={calculationResult}
+          />
+          
+          {/* Debug info in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="fixed bottom-4 right-4 bg-black/80 text-white p-3 rounded-lg text-xs z-50">
+              <div><strong>🎯 Exit Intent:</strong> {hasShown ? 'Shown' : 'Waiting'}</div>
+              <div><strong>👁️ Popup:</strong> {showExitPopup ? 'Visible' : 'Hidden'}</div>
+              <div><strong>📍 Page:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'Unknown'}</div>
+              <div><strong>📊 Session:</strong> {analytics.getSessionId()?.slice(-8) || 'None'}</div>
+              <button 
+                onClick={showPopup}
+                className="mt-2 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+              >
+                🚨 Test Popup
+              </button>
+            </div>
+          )}
+        </>
       )}
     </ExitIntentContext.Provider>
   );

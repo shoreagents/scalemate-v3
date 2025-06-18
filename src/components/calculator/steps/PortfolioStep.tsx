@@ -18,15 +18,17 @@ export function PortfolioStep({ value, onChange }: PortfolioStepProps) {
   }));
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-brand-primary-100 flex items-center justify-center">
-          <Building className="w-8 h-8 text-brand-primary-600" />
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <Building className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-headline-1 text-neutral-900">
+            What's your portfolio size?
+          </h2>
         </div>
-        <h2 className="text-headline-1 text-neutral-900 mb-2">
-          What's your portfolio size?
-        </h2>
         <p className="text-body-large text-neutral-600">
           Select the range that best matches your current property portfolio. This helps us 
           recommend the optimal team structure for your business.
@@ -34,7 +36,7 @@ export function PortfolioStep({ value, onChange }: PortfolioStepProps) {
       </div>
 
       {/* Portfolio Options */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {portfolioOptions.map((option) => {
           const isSelected = value === option.value;
           
@@ -48,7 +50,7 @@ export function PortfolioStep({ value, onChange }: PortfolioStepProps) {
               <button
                 onClick={() => onChange(option.value)}
                 className={`
-                  w-full p-6 rounded-xl border-2 text-left transition-all duration-200
+                  w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200
                   ${isSelected 
                     ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
                     : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
