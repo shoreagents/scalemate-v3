@@ -113,12 +113,12 @@ export function ExperienceStep({
           <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Choose Experience Level</h2>
+          <h2 className="text-headline-1 text-neutral-900">Choose Experience Level</h2>
         </div>
-        <p className="text-gray-600 mb-4">
+        <p className="text-body-large text-neutral-600">
           Select the experience level that best fits your needs and budget for your offshore team.
         </p>
-        <div className="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg">
+        <div className="mt-4 inline-flex items-center px-4 py-2 bg-neural-blue-50 text-neural-blue-700 rounded-lg">
           <Users className="w-4 h-4 mr-2" />
           Building team of {totalTeamMembers} member{totalTeamMembers > 1 ? 's' : ''} across {activeRoles.length} role{activeRoles.length > 1 ? 's' : ''}
         </div>
@@ -138,13 +138,15 @@ export function ExperienceStep({
               transition={{ delay: index * 0.1 }}
               className={`relative cursor-pointer transition-all duration-200 ${
                 isSelected 
-                  ? 'transform scale-105 shadow-lg ring-2 ring-indigo-500' 
+                  ? 'transform scale-102' 
                   : 'hover:shadow-md hover:transform hover:scale-102'
               }`}
               onClick={() => onChange(option.level)}
             >
-              <div className={`p-6 rounded-xl border-2 h-full ${
-                isSelected ? option.color.replace('50', '100').replace('200', '300') : option.color
+              <div className={`p-6 rounded-xl border-2 h-full transition-all duration-200 ${
+                isSelected 
+                  ? `border-neural-blue-500 shadow-lg ${option.color}` 
+                  : `border-gray-200 hover:border-gray-300 hover:shadow-md ${option.color}`
               }`}>
                 {/* Selection Indicator */}
                 <div className="flex items-center justify-between mb-4">
@@ -153,7 +155,7 @@ export function ExperienceStep({
                   </div>
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     isSelected 
-                      ? 'border-indigo-500 bg-indigo-500' 
+                      ? 'border-neural-blue-500 bg-neural-blue-500' 
                       : 'border-gray-300'
                   }`}>
                     {isSelected && <Check className="w-4 h-4 text-white" />}
@@ -222,29 +224,40 @@ export function ExperienceStep({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200"
+          className="p-6 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden"
         >
-          <h3 className="font-semibold text-gray-900 mb-4">Your Selection Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">{value.charAt(0).toUpperCase() + value.slice(1)}</div>
-              <div className="text-sm text-gray-600">Experience Level</div>
+          {/* Moving glow effects */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          
+          <div className="relative z-10">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
+                Your Selection Summary
+              </h3>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{totalTeamMembers}</div>
-              <div className="text-sm text-gray-600">Team Members</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                ${getEstimatedSavings(value).toLocaleString()}
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-neural-blue-600">{value.charAt(0).toUpperCase() + value.slice(1)}</div>
+                <div className="text-sm text-neural-blue-600">Experience Level</div>
               </div>
-              <div className="text-sm text-gray-600">Annual Savings</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {experienceLevels.find(l => l.level === value)?.timeToProductivity}
+              <div>
+                <div className="text-2xl font-bold text-quantum-purple-600">{totalTeamMembers}</div>
+                <div className="text-sm text-neural-blue-600">Team Members</div>
               </div>
-              <div className="text-sm text-gray-600">To Productivity</div>
+              <div>
+                <div className="text-2xl font-bold text-cyber-green-600">
+                  ${getEstimatedSavings(value).toLocaleString()}
+                </div>
+                <div className="text-sm text-neural-blue-600">Annual Savings</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-neural-blue-600">
+                  {experienceLevels.find(l => l.level === value)?.timeToProductivity}
+                </div>
+                <div className="text-sm text-neural-blue-600">To Productivity</div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -260,7 +273,7 @@ export function ExperienceStep({
           <Button
             onClick={onCalculate}
             disabled={isCalculating}
-            className="px-8 py-4 text-lg"
+            className="w-full sm:w-auto px-8 py-4 text-lg"
             size="lg"
           >
             {isCalculating ? (
@@ -269,10 +282,7 @@ export function ExperienceStep({
                 Calculating Your Savings...
               </>
             ) : (
-              <>
-                <DollarSign className="w-5 h-5 mr-2" />
-                Calculate My Detailed Savings
-              </>
+              "Calculate My Detailed Savings"
             )}
           </Button>
           <p className="text-sm text-gray-500 mt-2">
