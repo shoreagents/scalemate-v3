@@ -254,7 +254,7 @@ export const ROLES: Readonly<Record<RoleId, Role>> = {
   leasingCoordinator: {
     id: 'leasingCoordinator',
     title: 'Leasing Coordinator',
-    icon: '🤝',
+    icon: '🗝️',
     description: 'Manages leasing activities, prospect communication, and application processing.',
     color: 'brand-secondary',
     tasks: ROLE_TASKS.leasingCoordinator,

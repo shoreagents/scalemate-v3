@@ -113,21 +113,44 @@ export function ExitIntentProvider({ children, enabled = true }: ExitIntentProvi
             calculationResult={calculationResult}
           />
           
-          {/* Debug info in development */}
+          {/* Debug info in development - moved to bottom left */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="fixed bottom-4 right-4 bg-black/80 text-white p-3 rounded-lg text-xs z-50">
+            <div className="fixed bottom-4 left-4 bg-black/80 backdrop-blur-sm text-white p-3 rounded-lg text-xs z-50 border border-neural-blue-600/30">
               <div><strong>🎯 Exit Intent:</strong> {hasShown ? 'Shown' : 'Waiting'}</div>
               <div><strong>👁️ Popup:</strong> {showExitPopup ? 'Visible' : 'Hidden'}</div>
               <div><strong>📍 Page:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'Unknown'}</div>
               <div><strong>📊 Session:</strong> {analytics.getSessionId()?.slice(-8) || 'None'}</div>
               <button 
                 onClick={showPopup}
-                className="mt-2 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                className="mt-2 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors duration-200"
               >
                 🚨 Test Popup
               </button>
             </div>
           )}
+          
+          {/* Back to Top Button - bottom right */}
+          <div className="fixed bottom-4 right-4 z-50">
+            <button
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                analytics.trackEvent('back_to_top_click', { 
+                  page: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+                });
+              }}
+              className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-3 rounded-xl shadow-lg hover:shadow-neural-glow transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
+              aria-label="Back to top"
+            >
+              <svg 
+                className="w-5 h-5 transform group-hover:-translate-y-0.5 transition-transform duration-200" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
+            </button>
+          </div>
         </>
       )}
     </ExitIntentContext.Provider>

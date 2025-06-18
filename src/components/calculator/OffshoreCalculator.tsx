@@ -318,11 +318,13 @@ export function OffshoreCalculator({
         <div className="mb-8 px-8 py-12 text-center">
           {/* ScaleMate Badge */}
           <div className="flex justify-center mb-8">
-            <Card>
-              <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden">
-                <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
-              </div>
-            </Card>
+            <Link href="/" className="transition-transform hover:scale-105">
+              <Card>
+                <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer">
+                  <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
+                </div>
+              </Card>
+            </Link>
           </div>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">

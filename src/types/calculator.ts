@@ -83,6 +83,7 @@ export interface Role {
 // Custom task added by user
 export interface CustomTask {
   readonly id: string;
+  readonly name: string;
   readonly description: string;
   readonly estimatedComplexity: TaskComplexity;
   readonly aiSuggestion?: string;

@@ -150,7 +150,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
             Which roles do you want to offshore?
           </h2>
         </div>
-        <p className="text-body-large text-neutral-600">
+        <p className="text-body-large text-neutral-900">
           Select the property management roles you'd like to move offshore. 
           You can adjust team sizes for each role.
         </p>
