@@ -17,7 +17,13 @@ const ROLES = [
     title: 'Assistant Property Manager',
     description: 'Handle tenant applications, lease renewals, maintenance coordination, and compliance documentation.',
     icon: '🏢',
-    color: 'brand-primary',
+    colors: {
+      border: 'border-neural-blue-500',
+      bg: 'bg-neural-blue-50',
+      text: 'text-neural-blue-700',
+      button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
+      indicator: 'bg-neural-blue-500'
+    },
     keyTasks: [
       'Tenant Application Screening',
       'Lease Renewal Processing', 
@@ -33,7 +39,13 @@ const ROLES = [
     title: 'Leasing Coordinator',
     description: 'Manage inquiries, coordinate property tours, process applications, and conduct market research.',
     icon: '🗝️',
-    color: 'brand-secondary',
+    colors: {
+      border: 'border-neural-blue-500',
+      bg: 'bg-neural-blue-50',
+      text: 'text-neural-blue-700',
+      button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
+      indicator: 'bg-neural-blue-500'
+    },
     keyTasks: [
       'Inquiry Response Management',
       'Virtual Tour Coordination',
@@ -49,7 +61,13 @@ const ROLES = [
     title: 'Marketing Specialist',
     description: 'Create property marketing content, manage social media, analyze performance, and optimize campaigns.',
     icon: '📈',
-    color: 'brand-accent',
+    colors: {
+      border: 'border-neural-blue-500',
+      bg: 'bg-neural-blue-50',
+      text: 'text-neural-blue-700',
+      button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
+      indicator: 'bg-neural-blue-500'
+    },
     keyTasks: [
       'Property Marketing Content',
       'Social Media Management',
@@ -139,7 +157,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
       </div>
 
       {/* Role Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-stretch">
         {ROLES.map((role) => {
           const isSelected = selectedRoles[role.id];
           const currentTeamSize = teamSize[role.id] || 0;
@@ -150,13 +168,13 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
               key={role.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="relative"
+              className="relative h-full"
             >
               <div
                 className={`
-                  p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer
+                  p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer h-full flex flex-col
                   ${isSelected 
-                    ? `border-${role.color}-500 bg-${role.color}-50 shadow-lg` 
+                    ? `${role.colors.border} ${role.colors.bg} shadow-lg` 
                     : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-md'
                   }
                 `}
@@ -167,7 +185,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className={`absolute top-4 right-4 w-6 h-6 rounded-full bg-${role.color}-500 flex items-center justify-center`}
+                    className={`absolute top-4 right-4 w-6 h-6 rounded-full ${role.colors.indicator} flex items-center justify-center`}
                   >
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -180,7 +198,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                   <div className="text-4xl mb-2">{role.icon}</div>
                   <h3 className={`
                     text-xl font-bold mb-1
-                    ${isSelected ? `text-${role.color}-700` : 'text-neutral-900'}
+                    ${isSelected ? role.colors.text : 'text-neutral-900'}
                   `}>
                     {role.title}
                   </h3>
@@ -190,7 +208,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                 </div>
 
                 {/* Key Tasks */}
-                <div className="mb-4">
+                <div className="mb-4 flex-grow">
                   <h4 className="text-sm font-medium text-neutral-700 mb-2">Key Tasks:</h4>
                   <ul className="space-y-1">
                     {role.keyTasks.slice(0, 3).map((task, index) => (
@@ -208,7 +226,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                 </div>
 
                 {/* Savings Preview */}
-                <div className="mb-4 p-3 rounded-lg bg-white/80">
+                <div className="mb-4 p-3 rounded-lg bg-white/80 mt-auto">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-neutral-500">Potential Savings</span>
                     <span className="text-xs text-neutral-500">Per Person/Year</span>
@@ -228,10 +246,10 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="border-t border-neutral-200 pt-4"
+                    className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-neutral-700">Team Size:</span>
+                      <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
                       <div className="flex items-center gap-3">
                         <button
                           onClick={(e) => {
@@ -241,7 +259,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                           className={`
                             w-8 h-8 rounded-full flex items-center justify-center transition-colors
                             ${currentTeamSize > 1 
-                              ? `bg-${role.color}-100 text-${role.color}-600 hover:bg-${role.color}-200` 
+                              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
                               : 'bg-neutral-100 text-neutral-400'
                             }
                           `}
@@ -250,7 +268,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                           <Minus className="w-4 h-4" />
                         </button>
                         
-                        <span className="w-8 text-center font-bold text-neutral-900">
+                        <span className="w-8 text-center font-bold text-cyber-green-700">
                           {currentTeamSize}
                         </span>
                         
@@ -259,10 +277,7 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                             e.stopPropagation();
                             handleTeamSizeChange(role.id, 1);
                           }}
-                          className={`
-                            w-8 h-8 rounded-full bg-${role.color}-100 text-${role.color}-600 
-                            hover:bg-${role.color}-200 flex items-center justify-center transition-colors
-                          `}
+                          className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors"
                           disabled={currentTeamSize >= 10}
                         >
                           <Plus className="w-4 h-4" />
@@ -271,12 +286,14 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                     </div>
                     
                     {currentTeamSize > 0 && (
-                      <div className="mt-2 text-center">
-                        <div className="text-sm text-neutral-600">
-                          Total Savings: 
-                          <span className="font-bold text-green-600 ml-1">
+                      <div className="mt-3 p-3 bg-cyber-green-100 rounded-lg">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-cyber-green-700 mb-1">
+                            Total Savings
+                          </div>
+                          <div className="text-lg font-bold text-cyber-green-800">
                             ${savings.toLocaleString()}/year
-                          </span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -287,42 +304,6 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
           );
         })}
       </div>
-
-      {/* Summary Card */}
-      {Object.values(selectedRoles).some(Boolean) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-r from-brand-primary-50 to-brand-secondary-50 border border-brand-primary-200"
-        >
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-neutral-900 mb-2">
-              Selection Summary
-            </h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-brand-primary-600">
-                {Object.values(selectedRoles).filter(Boolean).length}
-              </div>
-              <div className="text-sm text-neutral-600">Roles Selected</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-brand-secondary-600">
-                {getTotalTeamSize()}
-              </div>
-              <div className="text-sm text-neutral-600">Total Team Members</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                ${getTotalSavings().toLocaleString()}
-              </div>
-              <div className="text-sm text-neutral-600">Annual Savings</div>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* Help Text */}
       <div className="mt-8 p-4 rounded-lg bg-neutral-50 border border-neutral-200">
@@ -343,6 +324,48 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
           </div>
         </div>
       </div>
+
+      {/* Summary Card */}
+      {Object.values(selectedRoles).some(Boolean) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-6 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden"
+        >
+          {/* Moving glow effects */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          
+          <div className="relative z-10">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
+                Selection Summary
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-neural-blue-600">
+                  {Object.values(selectedRoles).filter(Boolean).length}
+                </div>
+                <div className="text-sm text-neural-blue-600">Roles Selected</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-quantum-purple-600">
+                  {getTotalTeamSize()}
+                </div>
+                <div className="text-sm text-neural-blue-600">Total Team Members</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-cyber-green-600">
+                  ${getTotalSavings().toLocaleString()}
+                </div>
+                <div className="text-sm text-neural-blue-600">Annual Savings</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 } 
