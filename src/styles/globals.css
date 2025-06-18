@@ -1,0 +1,555 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Neural Brand Color Variables */
+    --neural-blue-50: #EFF6FF;
+    --neural-blue-100: #DBEAFE;
+    --neural-blue-200: #BFDBFE;
+    --neural-blue-300: #93C5FD;
+    --neural-blue-400: #60A5FA;
+    --neural-blue-500: #0066FF;
+    --neural-blue-600: #0052CC;
+    --neural-blue-700: #0047B8;
+    --neural-blue-800: #003D9A;
+    --neural-blue-900: #00337A;
+    --neural-blue-950: #001F4D;
+    
+    --quantum-purple-50: #F5F3FF;
+    --quantum-purple-100: #EDE9FE;
+    --quantum-purple-200: #DDD6FE;
+    --quantum-purple-300: #C4B5FD;
+    --quantum-purple-400: #A78BFA;
+    --quantum-purple-500: #6B46C1;
+    --quantum-purple-600: #553C9A;
+    --quantum-purple-700: #4C1D95;
+    --quantum-purple-800: #3B1A7A;
+    --quantum-purple-900: #2D1B69;
+    --quantum-purple-950: #1E1B4B;
+    
+    --cyber-green-50: #ECFDF5;
+    --cyber-green-100: #D1FAE5;
+    --cyber-green-200: #A7F3D0;
+    --cyber-green-300: #6EE7B7;
+    --cyber-green-400: #34D399;
+    --cyber-green-500: #10B981;
+    --cyber-green-600: #059669;
+    --cyber-green-700: #047857;
+    --cyber-green-800: #065F46;
+    --cyber-green-900: #064E3B;
+    --cyber-green-950: #022C22;
+    
+    --matrix-orange-50: #FFFBEB;
+    --matrix-orange-100: #FEF3C7;
+    --matrix-orange-200: #FDE68A;
+    --matrix-orange-300: #FCD34D;
+    --matrix-orange-400: #FBBF24;
+    --matrix-orange-500: #F59E0B;
+    --matrix-orange-600: #D97706;
+    --matrix-orange-700: #B45309;
+    --matrix-orange-800: #92400E;
+    --matrix-orange-900: #78350F;
+    --matrix-orange-950: #451A03;
+
+    /* Neural Gradients */
+    --gradient-neural-primary: linear-gradient(135deg, #0066FF, #6B46C1);
+    --gradient-neural-secondary: linear-gradient(135deg, #3385FF, #8B5CF6);
+    --gradient-neural-subtle: linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(107, 70, 193, 0.1));
+    
+    /* AI Shadows */
+    --shadow-neural-glow: 0 0 20px rgba(0, 102, 255, 0.3);
+    --shadow-quantum-glow: 0 0 20px rgba(107, 70, 193, 0.3);
+    --shadow-cyber-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+    --shadow-matrix-glow: 0 0 20px rgba(245, 158, 11, 0.3);
+
+    /* Neural Spacing */
+    --spacing-neural: 1.5rem;
+    --spacing-ai-section: 4rem;
+    --spacing-neural-hero: 6rem;
+
+    /* AI Animation Variables */
+    --duration-neural-fast: 0.2s;
+    --duration-neural-standard: 0.3s;
+    --duration-neural-slow: 0.6s;
+    --duration-ai-processing: 2s;
+  }
+
+  /* Dark Mode Neural Variables */
+  :root[data-theme="dark"] {
+    --neural-bg-primary: #0F172A;
+    --neural-bg-secondary: #1E293B;
+    --neural-text-primary: #F8FAFC;
+    --neural-text-secondary: #CBD5E1;
+    --neural-border-primary: #334155;
+  }
+
+  * {
+    @apply border-neutral-200;
+  }
+
+  html {
+    @apply scroll-smooth;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  body {
+    @apply bg-white text-neural-blue-900 font-sans antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* Neural Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-neural-blue-50;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gradient-to-b from-neural-blue-400 to-quantum-purple-400 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply from-neural-blue-500 to-quantum-purple-500;
+  }
+
+  /* AI Selection Styling */
+  ::selection {
+    @apply bg-neural-blue-500/20 text-neural-blue-900;
+  }
+
+  /* Neural Focus Visible */
+  :focus-visible {
+    @apply outline-none ring-2 ring-neural-blue-500 ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer components {
+  /* Neural Typography Scale */
+  .text-display-1 {
+    @apply text-6xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight;
+  }
+
+  .text-display-2 {
+    @apply text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight;
+  }
+
+  .text-display-3 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight;
+  }
+
+  .text-headline-1 {
+    @apply text-3xl md:text-4xl font-display font-semibold tracking-tight;
+  }
+
+  .text-headline-2 {
+    @apply text-2xl md:text-3xl font-display font-semibold tracking-tight;
+  }
+
+  .text-headline-3 {
+    @apply text-xl md:text-2xl font-display font-semibold tracking-tight;
+  }
+
+  .text-body-large {
+    @apply text-lg leading-relaxed;
+  }
+
+  .text-body {
+    @apply text-base leading-relaxed;
+  }
+
+  .text-body-small {
+    @apply text-sm leading-relaxed;
+  }
+
+  .text-caption {
+    @apply text-xs uppercase tracking-wider font-medium;
+  }
+
+  /* Neural Gradient Text Effects */
+  .gradient-text-neural {
+    @apply bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 bg-clip-text text-transparent;
+  }
+
+  .text-neural {
+    @apply text-neural-blue-600;
+  }
+
+  .text-quantum {
+    @apply text-quantum-purple-600;
+  }
+
+  .text-cyber {
+    @apply text-cyber-green-600;
+  }
+
+  .text-matrix {
+    @apply text-matrix-orange-600;
+  }
+
+  /* Legacy brand gradients (for backward compatibility) */
+  .gradient-brand {
+    @apply bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500;
+  }
+
+  .gradient-brand-subtle {
+    @apply bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-neural-blue-600 to-quantum-purple-600 bg-clip-text text-transparent;
+  }
+
+  /* Neural Interactive Elements */
+  .interactive-neural-scale {
+    @apply transition-transform duration-200 ease-out hover:scale-105 active:scale-95;
+  }
+
+  .interactive-quantum-glow {
+    @apply transition-shadow duration-300 ease-out hover:shadow-quantum-glow;
+  }
+
+  .interactive-neural-lift {
+    @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-neural-glow;
+  }
+
+  .interactive-cyber-boost {
+    @apply transition-all duration-200 ease-out hover:scale-102 hover:shadow-cyber-glow;
+  }
+
+  /* Legacy interactive classes (for backward compatibility) */
+  .interactive-scale {
+    @apply interactive-neural-scale;
+  }
+
+  .interactive-glow {
+    @apply interactive-quantum-glow;
+  }
+
+  .interactive-lift {
+    @apply interactive-neural-lift;
+  }
+
+  /* Neural Glass Morphism */
+  .glass-neural {
+    @apply bg-white/80 backdrop-blur-lg border border-white/20 rounded-2xl;
+  }
+
+  .glass-quantum {
+    @apply bg-gradient-to-br from-white/90 to-neural-blue-50/80 backdrop-blur-lg border border-white/30 rounded-2xl;
+  }
+
+  .glass-cyber {
+    @apply bg-gradient-to-br from-white/90 to-cyber-green-50/80 backdrop-blur-lg border border-white/30 rounded-2xl;
+  }
+
+  /* Legacy glass classes */
+  .glass {
+    @apply glass-neural;
+  }
+
+  .glass-dark {
+    @apply bg-neutral-900/80 backdrop-blur-md border border-white/10;
+  }
+
+  /* Neural Card Variants */
+  .card-neural-elevated {
+    @apply bg-white rounded-2xl border border-neural-blue-100 shadow-lg hover:shadow-neural-glow hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm;
+  }
+
+  .card-quantum-glass {
+    @apply glass-quantum shadow-xl hover:shadow-quantum-glow hover:-translate-y-1 transition-all duration-300;
+  }
+
+  .card-neural-gradient {
+    @apply bg-gradient-to-br from-neural-blue-500 via-quantum-purple-500 to-neural-blue-600 rounded-2xl text-white shadow-neural-glow hover:shadow-2xl hover:-translate-y-1 transition-all duration-300;
+  }
+
+  .card-ai-feature {
+    @apply bg-white border border-neural-blue-100 rounded-2xl p-8 shadow-md hover:shadow-neural-glow hover:border-neural-blue-300 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden;
+  }
+
+  .card-ai-feature::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-neural-blue-50/50 to-quantum-purple-50/50 opacity-0 hover:opacity-100 transition-opacity duration-300;
+  }
+
+  /* Legacy card classes (for backward compatibility) */
+  .card-elevated {
+    @apply card-neural-elevated;
+  }
+
+  .card-glass {
+    @apply card-quantum-glass;
+  }
+
+  .card-brand {
+    @apply card-neural-gradient;
+  }
+
+  /* Neural Button Variants */
+  .btn-neural-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 border-0 rounded-xl shadow-lg hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow hover:-translate-y-0.5 active:scale-95 focus:ring-2 focus:ring-neural-blue-500/50 transition-all duration-300;
+  }
+
+  .btn-quantum-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-neural-blue-700 bg-neural-blue-50 border-2 border-neural-blue-200 rounded-xl shadow-sm hover:bg-neural-blue-100 hover:border-neural-blue-300 hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-quantum-purple-500/50 transition-all duration-300;
+  }
+
+  .btn-cyber-success {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 border-0 rounded-xl shadow-lg hover:from-cyber-green-600 hover:to-cyber-green-700 hover:shadow-cyber-glow hover:-translate-y-0.5 active:scale-95 transition-all duration-300;
+  }
+
+  .btn-matrix-energy {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-matrix-orange-500 to-matrix-orange-600 border-0 rounded-xl shadow-lg hover:from-matrix-orange-600 hover:to-matrix-orange-700 hover:shadow-matrix-glow hover:-translate-y-0.5 active:scale-95 transition-all duration-300;
+  }
+
+  .btn-neural-ghost {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-neural-blue-600 bg-transparent border-transparent rounded-xl hover:bg-neural-blue-50 hover:text-neural-blue-700 hover:shadow-sm hover:-translate-y-0.5 focus:ring-2 focus:ring-neural-blue-500/50 transition-all duration-300;
+  }
+
+  /* Legacy button classes (for backward compatibility) */
+  .btn-primary {
+    @apply btn-neural-primary;
+  }
+
+  .btn-secondary {
+    @apply btn-quantum-secondary;
+  }
+
+  .btn-ghost {
+    @apply btn-neural-ghost;
+  }
+
+  /* Neural Form Elements */
+  .input-neural {
+    @apply bg-white/90 border-2 border-neural-blue-100 rounded-xl px-4 py-3 text-neural-blue-900 placeholder:text-neural-blue-400 focus:outline-none focus:border-neural-blue-500 focus:shadow-lg focus:shadow-neural-blue-500/10 focus:bg-white transition-all duration-300;
+  }
+
+  .input-neural:focus {
+    @apply bg-gradient-to-r from-transparent to-neural-blue-50/20;
+  }
+
+  /* AI-Assisted Input Indicator */
+  .input-ai-assisted {
+    @apply relative;
+  }
+
+  .input-ai-assisted::after {
+    content: '';
+    @apply absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-neural-blue-500 rounded-full animate-neural-pulse;
+  }
+
+  /* Legacy input classes */
+  .input-primary {
+    @apply input-neural;
+  }
+
+  /* Neural Progress & Loading */
+  .progress-neural {
+    @apply w-full bg-neural-blue-100 rounded-full h-3 overflow-hidden;
+  }
+
+  .progress-neural-fill {
+    @apply h-full bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 rounded-full transition-all duration-500 ease-out relative;
+  }
+
+  .progress-neural-fill::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-neural-shimmer;
+  }
+
+  /* AI Loading States */
+  .loading-neural-dots {
+    @apply inline-flex gap-1;
+  }
+
+  .loading-neural-dots > div {
+    @apply w-2 h-2 bg-neural-blue-500 rounded-full animate-neural-pulse;
+  }
+
+  .loading-neural-dots > div:nth-child(1) { animation-delay: 0s; }
+  .loading-neural-dots > div:nth-child(2) { animation-delay: 0.2s; }
+  .loading-neural-dots > div:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Neural Shimmer Loading */
+  .loading-neural-shimmer {
+    @apply animate-pulse bg-gradient-to-r from-neural-blue-100 via-neural-blue-200 to-neural-blue-100 bg-200% animate-neural-shimmer;
+  }
+
+  /* AI Processing States */
+  .ai-processing {
+    @apply relative overflow-hidden;
+  }
+
+  .ai-processing::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-500/10 to-transparent animate-neural-shimmer;
+  }
+
+  /* Neural Pattern Backgrounds */
+  .pattern-neural-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(0, 102, 255, 0.15) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+
+  .pattern-quantum-dots {
+    background-image: radial-gradient(circle at 2px 2px, rgba(107, 70, 193, 0.1) 2px, transparent 0);
+    background-size: 30px 30px;
+  }
+
+  .pattern-cyber-lines {
+    background-image: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Mesh gradient backgrounds */
+  .mesh-bg {
+    @apply bg-neural-mesh;
+  }
+
+  .neural-mesh-bg {
+    background: var(--gradient-neural-mesh, radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 1) 0px, transparent 0%));
+  }
+}
+
+@layer utilities {
+  /* Neural Focus States */
+  .neural-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:border-neural-blue-500;
+  }
+
+  .neural-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* AI Intelligence Indicators */
+  .badge-ai-powered {
+    @apply inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white text-xs font-medium rounded-full;
+  }
+
+  .badge-ai-powered::before {
+    content: '';
+    @apply w-1.5 h-1.5 bg-white rounded-full animate-neural-pulse;
+  }
+
+  /* Neural Processing Indicators */
+  .neural-processing {
+    @apply relative;
+  }
+
+  .neural-processing::after {
+    content: '';
+    @apply absolute -inset-1 bg-gradient-to-r from-neural-blue-500/20 to-quantum-purple-500/20 rounded-lg animate-neural-pulse;
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Legacy focus styles (for backward compatibility) */
+  .focus-brand {
+    @apply neural-focus;
+  }
+
+  /* Backdrop filters */
+  .backdrop-blur-xs {
+    backdrop-filter: blur(2px);
+  }
+
+  /* Neural Shadows */
+  .shadow-neural {
+    box-shadow: var(--shadow-neural-glow);
+  }
+
+  .shadow-quantum {
+    box-shadow: var(--shadow-quantum-glow);
+  }
+
+  .shadow-cyber {
+    box-shadow: var(--shadow-cyber-glow);
+  }
+
+  .shadow-matrix {
+    box-shadow: var(--shadow-matrix-glow);
+  }
+
+  /* Legacy brand utilities (for backward compatibility) */
+  .brand-shadow {
+    @apply shadow-neural;
+  }
+
+  .brand-shadow-lg {
+    box-shadow: 0 20px 60px rgba(0, 102, 255, 0.3);
+  }
+
+  .brand-glow {
+    @apply shadow-neural;
+  }
+
+  .brand-glow-lg {
+    box-shadow: 0 0 40px rgba(0, 102, 255, 0.4);
+  }
+}
+
+/* Neural Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-neural-pulse,
+  .animate-neural-shimmer,
+  .animate-neural-float,
+  .animate-quantum-morph,
+  .animate-ai-think {
+    animation: none;
+  }
+}
+
+/* Neural Accessibility Enhancements */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+}
+
+.ai-skip-link {
+  @apply absolute -top-10 left-6 bg-neural-blue-500 text-white px-4 py-2 rounded-b-md transform -translate-y-full focus:translate-y-0 neural-transition z-50;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .gradient-text-neural {
+    @apply text-neural-blue-700 bg-none;
+  }
+  
+  .btn-neural-primary {
+    @apply border-2 border-neural-blue-700;
+  }
+}
+
+/* Neural Print Styles */
+@media print {
+  .animate-neural-pulse,
+  .animate-neural-shimmer,
+  .animate-neural-float {
+    animation: none;
+  }
+  
+  .shadow-neural-glow,
+  .shadow-quantum-glow {
+    box-shadow: none;
+  }
+} 
