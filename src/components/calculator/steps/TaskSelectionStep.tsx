@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
 import { ROLES, ROLE_TASKS } from '@/utils/constants';
 import { Button } from '@/components/ui/Button';
-import { Plus, Check, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
+import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
 
 interface TaskSelectionStepProps {
   selectedRoles: Record<RoleId, boolean>;
@@ -148,7 +148,12 @@ export function TaskSelectionStep({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Tasks to Offshore</h2>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <CheckSquare className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Select Tasks to Offshore</h2>
+        </div>
         <p className="text-gray-600">
           Choose which tasks you'd like to offshore for each role. You can also add custom tasks.
         </p>

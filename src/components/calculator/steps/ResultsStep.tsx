@@ -222,9 +222,14 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           <Trophy className="w-4 h-4" />
           Calculation Complete
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Your Offshore Scaling Results
-        </h2>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <TrendingUp className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Your Offshore Scaling Results
+          </h2>
+        </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Here's your comprehensive analysis of potential savings and implementation strategy
         </p>

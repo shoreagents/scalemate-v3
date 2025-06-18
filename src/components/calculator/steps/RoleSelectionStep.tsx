@@ -124,12 +124,14 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-brand-secondary-100 flex items-center justify-center">
-          <Users className="w-8 h-8 text-brand-secondary-600" />
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <Users className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-headline-1 text-neutral-900">
+            Which roles do you want to offshore?
+          </h2>
         </div>
-        <h2 className="text-headline-1 text-neutral-900 mb-2">
-          Which roles do you want to offshore?
-        </h2>
         <p className="text-body-large text-neutral-600">
           Select the property management roles you'd like to move offshore. 
           You can adjust team sizes for each role.

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { RoleId, ExperienceLevel } from '@/types';
 import { ROLES } from '@/utils/constants';
 import { Button } from '@/components/ui/Button';
-import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb } from 'lucide-react';
+import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb, GraduationCap } from 'lucide-react';
 
 interface ExperienceStepProps {
   value: ExperienceLevel | '';
@@ -109,7 +109,12 @@ export function ExperienceStep({
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Choose Experience Level</h2>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <GraduationCap className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Choose Experience Level</h2>
+        </div>
         <p className="text-gray-600 mb-4">
           Select the experience level that best fits your needs and budget for your offshore team.
         </p>
