@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
-import { calculateSavings } from '@/utils/calculations';
-import { DEFAULT_FORM_DATA } from '@/utils/constants';
+import { calculateSavings, DEFAULT_FORM_DATA } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
