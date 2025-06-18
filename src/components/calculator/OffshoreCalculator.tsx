@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
-import { calculateSavings, DEFAULT_FORM_DATA } from '@/utils/calculator';
+import { calculateSavings } from '@/utils/calculations';
+import { DEFAULT_FORM_DATA } from '@/utils/constants';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
@@ -24,8 +25,10 @@ import {
   Sparkles,
   Zap,
   Cpu,
-  Target
+  Target,
+  Home
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface OffshoreCalculatorProps {
   className?: string;
@@ -65,6 +68,7 @@ export function OffshoreCalculator({
       y: 0,
       transition: {
         duration: 0.6,
+        ease: "easeOut",
         staggerChildren: 0.1
       }
     },
@@ -80,7 +84,7 @@ export function OffshoreCalculator({
     visible: { 
       opacity: 1, 
       x: 0,
-      transition: { duration: 0.5 }
+      transition: { duration: 0.5, ease: "easeOut" }
     },
     exit: { 
       opacity: 0, 
@@ -164,7 +168,7 @@ export function OffshoreCalculator({
       ];
 
       for (let i = 0; i < processingStages.length; i++) {
-        setProcessingStage(processingStages[i] || '');
+        setProcessingStage(processingStages[i]!);
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
       
@@ -310,13 +314,11 @@ export function OffshoreCalculator({
         <Card 
           variant="quantum-glass" 
           className="mb-8 p-8 text-center relative overflow-hidden"
-          aiPowered={true}
-          neuralGlow={true}
+          neuralGlow={false}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-500/5 to-transparent animate-neural-shimmer" />
           
           <div className="relative z-10">
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-4">
               <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
                 <Calculator className="h-6 w-6 text-white" />
               </div>
@@ -332,11 +334,15 @@ export function OffshoreCalculator({
         </Card>
 
         {/* Step Indicator */}
-        <div className="mb-8">
-          <StepIndicator 
-            currentStep={formData.currentStep} 
-            completedSteps={[]}
-          />
+        <div className="my-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          <div className="relative z-10">
+            <StepIndicator 
+              currentStep={formData.currentStep} 
+              completedSteps={[]}
+            />
+          </div>
         </div>
 
         {/* Processing Overlay */}
@@ -406,7 +412,16 @@ export function OffshoreCalculator({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {formData.currentStep > 1 && (
+                {formData.currentStep === 1 ? (
+                  <Link href="/">
+                    <Button
+                      variant="quantum-secondary"
+                      leftIcon={<Home className="h-4 w-4" />}
+                    >
+                      Back to Home
+                    </Button>
+                  </Link>
+                ) : (
                   <Button
                     variant="quantum-secondary"
                     onClick={prevStep}
@@ -428,7 +443,7 @@ export function OffshoreCalculator({
                     onClick={nextStep}
                     disabled={!canProceedFromStep(formData.currentStep)}
                     rightIcon={<ArrowRight className="h-4 w-4" />}
-                    aiAssisted={true}
+                 
                   >
                     Continue
                   </Button>
