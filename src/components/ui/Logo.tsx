@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 import { SCALEMATE_BRAND } from '@/lib/brand';
 
 interface LogoProps {
@@ -34,15 +34,13 @@ export const Logo: React.FC<LogoProps> = ({
       opacity: 1, 
       scale: 1,
       transition: {
-        duration: 0.6,
-        ease: "easeOut"
+        duration: 0.6
       }
     },
     hover: {
       scale: 1.05,
       transition: {
-        duration: 0.2,
-        ease: "easeInOut"
+        duration: 0.2
       }
     },
     tap: {
@@ -56,7 +54,7 @@ export const Logo: React.FC<LogoProps> = ({
   const ScaleMateLogo = () => (
     <svg
       viewBox="0 0 200 48"
-      className={cn(sizeMap[size], 'w-auto')}
+      className={`${sizeMap[size]} w-auto`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -64,7 +62,7 @@ export const Logo: React.FC<LogoProps> = ({
       <motion.g
         initial={animated ? { pathLength: 0 } : false}
         animate={animated ? { pathLength: 1 } : false}
-        transition={{ duration: 1.5, ease: "easeInOut" }}
+        transition={{ duration: 1.5 }}
       >
         {/* Main S shape */}
         <path
@@ -84,7 +82,7 @@ export const Logo: React.FC<LogoProps> = ({
           strokeLinejoin="round"
           initial={animated ? { pathLength: 0, opacity: 0 } : false}
           animate={animated ? { pathLength: 1, opacity: 1 } : false}
-          transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
+          transition={{ duration: 1, delay: 0.8 }}
         />
       </motion.g>
 
@@ -93,7 +91,7 @@ export const Logo: React.FC<LogoProps> = ({
         <motion.g
           initial={animated ? { opacity: 0, x: -20 } : false}
           animate={animated ? { opacity: 1, x: 0 } : false}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 0.4 }}
         >
           <text
             x="50"
@@ -127,14 +125,14 @@ export const Logo: React.FC<LogoProps> = ({
   const LogoMark = () => (
     <svg
       viewBox="0 0 48 48"
-      className={cn(sizeMap[size], 'w-auto')}
+      className={`${sizeMap[size]} w-auto`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <motion.g
         initial={animated ? { pathLength: 0 } : false}
         animate={animated ? { pathLength: 1 } : false}
-        transition={{ duration: 1.5, ease: "easeInOut" }}
+        transition={{ duration: 1.5 }}
       >
         <path
           d="M12 8c-4.4 0-8 3.6-8 8s3.6 8 8 8h8c2.2 0 4 1.8 4 4s-1.8 4-4 4H8"
@@ -151,7 +149,7 @@ export const Logo: React.FC<LogoProps> = ({
           strokeLinejoin="round"
           initial={animated ? { pathLength: 0, opacity: 0 } : false}
           animate={animated ? { pathLength: 1, opacity: 1 } : false}
-          transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
+          transition={{ duration: 1, delay: 0.8 }}
         />
       </motion.g>
       <defs>
@@ -171,7 +169,7 @@ export const Logo: React.FC<LogoProps> = ({
 
   if (!interactive && !animated) {
     return (
-      <div className={cn('inline-flex items-center', className)}>
+      <div className={`inline-flex items-center ${className || ''}`}>
         <LogoComponent />
       </div>
     );
@@ -184,10 +182,7 @@ export const Logo: React.FC<LogoProps> = ({
       animate={animated ? "animate" : false}
       whileHover={interactive ? "hover" : {}}
       whileTap={interactive ? "tap" : {}}
-      className={cn(
-        'inline-flex items-center cursor-pointer select-none',
-        className
-      )}
+      className={`inline-flex items-center cursor-pointer select-none ${className || ''}`}
     >
       <LogoComponent />
     </motion.div>

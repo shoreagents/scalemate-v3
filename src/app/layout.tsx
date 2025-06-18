@@ -25,13 +25,18 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['300', '400', '500', '600', '700']
 });
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0066FF',
+};
+
 export const metadata = {
+  metadataBase: new URL('https://scalemate.com'),
   title: 'ScaleMate 3.0 - AI-Enhanced Offshore Scaling Intelligence',
   description: 'Experience the future of property management scaling with our neural-powered offshore team calculator. Get AI-driven insights and personalized optimization strategies in real-time.',
   keywords: 'AI offshore scaling, neural property management, intelligent team optimization, quantum cost analysis, cyber business growth, AI-powered calculator',
   authors: [{ name: 'ScaleMate AI Labs' }],
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#0066FF',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',

@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
-import { calculateSavings } from '@/utils/calculations';
-import { DEFAULT_FORM_DATA } from '@/utils/constants';
+import { calculateSavings, DEFAULT_FORM_DATA } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
@@ -66,7 +65,6 @@ export function OffshoreCalculator({
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut",
         staggerChildren: 0.1
       }
     },
@@ -82,7 +80,7 @@ export function OffshoreCalculator({
     visible: { 
       opacity: 1, 
       x: 0,
-      transition: { duration: 0.5, ease: "easeOut" }
+      transition: { duration: 0.5 }
     },
     exit: { 
       opacity: 0, 
@@ -166,7 +164,7 @@ export function OffshoreCalculator({
       ];
 
       for (let i = 0; i < processingStages.length; i++) {
-        setProcessingStage(processingStages[i]);
+        setProcessingStage(processingStages[i] || '');
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
       

@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalculationResult, FormData, RoleId } from '@/types';
-import { ROLES } from '@/utils/constants';
+import { ROLES } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { AIInsightsPanel } from '../AIInsightsPanel';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -468,6 +469,19 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             )}
           </AnimatePresence>
         </Card>
+      </motion.div>
+
+      {/* AI Insights Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.85, duration: 0.5 }}
+      >
+        <AIInsightsPanel 
+          formData={formData} 
+          calculationResult={result}
+          className="mb-8"
+        />
       </motion.div>
 
       {/* Action Buttons */}

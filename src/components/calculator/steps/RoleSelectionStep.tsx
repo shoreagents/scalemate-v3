@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { RoleId } from '@/types';
-import { SALARY_DATA } from '@/utils/constants';
+import { SALARY_DATA } from '@/utils/calculator';
 import { Users, TrendingUp, DollarSign, Plus, Minus } from 'lucide-react';
 
 interface RoleSelectionStepProps {

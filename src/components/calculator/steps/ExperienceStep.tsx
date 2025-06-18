@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { RoleId, ExperienceLevel } from '@/types';
-import { ROLES } from '@/utils/constants';
+import { ROLES } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb } from 'lucide-react';
 

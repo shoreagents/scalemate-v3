@@ -309,28 +309,6 @@ export const PHONE_COUNTRY_CODES = {
   PH: '+63'
 } as const;
 
-// Common email domains
-export const COMMON_EMAIL_DOMAINS = [
-  'gmail.com',
-  'outlook.com',
-  'hotmail.com',
-  'yahoo.com',
-  'icloud.com',
-  'bigpond.com',
-  'optusnet.com.au',
-  'telstra.com',
-  'tpg.com.au'
-] as const;
-
-// Disposable email domains (sample)
-export const DISPOSABLE_EMAIL_DOMAINS = [
-  '10minutemail.com',
-  'tempmail.org',
-  'guerrillamail.com',
-  'mailinator.com',
-  'throwaway.email'
-] as const;
-
 // Default form values - ANONYMOUS
 export const DEFAULT_FORM_DATA = {
   portfolioSize: '',
@@ -354,24 +332,6 @@ export const DEFAULT_FORM_DATA = {
   // NO email field - completely anonymous
   currentStep: 1 as const,
   completedSteps: []
-} as const;
-
-// API endpoints
-export const API_ENDPOINTS = {
-  ANTHROPIC: 'https://api.anthropic.com/v1/messages',
-  ANALYTICS: '/api/analytics',
-  VALIDATION: '/api/validation',
-  PREMIUM_SIGNUP: '/api/premium-signup',
-  PHONE_VALIDATION: '/api/validate-phone',
-  EMAIL_VALIDATION: '/api/validate-email'
-} as const;
-
-// Cache durations (in milliseconds)
-export const CACHE_DURATIONS = {
-  AI_TOOLTIP: 24 * 60 * 60 * 1000,      // 24 hours
-  VALIDATION: 5 * 60 * 1000,            // 5 minutes
-  ANALYTICS: 30 * 1000,                 // 30 seconds
-  SESSION: 7 * 24 * 60 * 60 * 1000      // 7 days
 } as const;
 
 // ScaleMate Brand Messaging

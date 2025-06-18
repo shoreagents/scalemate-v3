@@ -40,8 +40,7 @@ export function Card({
       y: hoverLift ? -4 : 0,
       rotateX: quantumMorph ? 2 : 0,
       transition: { 
-        duration: 0.3, 
-        ease: "easeOut" 
+        duration: 0.3
       }
     },
     tap: {

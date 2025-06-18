@@ -56,7 +56,7 @@ export const Button: React.FC<ButtonProps> = ({
     hover: { 
       scale: 1.02,
       y: -2,
-      transition: { duration: 0.2, ease: "easeOut" }
+      transition: { duration: 0.2 }
     },
     tap: { 
       scale: 0.98,
@@ -67,8 +67,7 @@ export const Button: React.FC<ButtonProps> = ({
       scale: [1, 1.02, 1],
       transition: { 
         duration: 2, 
-        repeat: Infinity,
-        ease: "easeInOut"
+        repeat: Infinity
       }
     }
   };
@@ -80,16 +79,14 @@ export const Button: React.FC<ButtonProps> = ({
       scale: 1.1,
       transition: { 
         duration: aiProcessing ? 2 : 0.3,
-        repeat: aiProcessing ? Infinity : 0,
-        ease: aiProcessing ? "linear" : "easeOut"
+        repeat: aiProcessing ? Infinity : 0
       }
     },
     processing: {
       rotate: 360,
       transition: {
         duration: 2,
-        repeat: Infinity,
-        ease: "linear"
+        repeat: Infinity
       }
     }
   };

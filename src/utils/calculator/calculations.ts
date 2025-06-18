@@ -14,7 +14,7 @@ import {
   PORTFOLIO_INDICATORS, 
   TASK_COMPLEXITY_MULTIPLIERS, 
   ROLES 
-} from './constants';
+} from './data';
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling

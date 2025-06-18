@@ -1,24 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { OffshoreCalculator } from '@/components/calculator/OffshoreCalculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { CalculationResult } from '@/types';
 import { Brain, Zap, Target, Sparkles, BarChart3, Users, TrendingUp, CheckCircle, Play, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function HomePage() {
-  const [showCalculator, setShowCalculator] = useState(false);
-  const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
-
-  const handleStartCalculator = () => {
-    setShowCalculator(true);
-  };
-
-  const handleCalculatorComplete = (result: CalculationResult) => {
-    setCalculationResult(result);
-  };
 
   // Neural animation variants
   const fadeInUp = {
@@ -34,38 +22,23 @@ export default function HomePage() {
     }
   };
 
-  if (showCalculator) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-neural-blue-50/50 via-white to-quantum-purple-50/50 py-12 relative">
-        {/* Neural background pattern */}
-        <div className="fixed inset-0 pattern-neural-grid opacity-10 pointer-events-none" />
-        
-        <div className="px-6 mx-auto max-w-7xl lg:px-8 relative z-10">
-          <OffshoreCalculator 
-            onComplete={handleCalculatorComplete}
-            className="mb-12"
-          />
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-neural-blue-50 via-white to-quantum-purple-50 relative overflow-hidden">
       {/* Hero Section */}
-      <section className="relative px-6 pt-20 pb-16 mx-auto max-w-7xl lg:px-8">
-        {/* Static background patterns */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-50/30 via-white to-quantum-purple-50/20 opacity-80" />
-        <div className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-br from-neural-blue-400/8 to-quantum-purple-400/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-80 h-80 bg-gradient-to-br from-quantum-purple-400/6 to-cyber-green-400/6 rounded-full blur-3xl" />
-        
-        <motion.div 
-          className="relative z-10 text-center"
-          initial="initial"
-          animate="animate"
-          variants={staggerContainer}
-        >
-          {/* AI-Enhanced Logo */}
+      <div className="mb-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+        <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+        <section className="relative z-10 px-6 pt-20 pb-16 mx-auto max-w-7xl lg:px-8">
+          {/* Static background patterns */}
+         
+          
+          <motion.div 
+            className="relative z-10 text-center"
+            initial="initial"
+            animate="animate"
+            variants={staggerContainer}
+          >
+            {/* AI-Enhanced Logo */}
                      <motion.div 
              className="flex justify-center mb-8"
              variants={fadeInUp}
@@ -77,7 +50,7 @@ export default function HomePage() {
               <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden">
                 <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
                 <div className="absolute top-1 right-2">
-                  <span className="text-[10px] font-mono text-white/80">3.0</span>
+                  
                 </div>
               </div>
             </Card>
@@ -105,28 +78,28 @@ export default function HomePage() {
 
                     {/* CTA Buttons */}
           <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 w-full max-w-md sm:max-w-none mx-auto"
             variants={fadeInUp}
             transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <Button 
-              variant="neural-primary"
-              size="neural-lg"
-              onClick={handleStartCalculator}
-              aiAssisted={true}
-              neuralGlow={true}
-              leftIcon={<Brain className="h-5 w-5" />}
-              rightIcon={<ArrowRight className="h-5 w-5" />}
-              className="px-8 py-4 text-lg font-semibold"
-            >
-              Calculate Your Savings
-            </Button>
+            <Link href="/quote-calculator" className="w-full sm:w-auto">
+              <Button 
+                variant="neural-primary"
+                size="neural-lg"
+            
+                neuralGlow={true}
+                rightIcon={<ArrowRight className="h-5 w-5" />}
+                className="px-8 py-4 text-lg font-semibold w-full sm:w-auto"
+              >
+                Calculate Your Savings
+              </Button>
+            </Link>
             
             <Button 
               variant="quantum-secondary"
               size="neural-lg"
               leftIcon={<Play className="h-5 w-5" />}
-              className="px-8 py-4 text-lg"
+              className="px-8 py-4 text-lg font-semibold w-full sm:w-auto"
             >
               Watch Demo
             </Button>
@@ -154,8 +127,9 @@ export default function HomePage() {
               </motion.div>
             ))}
           </motion.div>
-        </motion.div>
-      </section>
+          </motion.div>
+        </section>
+      </div>
 
       {/* AI Features Preview */}
       <section className="px-6 py-16 mx-auto max-w-7xl lg:px-8 relative">
@@ -271,34 +245,37 @@ export default function HomePage() {
       </section>
 
       {/* Neural Social Proof */}
-      <section className="px-6 py-16 mx-auto max-w-7xl lg:px-8 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-neural-blue-50/50 to-quantum-purple-50/50 rounded-3xl" />
-        
-                 <motion.div 
-           className="text-center relative z-10"
-           initial="initial"
-           whileInView="animate"
-           viewport={{ once: true }}
-           variants={fadeInUp}
-           transition={{ duration: 0.6, ease: "easeOut" }}
-         >
-          <h2 className="text-headline-2 text-neural-blue-900 mb-8 font-display">
-            Trusted by <span className="gradient-text-neural">Smart</span> Property Leaders
-          </h2>
+      <div className="mb-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+        <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+        <section className="relative z-10 px-6 py-16 mx-auto max-w-7xl lg:px-8">
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-            {[1, 2, 3, 4].map((i) => (
-              <motion.div 
-                key={i}
-                className="h-12 bg-white/80 backdrop-blur-lg border border-neural-blue-100 rounded-xl flex items-center justify-center shadow-sm hover:shadow-neural-glow transition-all duration-300"
-                whileHover={{ scale: 1.05, opacity: 1 }}
-              >
-                <span className="text-neural-blue-600 font-medium">Company {i}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
+                   <motion.div 
+             className="text-center relative z-10"
+             initial="initial"
+             whileInView="animate"
+             viewport={{ once: true }}
+             variants={fadeInUp}
+             transition={{ duration: 0.6, ease: "easeOut" }}
+           >
+            <h2 className="text-headline-2 text-neural-blue-900 mb-8 font-display">
+              Trusted by <span className="gradient-text-neural">Smart</span> Property Leaders
+            </h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
+              {[1, 2, 3, 4].map((i) => (
+                <motion.div 
+                  key={i}
+                  className="h-12 bg-white/80 backdrop-blur-lg border border-neural-blue-100 rounded-xl flex items-center justify-center shadow-sm hover:shadow-neural-glow transition-all duration-300"
+                  whileHover={{ scale: 1.05, opacity: 1 }}
+                >
+                  <span className="text-neural-blue-600 font-medium">Company {i}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+      </div>
 
       {/* AI-Enhanced CTA Section */}
       <section className="px-6 py-20 mx-auto max-w-7xl lg:px-8">
@@ -335,17 +312,18 @@ export default function HomePage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <Button 
-                variant="quantum-secondary"
-                size="neural-xl"
-                onClick={handleStartCalculator}
-                aiAssisted={true}
-                leftIcon={<Brain className="h-5 w-5" />}
-                rightIcon={<ArrowRight className="h-5 w-5" />}
-                className="bg-white text-neural-blue-600 hover:bg-neural-blue-50 px-8 py-4 text-lg font-semibold"
-              >
-Get Your Free Analysis
-              </Button>
+              <Link href="/quote-calculator">
+                <Button 
+                  variant="quantum-secondary"
+                  size="neural-xl"
+                
+              
+                  rightIcon={<ArrowRight className="h-5 w-5" />}
+                  className="bg-white text-neural-blue-600 hover:bg-neural-blue-50 px-8 py-4 text-lg font-semibold"
+                >
+                  Get Your Free Analysis
+                </Button>
+              </Link>
             </motion.div>
           </div>
         </Card>

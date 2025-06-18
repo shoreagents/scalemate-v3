@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
-import { ROLES, ROLE_TASKS } from '@/utils/constants';
+import { ROLES, ROLE_TASKS } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Plus, Check, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
 

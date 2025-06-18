@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { PortfolioSize } from '@/types';
-import { PORTFOLIO_INDICATORS } from '@/utils/constants';
+import { PORTFOLIO_INDICATORS } from '@/utils/calculator';
 import { Building, TrendingUp, Users, Target } from 'lucide-react';
 
 interface PortfolioStepProps {
