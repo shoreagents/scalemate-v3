@@ -68,7 +68,6 @@ export function OffshoreCalculator({
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut",
         staggerChildren: 0.1
       }
     },
@@ -84,7 +83,7 @@ export function OffshoreCalculator({
     visible: { 
       opacity: 1, 
       x: 0,
-      transition: { duration: 0.5, ease: "easeOut" }
+      transition: { duration: 0.5 }
     },
     exit: { 
       opacity: 0, 
