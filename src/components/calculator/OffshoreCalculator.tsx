@@ -142,12 +142,16 @@ export function OffshoreCalculator({
   const nextStep = () => {
     if (formData.currentStep < 5) {
       updateFormData({ currentStep: (formData.currentStep + 1) as CalculatorStep });
+      // Scroll to top of the page to show the new step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const prevStep = () => {
     if (formData.currentStep > 1) {
       updateFormData({ currentStep: (formData.currentStep - 1) as CalculatorStep });
+      // Scroll to top of the page to show the new step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -311,27 +315,29 @@ export function OffshoreCalculator({
         className="relative z-10"
       >
         {/* Calculator Header */}
-        <Card 
-          variant="quantum-glass" 
-          className="mb-8 p-8 text-center relative overflow-hidden"
-          neuralGlow={false}
-        >
-          
-          <div className="relative z-10">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
-                <Calculator className="h-6 w-6 text-white" />
+        <div className="mb-8 px-8 py-12 text-center">
+          {/* ScaleMate Badge */}
+          <div className="flex justify-center mb-8">
+            <Card>
+              <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden">
+                <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
               </div>
-              <h1 className="text-headline-1 gradient-text-neural font-display">
-                Offshore Scaling Calculator
-              </h1>
-            </div>
-            
-            <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
-              {getStepDescription(formData.currentStep)}
-            </p>
+            </Card>
           </div>
-        </Card>
+          
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
+              <Calculator className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-display-3 gradient-text-neural font-display leading-tight">
+              Offshore Scaling Calculator
+            </h1>
+          </div>
+          
+          <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
+            {getStepDescription(formData.currentStep)}
+          </p>
+        </div>
 
         {/* Step Indicator */}
         <div className="my-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
@@ -410,13 +416,15 @@ export function OffshoreCalculator({
             className="mt-8 p-6"
             hoverLift={false}
           >
-            <div className="flex items-center justify-between">
+            {/* Desktop Layout */}
+            <div className="hidden sm:flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {formData.currentStep === 1 ? (
                   <Link href="/">
                     <Button
                       variant="quantum-secondary"
                       leftIcon={<Home className="h-4 w-4" />}
+                      className="w-40 h-12"
                     >
                       Back to Home
                     </Button>
@@ -426,6 +434,7 @@ export function OffshoreCalculator({
                     variant="quantum-secondary"
                     onClick={prevStep}
                     leftIcon={<ArrowLeft className="h-4 w-4" />}
+                    className="w-40 h-12"
                   >
                     Previous
                   </Button>
@@ -443,12 +452,55 @@ export function OffshoreCalculator({
                     onClick={nextStep}
                     disabled={!canProceedFromStep(formData.currentStep)}
                     rightIcon={<ArrowRight className="h-4 w-4" />}
-                 
+                    className="w-40 h-12"
                   >
                     Continue
                   </Button>
                 )}
               </div>
+            </div>
+
+            {/* Mobile Layout (stacked vertically) */}
+            <div className="flex sm:hidden flex-col items-center gap-4">
+              {/* Step counter at top */}
+              <div className="text-sm text-neural-blue-600 font-medium">
+                Step {formData.currentStep} of 5
+              </div>
+              
+              {/* Continue button */}
+              {formData.currentStep < 4 && (
+                <Button
+                  variant="neural-primary"
+                  onClick={nextStep}
+                  disabled={!canProceedFromStep(formData.currentStep)}
+                  rightIcon={<ArrowRight className="h-4 w-4" />}
+                  className="w-full h-12"
+                >
+                  Continue
+                </Button>
+              )}
+              
+              {/* Back/Previous button at bottom */}
+              {formData.currentStep === 1 ? (
+                <Link href="/" className="w-full">
+                  <Button
+                    variant="quantum-secondary"
+                    leftIcon={<Home className="h-4 w-4" />}
+                    className="w-full h-12"
+                  >
+                    Back to Home
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="quantum-secondary"
+                  onClick={prevStep}
+                  leftIcon={<ArrowLeft className="h-4 w-4" />}
+                  className="w-full h-12"
+                >
+                  Previous
+                </Button>
+              )}
             </div>
           </Card>
         )}
