@@ -13,6 +13,7 @@ import { TaskSelectionStep } from './steps/TaskSelectionStep';
 import { ExperienceStep } from './steps/ExperienceStep';
 import { ResultsStep } from './steps/ResultsStep';
 import { useExitIntentContext } from '@/components/providers/ExitIntentProvider';
+import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { analytics } from '@/utils/analytics';
 import { 
   ArrowLeft, 
@@ -25,7 +26,9 @@ import {
   Zap,
   Cpu,
   Target,
-  Home
+  Home,
+  MapPin,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -56,8 +59,9 @@ export function OffshoreCalculator({
   const [isCalculating, setIsCalculating] = useState(false);
   const [processingStage, setProcessingStage] = useState<string>('');
 
-  // Use global exit intent context
+  // Use global exit intent context and calculator data
   const exitIntentContext = useExitIntentContext();
+  const { isAIGenerated, location, isLoading, error } = useCalculatorData();
 
   // Animation variants
   const containerVariants = {
@@ -314,27 +318,46 @@ export function OffshoreCalculator({
       >
         {/* Calculator Header */}
         <div className="mb-8 px-8 py-12 text-center">
-          {/* ScaleMate Badge */}
-          <div className="flex justify-center mb-8">
-            <Card>
-              <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden">
-                <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
-              </div>
-            </Card>
-          </div>
-          
           <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">
-            <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
-              <Calculator className="h-6 w-6 text-white" />
-            </div>
             <h1 className="text-display-3 gradient-text-neural font-display leading-tight">
               Offshore Scaling Calculator
             </h1>
+            <div className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden
+              ${isAIGenerated 
+                ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow border-0' 
+                : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
+              }
+            `}>
+              {isAIGenerated && (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/20 via-quantum-purple-400/30 to-cyber-green-400/20 animate-neural-pulse" />
+                </>
+              )}
+              <Sparkles className={`w-4 h-4 relative z-10 ${isAIGenerated ? 'animate-neural-pulse' : ''}`} />
+              <span className="text-sm font-medium relative z-10">
+                {isAIGenerated ? 'AI Powered' : 'Standard'}
+              </span>
+            </div>
           </div>
           
-          <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
-            {getStepDescription(formData.currentStep)}
-          </p>
+          {/* Location Status */}
+          {location && location.country !== 'Unknown' && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <MapPin className="w-4 h-4 text-brand-primary-500" />
+              <span className="text-sm text-neutral-600">
+                Customized for {location.city}, {location.country}
+              </span>
+            </div>
+          )}
+          
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Loader2 className="w-4 h-4 animate-spin text-brand-primary-500" />
+              <span className="text-sm text-neutral-600">Fetching location data...</span>
+            </div>
+          )}
         </div>
 
         {/* Step Indicator */}

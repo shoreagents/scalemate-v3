@@ -62,7 +62,7 @@ export const PORTFOLIO_INDICATORS: Readonly<Record<PortfolioSize, PortfolioIndic
       marketingSpecialist: 1
     },
     averageRevenue: { min: 500000, max: 1500000 },
-    implementationComplexity: 'simple'
+    implementationComplexity: 'basic'
   },
   '1000-1999': {
     min: 1000,
@@ -75,7 +75,7 @@ export const PORTFOLIO_INDICATORS: Readonly<Record<PortfolioSize, PortfolioIndic
       marketingSpecialist: 1
     },
     averageRevenue: { min: 1500000, max: 4000000 },
-    implementationComplexity: 'moderate'
+    implementationComplexity: 'intermediate'
   },
   '2000-4999': {
     min: 2000,
@@ -88,7 +88,7 @@ export const PORTFOLIO_INDICATORS: Readonly<Record<PortfolioSize, PortfolioIndic
       marketingSpecialist: 2
     },
     averageRevenue: { min: 4000000, max: 15000000 },
-    implementationComplexity: 'complex'
+    implementationComplexity: 'advanced'
   },
   '5000+': {
     min: 5000,
@@ -351,4 +351,61 @@ export const BRAND_MESSAGING = {
     'Get Your Free Analysis',
     'Scale Smarter Today'
   ]
-} as const; 
+} as const;
+
+// Fallback portfolio data when AI is unavailable or location is unknown
+// This uses generic global ranges that work across most markets
+export const fallbackPortfolioData: Record<string, PortfolioIndicator> = {
+  "100-299": {
+    min: 100,
+    max: 299,
+    tier: 'growing',
+    description: "Entry-level portfolio perfect for new property managers getting started in the business. Focus on building systems and processes while maintaining high service quality.",
+    recommendedTeamSize: {
+      assistantPropertyManager: 1,
+      leasingCoordinator: 1, 
+      marketingSpecialist: 1
+    },
+    averageRevenue: { min: 50000, max: 150000 },
+    implementationComplexity: 'basic'
+  },
+  "300-799": {
+    min: 300,
+    max: 799,
+    tier: 'large',
+    description: "Established portfolio requiring structured operations and specialized team members. Perfect balance of growth potential and manageable complexity.",
+    recommendedTeamSize: {
+      assistantPropertyManager: 2,
+      leasingCoordinator: 2,
+      marketingSpecialist: 1
+    },
+    averageRevenue: { min: 150000, max: 400000 },
+    implementationComplexity: 'intermediate'
+  },
+  "800-1999": {
+    min: 800,
+    max: 1999,
+    tier: 'major',
+    description: "Major portfolio requiring advanced systems, dedicated teams, and sophisticated operational strategies. Significant market presence with complex coordination needs.",
+    recommendedTeamSize: {
+      assistantPropertyManager: 3,
+      leasingCoordinator: 3,
+      marketingSpecialist: 2
+    },
+    averageRevenue: { min: 400000, max: 1000000 },
+    implementationComplexity: 'advanced'
+  },
+  "2000+": {
+    min: 2000,
+    max: 10000,
+    tier: 'enterprise',
+    description: "Enterprise-scale portfolio requiring comprehensive management infrastructure, multiple specialized teams, and enterprise-grade systems and processes.",
+    recommendedTeamSize: {
+      assistantPropertyManager: 5,
+      leasingCoordinator: 4,
+      marketingSpecialist: 3
+    },
+    averageRevenue: { min: 1000000, max: 5000000 },
+    implementationComplexity: 'enterprise'
+  }
+}; 

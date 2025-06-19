@@ -3,7 +3,8 @@
 import { motion } from 'framer-motion';
 import { PortfolioSize } from '@/types';
 import { PORTFOLIO_INDICATORS } from '@/utils/calculator';
-import { Building, TrendingUp, Users, Target } from 'lucide-react';
+import { useCalculatorData } from '@/hooks/useCalculatorData';
+import { Building, Users, Target, MapPin, Sparkles, Loader2 } from 'lucide-react';
 
 interface PortfolioStepProps {
   value: PortfolioSize | '';
@@ -11,24 +12,36 @@ interface PortfolioStepProps {
 }
 
 export function PortfolioStep({ value, onChange }: PortfolioStepProps) {
-  const portfolioOptions = Object.entries(PORTFOLIO_INDICATORS).map(([size, data]) => ({
+  const { 
+    location, 
+    portfolioData,
+    isLoading, 
+    error,
+    isAIGenerated,
+    refetch
+  } = useCalculatorData();
+
+  // Use AI-generated portfolio data if available, otherwise fallback to static data
+  const dataSource = portfolioData || PORTFOLIO_INDICATORS;
+  
+  const portfolioOptions = Object.entries(dataSource).map(([size, data]) => ({
     value: size as PortfolioSize,
     label: `${data.min}${data.max === 99999 ? '+' : `-${data.max}`} Properties`,
     ...data
   }));
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="mx-auto" style={{ maxWidth: '100%' }}>
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
-            <Building className="w-8 h-8 text-white" />
-          </div>
           <h2 className="text-headline-1 text-neutral-900">
             What's your portfolio size?
           </h2>
         </div>
+        
+
+        
         <p className="text-body-large text-neutral-600">
           Select the range that best matches your current property portfolio. This helps us 
           recommend the optimal team structure for your business.
@@ -118,9 +131,11 @@ export function PortfolioStep({ value, onChange }: PortfolioStepProps) {
                 <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
                   <span>Revenue Range:</span>
                   <span className="font-medium">
-                    ${(option.averageRevenue.min / 1000000).toFixed(1)}M - ${(option.averageRevenue.max / 1000000).toFixed(1)}M
+                    {(location?.currency && location.currency !== 'Unknown') ? location.currency : '$'}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {(location?.currency && location.currency !== 'Unknown') ? location.currency : '$'}{(option.averageRevenue.max / 1000000).toFixed(1)}M
                   </span>
                 </div>
+
+
               </button>
             </motion.div>
           );

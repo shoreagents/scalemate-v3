@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { RoleId } from '@/types';
-import { SALARY_DATA } from '@/utils/calculator';
+import { ROLES as ROLE_DEFINITIONS } from '@/utils/calculator/data';
 import { Users, TrendingUp, DollarSign, Plus, Minus } from 'lucide-react';
 
 interface RoleSelectionStepProps {
@@ -11,74 +11,24 @@ interface RoleSelectionStepProps {
   onChange: (selectedRoles: Record<RoleId, boolean>, teamSize: Record<RoleId, number>) => void;
 }
 
-const ROLES = [
-  {
-    id: 'assistantPropertyManager' as RoleId,
-    title: 'Assistant Property Manager',
-    description: 'Handle tenant applications, lease renewals, maintenance coordination, and compliance documentation.',
-    icon: '🏢',
-    colors: {
-      border: 'border-neural-blue-500',
-      bg: 'bg-neural-blue-50',
-      text: 'text-neural-blue-700',
-      button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
-      indicator: 'bg-neural-blue-500'
-    },
-    keyTasks: [
-      'Tenant Application Screening',
-      'Lease Renewal Processing', 
-      'Maintenance Coordination',
-      'Compliance Documentation'
-    ],
-    avgSalaryAU: 75000,
-    avgSalaryPH: 18000,
-    complexity: 'Medium'
+// Create role display data from centralized definitions
+const ROLES = Object.values(ROLE_DEFINITIONS).map(role => ({
+  id: role.id,
+  title: role.title,
+  description: role.description,
+  icon: role.icon,
+  colors: {
+    border: 'border-neural-blue-500',
+    bg: 'bg-neural-blue-50',
+    text: 'text-neural-blue-700',
+    button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
+    indicator: 'bg-neural-blue-500'
   },
-  {
-    id: 'leasingCoordinator' as RoleId,
-    title: 'Leasing Coordinator',
-    description: 'Manage inquiries, coordinate property tours, process applications, and conduct market research.',
-    icon: '🗝️',
-    colors: {
-      border: 'border-neural-blue-500',
-      bg: 'bg-neural-blue-50',
-      text: 'text-neural-blue-700',
-      button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
-      indicator: 'bg-neural-blue-500'
-    },
-    keyTasks: [
-      'Inquiry Response Management',
-      'Virtual Tour Coordination',
-      'Application Processing',
-      'Market Research & Pricing'
-    ],
-    avgSalaryAU: 68000,
-    avgSalaryPH: 15000,
-    complexity: 'Medium'
-  },
-  {
-    id: 'marketingSpecialist' as RoleId,
-    title: 'Marketing Specialist',
-    description: 'Create property marketing content, manage social media, analyze performance, and optimize campaigns.',
-    icon: '📈',
-    colors: {
-      border: 'border-neural-blue-500',
-      bg: 'bg-neural-blue-50',
-      text: 'text-neural-blue-700',
-      button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
-      indicator: 'bg-neural-blue-500'
-    },
-    keyTasks: [
-      'Property Marketing Content',
-      'Social Media Management',
-      'Performance Analytics',
-      'Campaign Optimization'
-    ],
-    avgSalaryAU: 72000,
-    avgSalaryPH: 18000,
-    complexity: 'Medium-High'
-  }
-];
+  keyTasks: role.tasks.slice(0, 4).map(task => task.name), // Get first 4 task names
+  avgSalaryAU: role.averageSalary.australian,
+  avgSalaryPH: role.averageSalary.philippine,
+  complexity: 'Medium' // Default complexity for display
+}));
 
 export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSelectionStepProps) {
   const handleRoleToggle = (roleId: RoleId) => {

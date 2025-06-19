@@ -1,5 +1,5 @@
 // Enum-like string literal types for better type safety
-export type PortfolioSize = '500-999' | '1000-1999' | '2000-4999' | '5000+';
+export type PortfolioSize = string; // e.g. "100-299", "500-999", "1000-2499", etc.
 export type ExperienceLevel = 'entry' | 'moderate' | 'experienced';
 export type RoleId = 'assistantPropertyManager' | 'leasingCoordinator' | 'marketingSpecialist';
 export type BusinessTier = 'growing' | 'large' | 'major' | 'enterprise';
@@ -157,9 +157,10 @@ export interface PortfolioIndicator {
   readonly averageRevenue: {
     readonly min: number;
     readonly max: number;
-  };
-  readonly implementationComplexity: 'simple' | 'moderate' | 'complex' | 'enterprise';
-}
+      };
+    readonly implementationComplexity: 'basic' | 'intermediate' | 'advanced' | 'enterprise';
+    readonly marketInsights?: string;
+  }
 
 // Premium features
 export interface PremiumFeature {
