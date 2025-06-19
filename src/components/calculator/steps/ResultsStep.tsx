@@ -67,7 +67,7 @@ function ResultCard({ icon, title, value, subtitle, color, delay = 0 }: ResultCa
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
     >
-      <Card className={`p-6 border-l-4 ${color} hover:shadow-neural-glow transition-all duration-300 group bg-white/80 backdrop-blur-sm`}>
+      <Card className={`p-6 border-l-4 ${color} hover:shadow-neural-glow transition-all duration-300 group bg-white/80 backdrop-blur-sm h-full`}>
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-xl ${color.replace('border-l-', 'bg-').replace('-500', '-100')} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
             {icon}
@@ -276,7 +276,8 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         transition={{ delay: 0.4, duration: 0.5 }}
         className="flex justify-center"
       >
-        <div className="bg-white/80 backdrop-blur-sm border border-neural-blue-100 rounded-xl p-1 shadow-lg">
+        {/* Desktop Tab Navigation */}
+        <div className="hidden sm:block bg-white/80 backdrop-blur-sm border border-neural-blue-100 rounded-xl p-1 shadow-lg">
           <div className="flex">
             <button
               onClick={() => setActiveTab('overview')}
@@ -321,6 +322,27 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Navigation */}
+        <div className="sm:hidden w-full">
+          <div className="relative">
+            <div className="absolute left-5 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none">
+              {activeTab === 'overview' && <BarChart3 className="w-5 h-5 text-neural-blue-600" />}
+              {activeTab === 'implementation' && <ClipboardList className="w-5 h-5 text-neural-blue-600" />}
+              {activeTab === 'pitch' && <Presentation className="w-5 h-5 text-neural-blue-600" />}
+            </div>
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value as 'overview' | 'implementation' | 'pitch')}
+              className="w-full bg-white/80 backdrop-blur-sm border border-neural-blue-200 rounded-xl pl-14 pr-12 py-4 text-base font-medium text-neural-blue-700 shadow-lg appearance-none cursor-pointer focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 transition-all duration-300"
+            >
+              <option value="overview">Overview & Analysis</option>
+              <option value="implementation">Implementation Plan</option>
+              <option value="pitch">Pitch Deck</option>
+            </select>
+            <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-neural-blue-500 pointer-events-none" />
+          </div>
+        </div>
       </motion.div>
 
       {/* Tab Content */}
@@ -335,13 +357,13 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             className="space-y-8"
           >
             {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         <ResultCard
-          icon={<DollarSign className="w-6 h-6 text-cyber-green-600" />}
+          icon={<DollarSign className="w-6 h-6 text-neural-blue-600" />}
           title="Total Annual Savings"
           value={formatCurrency(result.totalSavings)}
           subtitle={`${formatPercentage(result.averageSavingsPercentage)} average savings`}
-          color="border-l-cyber-green-500"
+          color="border-l-neural-blue-500"
           delay={0.1}
         />
         <ResultCard
@@ -353,19 +375,19 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           delay={0.2}
         />
         <ResultCard
-          icon={<TrendingUp className="w-6 h-6 text-quantum-purple-600" />}
+          icon={<TrendingUp className="w-6 h-6 text-neural-blue-600" />}
           title="ROI Estimate"
           value={`${result.estimatedROI.toFixed(1)}x`}
           subtitle="Return on investment"
-          color="border-l-quantum-purple-500"
+          color="border-l-neural-blue-500"
           delay={0.3}
         />
         <ResultCard
-          icon={<Clock className="w-6 h-6 text-matrix-orange-600" />}
+          icon={<Clock className="w-6 h-6 text-neural-blue-600" />}
           title="Implementation"
           value={`${result.implementationTimeline.fullImplementation} weeks`}
           subtitle="Full deployment timeline"
-          color="border-l-matrix-orange-500"
+          color="border-l-neural-blue-500"
           delay={0.4}
         />
       </div>
@@ -906,26 +928,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         </Card>
       </motion.div>
 
-      {/* Action Buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9, duration: 0.5 }}
-        className="flex flex-col sm:flex-row gap-4 justify-center"
-      >
-        <Button variant="primary" className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Download Report
-        </Button>
-        <Button variant="secondary" className="flex items-center gap-2">
-          <Share2 className="w-4 h-4" />
-          Share Results
-        </Button>
-        <Button variant="ghost" onClick={onRestart} className="flex items-center gap-2">
-          <Calculator className="w-4 h-4" />
-          Start New Calculation
-        </Button>
-      </motion.div>
+
+
+
 
       {/* Call to Action */}
       <motion.div
@@ -1395,21 +1400,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
             </div>
 
-            {/* Pitch Deck Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="primary" className="flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Download Pitch Deck
-              </Button>
-              <Button variant="secondary" className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                Preview Presentation
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
-                Share with Team
-              </Button>
-            </div>
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -1419,30 +1410,34 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
-        className="flex flex-col sm:flex-row gap-4 justify-center"
+        className="flex flex-col sm:flex-row gap-4 justify-center items-center"
       >
+        {/* Download Button Container */}
         <Button 
           variant="primary" 
-          className="flex items-center gap-2 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 hover:from-neural-blue-600 hover:to-quantum-purple-600 shadow-neural-glow hover:shadow-lg transition-all duration-300"
+          leftIcon={<Download className="w-5 h-5" />}
+          className="w-[256px] px-6 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 hover:from-neural-blue-600 hover:to-quantum-purple-600 shadow-neural-glow hover:shadow-lg transition-all duration-300"
         >
-          <Download className="w-5 h-5" />
           Download Complete Report
         </Button>
-        <Button 
-          variant="secondary" 
-          className="flex items-center gap-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 transition-all duration-300"
-        >
-          <Share2 className="w-5 h-5" />
-          Share Results
-        </Button>
-        <Button 
-          variant="ghost" 
-          onClick={onRestart} 
-          className="flex items-center gap-2 text-neutral-600 hover:text-neural-blue-700 hover:bg-neural-blue-50 transition-all duration-300"
-        >
-          <Calculator className="w-5 h-5" />
-          Start New Calculation
-        </Button>
+        
+        {/* Start New Calculation + Share Icon Container */}
+        <div className="flex gap-2 items-center">
+          <Button 
+            variant="outline" 
+            onClick={onRestart} 
+            leftIcon={<Calculator className="w-5 h-5" />}
+            className="min-w-[200px] px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 transition-all duration-300"
+          >
+            Start New Calculation
+          </Button>
+          <Button 
+            variant="secondary" 
+            className="w-12 h-12 p-3 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 transition-all duration-300 flex items-center justify-center flex-shrink-0"
+          >
+            <Share2 className="w-5 h-5" />
+          </Button>
+        </div>
       </motion.div>
 
       {/* ScaleMate Pitch Section - Why Do It Yourself? */}
