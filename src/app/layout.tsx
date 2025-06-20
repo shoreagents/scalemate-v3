@@ -2,6 +2,7 @@ import { Inter, Outfit, JetBrains_Mono } from 'next/font/google';
 // @ts-ignore - CSS imports don't have TypeScript declarations
 import '@/styles/globals.css';
 import { ExitIntentProvider } from '@/components/providers/ExitIntentProvider';
+import { Header, Footer } from '@/components/common';
 
 // Neural font configuration
 const inter = Inter({ 
@@ -100,8 +101,12 @@ export default function RootLayout({
         <div className="fixed inset-0 bg-neural-mesh opacity-5 pointer-events-none" />
         
         <ExitIntentProvider>
-          <div id="root" className="relative z-10">
-            {children}
+          <div id="root" className="relative z-10 flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
           </div>
         </ExitIntentProvider>
         
