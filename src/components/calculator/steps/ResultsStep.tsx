@@ -67,16 +67,16 @@ function ResultCard({ icon, title, value, subtitle, color, delay = 0 }: ResultCa
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
     >
-      <Card className={`p-6 border-l-4 ${color} hover:shadow-neural-glow transition-all duration-300 group bg-white/80 backdrop-blur-sm`}>
+      <Card className={`p-6 border-l-4 ${color} hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-white h-full`}>
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-xl ${color.replace('border-l-', 'bg-').replace('-500', '-100')} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+          <div className={`p-3 rounded-2xl ${color.replace('border-l-', 'bg-').replace('-500', '-100')} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
             {icon}
           </div>
           <div className="flex-1">
             <p className="text-body-small font-medium text-neural-blue-600 mb-1">{title}</p>
-            <p className="text-headline-3 font-bold text-neutral-900">{value}</p>
+            <p className="text-headline-3 font-bold text-neural-blue-900">{value}</p>
             {subtitle && (
-              <p className="text-caption text-neutral-600 mt-1">{subtitle}</p>
+              <p className="text-caption text-neural-blue-700 mt-1">{subtitle}</p>
             )}
           </div>
         </div>
@@ -257,14 +257,14 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           Calculation Complete
         </div>
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+          <div className="w-16 h-16 rounded-2xl border-2 border-neural-blue-500 bg-neural-blue-500 flex items-center justify-center shadow-lg">
             <TrendingUp className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-headline-1 text-neutral-900">
+          <h2 className="text-display-2 font-display font-bold text-neural-blue-900">
             Your Offshore Scaling Results
           </h2>
         </div>
-        <p className="text-body-large text-neutral-600 max-w-3xl mx-auto">
+        <p className="text-body-large text-neural-blue-700 max-w-3xl mx-auto">
           Here's your comprehensive analysis of potential savings and implementation strategy
         </p>
       </motion.div>
@@ -276,13 +276,14 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         transition={{ delay: 0.4, duration: 0.5 }}
         className="flex justify-center"
       >
-        <div className="bg-white/80 backdrop-blur-sm border border-neural-blue-100 rounded-xl p-1 shadow-lg">
+        {/* Desktop Tab Navigation */}
+        <div className="hidden sm:block bg-white border border-neural-blue-200 rounded-2xl p-1 shadow-lg">
           <div className="flex">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
                 activeTab === 'overview'
-                  ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow'
+                  ? 'bg-neural-blue-500 text-white shadow-lg'
                   : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
               }`}
             >
@@ -295,9 +296,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             
             <button
               onClick={() => setActiveTab('implementation')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
                 activeTab === 'implementation'
-                  ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow'
+                  ? 'bg-neural-blue-500 text-white shadow-lg'
                   : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
               }`}
             >
@@ -310,15 +311,36 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             
             <button
               onClick={() => setActiveTab('pitch')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
                 activeTab === 'pitch'
-                  ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow'
+                  ? 'bg-neural-blue-500 text-white shadow-lg'
                   : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
               }`}
             >
               <Presentation className="w-4 h-4" />
               Pitch Deck
             </button>
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Navigation */}
+        <div className="sm:hidden w-full">
+          <div className="relative">
+            <div className="absolute left-5 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none">
+              {activeTab === 'overview' && <BarChart3 className="w-5 h-5 text-neural-blue-600" />}
+              {activeTab === 'implementation' && <ClipboardList className="w-5 h-5 text-neural-blue-600" />}
+              {activeTab === 'pitch' && <Presentation className="w-5 h-5 text-neural-blue-600" />}
+            </div>
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value as 'overview' | 'implementation' | 'pitch')}
+              className="w-full bg-white border border-neural-blue-200 rounded-2xl pl-14 pr-12 py-4 text-base font-medium text-neural-blue-700 shadow-lg appearance-none cursor-pointer focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 transition-all duration-300"
+            >
+              <option value="overview">Overview & Analysis</option>
+              <option value="implementation">Implementation Plan</option>
+              <option value="pitch">Pitch Deck</option>
+            </select>
+            <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-neural-blue-500 pointer-events-none" />
           </div>
         </div>
       </motion.div>
@@ -335,13 +357,13 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             className="space-y-8"
           >
             {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-stretch">
         <ResultCard
-          icon={<DollarSign className="w-6 h-6 text-cyber-green-600" />}
+          icon={<DollarSign className="w-6 h-6 text-neural-blue-600" />}
           title="Total Annual Savings"
           value={formatCurrency(result.totalSavings)}
           subtitle={`${formatPercentage(result.averageSavingsPercentage)} average savings`}
-          color="border-l-cyber-green-500"
+          color="border-l-neural-blue-500"
           delay={0.1}
         />
         <ResultCard
@@ -353,19 +375,19 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           delay={0.2}
         />
         <ResultCard
-          icon={<TrendingUp className="w-6 h-6 text-quantum-purple-600" />}
+          icon={<TrendingUp className="w-6 h-6 text-neural-blue-600" />}
           title="ROI Estimate"
           value={`${result.estimatedROI.toFixed(1)}x`}
           subtitle="Return on investment"
-          color="border-l-quantum-purple-500"
+          color="border-l-neural-blue-500"
           delay={0.3}
         />
         <ResultCard
-          icon={<Clock className="w-6 h-6 text-matrix-orange-600" />}
+          icon={<Clock className="w-6 h-6 text-neural-blue-600" />}
           title="Implementation"
           value={`${result.implementationTimeline.fullImplementation} weeks`}
           subtitle="Full deployment timeline"
-          color="border-l-matrix-orange-500"
+          color="border-l-neural-blue-500"
           delay={0.4}
         />
       </div>
@@ -387,9 +409,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="text-center">
-              <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="p-4 sm:p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <Globe className="w-10 h-10 text-red-600 mx-auto mb-3" />
                 <p className="text-body-small font-medium text-red-800 mb-2">Australian Workforce</p>
                 <p className="text-headline-3 font-bold text-red-600">
@@ -409,7 +431,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </div>
 
             <div className="text-center">
-              <div className="p-6 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="p-4 sm:p-6 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <Globe className="w-10 h-10 text-cyber-green-600 mx-auto mb-3" />
                 <p className="text-body-small font-medium text-cyber-green-800 mb-2">Philippine Workforce</p>
                 <p className="text-headline-3 font-bold text-cyber-green-600">
@@ -906,26 +928,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         </Card>
       </motion.div>
 
-      {/* Action Buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9, duration: 0.5 }}
-        className="flex flex-col sm:flex-row gap-4 justify-center"
-      >
-        <Button variant="primary" className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Download Report
-        </Button>
-        <Button variant="secondary" className="flex items-center gap-2">
-          <Share2 className="w-4 h-4" />
-          Share Results
-        </Button>
-        <Button variant="ghost" onClick={onRestart} className="flex items-center gap-2">
-          <Calculator className="w-4 h-4" />
-          Start New Calculation
-        </Button>
-      </motion.div>
+
+
+
 
       {/* Call to Action */}
       <motion.div
@@ -946,15 +951,24 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               Connect with our offshore scaling experts to implement your personalized strategy 
               and start saving {formatCurrency(result.totalSavings)} annually.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="primary" size="lg" className="flex items-center gap-2">
-                <Target className="w-5 h-5" />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                variant="primary" 
+                leftIcon={<Target className="w-5 h-5" />}
+                className="w-full sm:w-[256px] px-6 py-3 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+              >
                 Get Implementation Plan
               </Button>
-              <Button variant="outline" size="lg" className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Schedule Consultation
-              </Button>
+              
+              <div className="flex gap-2 items-center w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  leftIcon={<Calendar className="w-5 h-5" />}
+                  className="flex-1 sm:min-w-[200px] sm:flex-initial px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  Schedule Consultation
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -1395,21 +1409,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
             </div>
 
-            {/* Pitch Deck Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="primary" className="flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Download Pitch Deck
-              </Button>
-              <Button variant="secondary" className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                Preview Presentation
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
-                Share with Team
-              </Button>
-            </div>
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -1419,30 +1419,34 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
-        className="flex flex-col sm:flex-row gap-4 justify-center"
+        className="flex flex-col sm:flex-row gap-4 justify-center items-center"
       >
+        {/* Download Button Container */}
         <Button 
           variant="primary" 
-          className="flex items-center gap-2 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 hover:from-neural-blue-600 hover:to-quantum-purple-600 shadow-neural-glow hover:shadow-lg transition-all duration-300"
+          leftIcon={<Download className="w-5 h-5" />}
+          className="w-full sm:w-[256px] px-6 py-3 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
         >
-          <Download className="w-5 h-5" />
           Download Complete Report
         </Button>
-        <Button 
-          variant="secondary" 
-          className="flex items-center gap-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 transition-all duration-300"
-        >
-          <Share2 className="w-5 h-5" />
-          Share Results
-        </Button>
-        <Button 
-          variant="ghost" 
-          onClick={onRestart} 
-          className="flex items-center gap-2 text-neutral-600 hover:text-neural-blue-700 hover:bg-neural-blue-50 transition-all duration-300"
-        >
-          <Calculator className="w-5 h-5" />
-          Start New Calculation
-        </Button>
+        
+        {/* Start New Calculation + Share Icon Container */}
+        <div className="flex gap-2 items-center w-full sm:w-auto">
+          <Button 
+            variant="outline" 
+            onClick={onRestart} 
+            leftIcon={<Calculator className="w-5 h-5" />}
+            className="flex-1 sm:min-w-[200px] sm:flex-initial px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            Start New Calculation
+          </Button>
+          <Button 
+            variant="secondary" 
+            className="w-12 h-12 p-3 border-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center flex-shrink-0"
+          >
+            <Share2 className="w-5 h-5" />
+          </Button>
+        </div>
       </motion.div>
 
       {/* ScaleMate Pitch Section - Why Do It Yourself? */}
@@ -1451,117 +1455,116 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.1, duration: 0.5 }}
       >
-        <div className="bg-gradient-to-br from-neural-blue-900 via-quantum-purple-900 to-neural-blue-800 rounded-2xl p-8 text-white relative overflow-hidden shadow-neural-glow">
-          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-900/50 via-quantum-purple-900/50 to-neural-blue-800/50"></div>
+        <div className="bg-white border border-neural-blue-100 rounded-2xl p-6 sm:p-8 relative shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
           <div className="relative z-10">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 mb-6 border border-white/20">
-                <Zap className="w-6 h-6 text-cyber-green-400" />
-                <span className="text-body-large font-bold">Why Do It Yourself?</span>
-              </div>
-              <h3 className="text-display-2 font-bold mb-4">
-                ScaleMate Has <span className="text-cyber-green-400">Everything</span> You Need
-              </h3>
-              <p className="text-body-large text-white/90 max-w-3xl mx-auto">
-                Stop struggling with setup, training, and management. We've thought of everything so you don't have to.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-neural-blue-400 to-quantum-purple-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                  <Users className="w-6 h-6 text-white" />
+                          <div className="text-center mb-6 sm:mb-8">
+                <div className="inline-flex items-center gap-2 sm:gap-3 bg-cyber-green-500 rounded-full px-4 sm:px-6 py-2 sm:py-3 mb-4 sm:mb-6 shadow-lg">
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  <span className="text-base sm:text-body-large font-bold text-white">Why Do It Yourself?</span>
                 </div>
-                <h4 className="text-body-large font-bold mb-2">Role Builders</h4>
-                <p className="text-white/80 text-body-small">Pre-built role descriptions, skill requirements, and performance metrics for every property management position.</p>
+                <h3 className="text-xl sm:text-display-2 font-display font-bold mb-4 text-neural-blue-900">
+                  ScaleMate Has <span className="text-cyber-green-500">Everything</span> You Need
+                </h3>
+                <p className="text-base sm:text-body-large text-neural-blue-700 max-w-3xl mx-auto px-4 sm:px-0">
+                  Stop struggling with setup, training, and management. We've thought of everything so you don't have to.
+                </p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-cyber-green-400 to-cyber-green-500 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                  <CheckCircle2 className="w-6 h-6 text-white" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
+              <div className="bg-neural-blue-50 rounded-2xl p-4 sm:p-6 hover:bg-neural-blue-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neural-blue-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h4 className="text-body-large font-bold mb-2">Readiness Assessment</h4>
-                <p className="text-white/80 text-body-small">Comprehensive evaluation tools to ensure your team and processes are ready for offshore scaling.</p>
+                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Role Builders</h4>
+                <p className="text-neural-blue-700 text-sm sm:text-body-small">Pre-built role descriptions, skill requirements, and performance metrics for every property management position.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-quantum-purple-400 to-neural-blue-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                  <Brain className="w-6 h-6 text-white" />
+              <div className="bg-cyber-green-50 rounded-2xl p-4 sm:p-6 hover:bg-cyber-green-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyber-green-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
+                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h4 className="text-body-large font-bold mb-2">Advanced AI Training</h4>
-                <p className="text-white/80 text-body-small">Claude AI integration with custom prompts, workflows, and automation specifically for property management.</p>
+                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Readiness Assessment</h4>
+                <p className="text-neural-blue-700 text-sm sm:text-body-small">Comprehensive evaluation tools to ensure your team and processes are ready for offshore scaling.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-matrix-orange-400 to-matrix-orange-500 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                  <Globe className="w-6 h-6 text-white" />
+              <div className="bg-quantum-purple-50 rounded-2xl p-4 sm:p-6 hover:bg-quantum-purple-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-quantum-purple-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
+                  <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h4 className="text-body-large font-bold mb-2">Advanced Culture Training</h4>
-                <p className="text-white/80 text-body-small">Deep market knowledge training for Australian property management culture, tenant expectations, and business practices.</p>
+                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Advanced AI Training</h4>
+                <p className="text-neural-blue-700 text-sm sm:text-body-small">Claude AI integration with custom prompts, workflows, and automation specifically for property management.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-neural-blue-400 to-cyber-green-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                  <MessageSquare className="w-6 h-6 text-white" />
+              <div className="bg-matrix-orange-50 rounded-2xl p-4 sm:p-6 hover:bg-matrix-orange-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-matrix-orange-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
+                  <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h4 className="text-body-large font-bold mb-2">Offshore Team Mastery</h4>
-                <p className="text-white/80 text-body-small">Proven frameworks for managing Philippine offshore teams, communication protocols, and performance optimization.</p>
+                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Advanced Culture Training</h4>
+                <p className="text-neural-blue-700 text-sm sm:text-body-small">Deep market knowledge training for Australian property management culture, tenant expectations, and business practices.</p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-cyber-green-400 to-matrix-orange-400 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                  <Zap className="w-6 h-6 text-white" />
+              <div className="bg-neural-blue-50 rounded-2xl p-4 sm:p-6 hover:bg-neural-blue-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neural-blue-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
+                  <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h4 className="text-body-large font-bold mb-2">10X Growth System</h4>
-                <p className="text-white/80 text-body-small">Complete methodology combining AI automation with offshore talent to achieve exponential business growth.</p>
+                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Offshore Team Mastery</h4>
+                <p className="text-neural-blue-700 text-sm sm:text-body-small">Proven frameworks for managing Philippine offshore teams, communication protocols, and performance optimization.</p>
+              </div>
+
+              <div className="bg-cyber-green-50 rounded-2xl p-4 sm:p-6 hover:bg-cyber-green-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyber-green-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">10X Growth System</h4>
+                <p className="text-neural-blue-700 text-sm sm:text-body-small">Complete methodology combining AI automation with offshore talent to achieve exponential business growth.</p>
               </div>
             </div>
 
             {/* Main CTA */}
             <div className="text-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 mb-6">
-                <h4 className="text-headline-2 font-bold mb-4">
+              <div className="bg-neural-blue-50 border border-neural-blue-200 rounded-2xl p-6 sm:p-8 mb-6 shadow-lg">
+                <h4 className="text-xl sm:text-headline-2 font-display font-bold mb-4 text-neural-blue-900">
                   There's Nothing We Haven't Thought Of
                 </h4>
-                <p className="text-body-large text-white/90 mb-6">
+                <p className="text-base sm:text-body-large text-neural-blue-700 mb-6">
                   We combine cutting-edge AI with proven offshore team strategies to deliver everything you need for explosive growth.
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-                  <div className="flex items-center gap-2 text-cyber-green-400">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="text-body font-bold">FREE to Sign Up</span>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-6">
+                  <div className="flex items-center gap-2 text-cyber-green-600">
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-body font-bold">FREE to Sign Up</span>
                   </div>
-                  <div className="flex items-center gap-2 text-neural-blue-400">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="text-body font-bold">Advanced Features Available</span>
+                  <div className="flex items-center gap-2 text-neural-blue-600">
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-body font-bold">Advanced Features Available</span>
                   </div>
-                  <div className="flex items-center gap-2 text-quantum-purple-400">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="text-body font-bold">Complete Done-For-You Service</span>
+                  <div className="flex items-center gap-2 text-quantum-purple-600">
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-body font-bold">Complete Done-For-You Service</span>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <button className="w-full sm:w-auto bg-gradient-to-r from-cyber-green-400 to-matrix-orange-500 text-white font-bold text-xl px-12 py-4 rounded-full hover:from-cyber-green-300 hover:to-matrix-orange-400 transform hover:scale-105 transition-all duration-300 shadow-neural-glow">
+                  <button className="w-full sm:w-auto bg-cyber-green-500 hover:bg-cyber-green-600 text-white font-bold text-lg sm:text-xl px-8 sm:px-12 py-3 sm:py-4 rounded-2xl hover:-translate-y-0.5 transition-all duration-300 shadow-lg hover:shadow-xl">
                     🚀 Start Your 10X Journey FREE
                   </button>
                   
-                  <p className="text-body-small text-white/70">
+                  <p className="text-sm sm:text-body-small text-neural-blue-700">
                     Join thousands of property managers already scaling with ScaleMate
                   </p>
                 </div>
               </div>
 
               {/* Success Message */}
-              <div className="bg-gradient-to-r from-cyber-green-500/20 to-cyber-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-cyber-green-400/30 shadow-lg">
+              <div className="bg-cyber-green-50 border border-cyber-green-200 rounded-2xl p-6 shadow-lg">
                 <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-cyber-green-400 rounded-full flex items-center justify-center shadow-md">
+                  <div className="w-8 h-8 bg-cyber-green-500 rounded-full flex items-center justify-center shadow-md">
                     <CheckCircle2 className="w-5 h-5 text-white" />
                   </div>
-                  <h5 className="text-headline-3 font-bold text-cyber-green-400">Success is on the Other Side!</h5>
+                  <h5 className="text-headline-3 font-bold text-cyber-green-700">Success is on the Other Side!</h5>
                 </div>
-                <p className="text-body text-white/90">
+                <p className="text-body text-neural-blue-700">
                   Stop doing it the hard way. Let ScaleMate handle the complexity while you focus on growing your business.
                 </p>
               </div>

@@ -272,18 +272,10 @@ export function ExperienceStep({
         >
           <Button
             onClick={onCalculate}
-            disabled={isCalculating}
             className="w-full sm:w-auto px-8 py-4 text-lg"
             size="lg"
           >
-            {isCalculating ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Calculating Your Savings...
-              </>
-            ) : (
-              "Calculate My Detailed Savings"
-            )}
+            Calculate My Detailed Savings
           </Button>
           <p className="text-sm text-gray-500 mt-2">
             Get your personalized offshore scaling report

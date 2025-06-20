@@ -12,7 +12,7 @@ export default function CalculatorPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-neural-blue-50/50 via-white to-quantum-purple-50/50 py-12 relative">
+    <div className="py-12 relative">
       {/* Background pattern */}
       <div className="fixed inset-0 pattern-neural-grid opacity-10 pointer-events-none" />
       
@@ -22,6 +22,6 @@ export default function CalculatorPage() {
           className="mb-12"
         />
       </div>
-    </main>
+    </div>
   );
 } 

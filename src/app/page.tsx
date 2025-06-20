@@ -23,7 +23,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-neural-blue-50 via-white to-quantum-purple-50 relative overflow-hidden">
+    <div className="relative overflow-hidden">
       {/* Hero Section */}
       <div className="mb-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
@@ -328,6 +328,6 @@ export default function HomePage() {
           </div>
         </Card>
       </section>
-    </main>
+    </div>
   );
 } 
