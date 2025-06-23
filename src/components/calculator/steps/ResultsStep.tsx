@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalculationResult, FormData, RoleId } from '@/types';
-import { ROLES } from '@/utils/constants';
+import { ROLES } from '@/utils/quoteCalculatorData';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useImplementationPlan } from '@/hooks/useImplementationPlan';

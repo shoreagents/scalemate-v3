@@ -15,7 +15,7 @@ import {
   TASK_COMPLEXITY_MULTIPLIERS, 
   ROLES,
   detectBusinessTier
-} from './constants';
+} from './quoteCalculatorData';
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling
