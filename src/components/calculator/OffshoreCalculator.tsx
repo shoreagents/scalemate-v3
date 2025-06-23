@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
+import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
 import { calculateSavings } from '@/utils/calculations';
 import { DEFAULT_FORM_DATA } from '@/utils/constants';
 import { Button } from '@/components/ui/Button';
@@ -114,7 +114,7 @@ export function OffshoreCalculator({
   }, [formData.currentStep, calculationResult, exitIntentContext]);
 
   const updateFormData = (updates: Partial<FormData>) => {
-    setFormData(prev => {
+    setFormData((prev: FormData) => {
       const updated = { ...prev, ...updates, lastUpdatedAt: new Date() };
       
       // Track analytics for significant updates
@@ -212,15 +212,15 @@ export function OffshoreCalculator({
       case 1: return formData.portfolioSize !== '';
       case 2: return Object.values(formData.selectedRoles).some(Boolean);
       case 3: return Object.values(formData.selectedTasks).some(Boolean) || 
-                     Object.values(formData.customTasks).some(tasks => tasks.length > 0);
+                     Object.values(formData.customTasks).some((tasks: any) => Array.isArray(tasks) && tasks.length > 0);
       case 4: {
         // NEW: Multi-level experience validation
         const selectedRoles = Object.entries(formData.selectedRoles)
-          .filter(([_, selected]) => selected)
-          .map(([roleId]) => roleId);
+          .filter(([_, selected]: [string, boolean]) => selected)
+          .map(([roleId]: [string, boolean]) => roleId);
         
         // Check if all selected roles have complete experience distribution
-        return selectedRoles.every(roleId => {
+        return selectedRoles.every((roleId: string) => {
           const distribution = formData.roleExperienceDistribution?.[roleId];
           return distribution && distribution.isComplete;
         });
@@ -238,7 +238,7 @@ export function OffshoreCalculator({
             manualData={formData.manualPortfolioData}
             onChange={(portfolioSize, manualData) => updateFormData({ 
               portfolioSize, 
-              manualPortfolioData: manualData 
+              ...(manualData !== undefined && { manualPortfolioData: manualData })
             })}
           />
         );
@@ -248,12 +248,12 @@ export function OffshoreCalculator({
             selectedRoles={formData.selectedRoles}
             customRoles={formData.customRoles || {}}
             teamSize={formData.teamSize}
-            userLocation={formData.userLocation}
+            {...(formData.userLocation && { userLocation: formData.userLocation })}
             onChange={(selectedRoles, teamSize, customRoles, userLocation) => updateFormData({ 
               selectedRoles, 
               teamSize, 
               customRoles: customRoles || {},
-              userLocation 
+              ...(userLocation !== undefined && { userLocation })
             })}
           />
         );
@@ -275,7 +275,7 @@ export function OffshoreCalculator({
             teamSize={formData.teamSize}
             roleExperienceLevels={formData.roleExperienceLevels || {}}
             roleExperienceDistribution={formData.roleExperienceDistribution || {}}
-            userLocation={formData.userLocation}
+            {...(formData.userLocation && { userLocation: formData.userLocation })}
             onChange={(experienceLevel) => updateFormData({ experienceLevel })}
             onRoleExperienceChange={(roleExperienceLevels) => updateFormData({ roleExperienceLevels })}
             onRoleExperienceDistributionChange={(roleExperienceDistribution) => updateFormData({ roleExperienceDistribution })}
@@ -348,9 +348,11 @@ export function OffshoreCalculator({
           <div className="flex justify-center mb-8">
             <Link href="/" className="transition-transform hover:scale-105">
               <Card>
-                <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer">
-                  <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
-                </div>
+                <>
+                  <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer">
+                    <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
+                  </div>
+                </>
               </Card>
             </Link>
           </div>
@@ -396,31 +398,33 @@ export function OffshoreCalculator({
                 aiPowered={true}
                 neuralGlow={true}
               >
-                <div className="mb-6">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neural-primary rounded-full flex items-center justify-center shadow-neural-glow">
-                    <Calculator className="h-8 w-8 text-white animate-neural-pulse" />
+                <>
+                  <div className="mb-6">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neural-primary rounded-full flex items-center justify-center shadow-neural-glow">
+                      <Calculator className="h-8 w-8 text-white animate-neural-pulse" />
+                    </div>
+                    
+                    <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
+                      Calculating Your Savings
+                    </h3>
+                    
+                    <motion.p 
+                      key={processingStage}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-neural-blue-600 font-medium"
+                    >
+                      {processingStage}
+                    </motion.p>
                   </div>
                   
-                  <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
-                    Calculating Your Savings
-                  </h3>
-                  
-                  <motion.p 
-                    key={processingStage}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-neural-blue-600 font-medium"
-                  >
-                    {processingStage}
-                  </motion.p>
-                </div>
-                
-                {/* Processing dots */}
-                <div className="loading-neural-dots justify-center">
-                  <div className="animate-neural-pulse"></div>
-                  <div className="animate-neural-pulse [animation-delay:0.2s]"></div>
-                  <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
-                </div>
+                  {/* Processing dots */}
+                  <div className="loading-neural-dots justify-center">
+                    <div className="animate-neural-pulse"></div>
+                    <div className="animate-neural-pulse [animation-delay:0.2s]"></div>
+                    <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
+                  </div>
+                </>
               </Card>
             </motion.div>
           )}
@@ -446,8 +450,9 @@ export function OffshoreCalculator({
             className="mt-8 p-6"
             hoverLift={false}
           >
-            {/* Desktop Layout */}
-            <div className="hidden sm:flex items-center justify-between">
+            <>
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {formData.currentStep === 1 ? (
                   <Link href="/">
@@ -532,6 +537,7 @@ export function OffshoreCalculator({
                 </Button>
               )}
             </div>
+            </>
           </Card>
         )}
       </motion.div>
