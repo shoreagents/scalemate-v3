@@ -495,14 +495,7 @@ export function OffshoreCalculator({
                     disabled={isCalculating || !canProceedFromStep(4)}
                     className="w-40 h-12"
                   >
-                    {isCalculating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Calculating...
-                      </>
-                    ) : (
-                      'Calculate Savings'
-                    )}
+                    {isCalculating ? 'Calculating...' : 'Calculate Savings'}
                   </Button>
                 )}
               </div>
@@ -536,14 +529,7 @@ export function OffshoreCalculator({
                   disabled={isCalculating || !canProceedFromStep(4)}
                   className="w-full h-12"
                 >
-                  {isCalculating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Calculating...
-                    </>
-                  ) : (
-                    'Calculate My Detailed Savings'
-                  )}
+                  {isCalculating ? 'Calculating...' : 'Calculate My Detailed Savings'}
                 </Button>
               )}
               
