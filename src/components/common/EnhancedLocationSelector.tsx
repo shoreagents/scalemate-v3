@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Globe, Check, X, ChevronDown, MapPinIcon, Navigation } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MapPin, Globe, Check, X, ChevronDown, MapPinIcon } from 'lucide-react';
 import { fetchCountries, searchCountries, type Country } from '@/utils/locationApi';
 
 interface LocationData {
@@ -31,7 +31,6 @@ export function EnhancedLocationSelector({
   const [countries, setCountries] = useState<Country[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   
@@ -150,7 +149,7 @@ export function EnhancedLocationSelector({
                   No countries found
                 </div>
               ) : (
-                (searchQuery ? filteredCountries : countries).slice(0, 50).map(country => (
+                (searchQuery ? filteredCountries : countries).map(country => (
                   <button
                     key={country.cca2}
                     onClick={() => handleCountrySelect(country.name.common)}

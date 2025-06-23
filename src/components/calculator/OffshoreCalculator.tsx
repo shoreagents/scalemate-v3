@@ -147,10 +147,14 @@ export function OffshoreCalculator({
 
   // Handle location edit save
   const saveLocationEdit = () => {
-    if (tempLocation.country && tempLocation.region) {
-      setManualLocation({ ...tempLocation });
+    if (tempLocation.country) {
+      setManualLocation({ 
+        country: tempLocation.country,
+        region: '', // Set empty since we're using country-only now
+        city: ''    // Set empty since we're using country-only now
+      });
       setIsEditingLocation(false);
-      console.log('📍 Location manually overridden:', tempLocation);
+      console.log('📍 Location manually overridden:', { country: tempLocation.country });
     }
   };
 
