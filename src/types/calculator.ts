@@ -1,10 +1,132 @@
 // Enum-like string literal types for better type safety
-export type PortfolioSize = '500-999' | '1000-1999' | '2000-4999' | '5000+';
+export type PortfolioSize = '500-999' | '1000-1999' | '2000-4999' | '5000+' | 'manual';
 export type ExperienceLevel = 'entry' | 'moderate' | 'experienced';
-export type RoleId = 'assistantPropertyManager' | 'leasingCoordinator' | 'marketingSpecialist';
+export type RoleId = 'assistantPropertyManager' | 'leasingCoordinator' | 'marketingSpecialist' | string; // Allow custom role IDs
 export type BusinessTier = 'growing' | 'large' | 'major' | 'enterprise';
 export type TaskComplexity = 'low' | 'medium' | 'high';
 export type CalculatorStep = 1 | 2 | 3 | 4 | 5;
+
+// Location and country types for savings comparison
+export type Country = 'AU' | 'US' | 'CA' | 'UK' | 'NZ' | 'SG';
+export type LocationData = {
+  country: Country;
+  countryName: string;
+  currency: string;
+  currencySymbol: string;
+  detected: boolean;
+  ipAddress?: string;
+};
+
+// Enhanced role types for custom roles
+export type RoleType = 'predefined' | 'custom';
+export type RoleCategory = 'property-management' | 'leasing' | 'marketing' | 'maintenance' | 'admin' | 'finance' | 'custom';
+
+// Expanded salary data with multiple countries and experience levels
+export interface DetailedSalaryData {
+  readonly base: number;
+  readonly total: number;
+  readonly benefits: number;
+  readonly taxes: number;
+}
+
+export interface CountrySalaryData {
+  readonly entry: DetailedSalaryData;
+  readonly moderate: DetailedSalaryData;
+  readonly experienced: DetailedSalaryData;
+}
+
+export interface MultiCountryRoleSalaryData {
+  readonly AU: CountrySalaryData; // Australia
+  readonly US: CountrySalaryData; // United States
+  readonly CA: CountrySalaryData; // Canada
+  readonly UK: CountrySalaryData; // United Kingdom
+  readonly NZ: CountrySalaryData; // New Zealand
+  readonly SG: CountrySalaryData; // Singapore
+  readonly PH: CountrySalaryData; // Philippines (offshore)
+}
+
+// Custom role definition
+export interface CustomRole {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string;
+  readonly category: RoleCategory;
+  readonly icon: string;
+  readonly type: 'custom';
+  readonly tasks: readonly string[];
+  readonly requiredSkills: readonly string[];
+  readonly optionalSkills: readonly string[];
+  readonly estimatedSalary: {
+    readonly local: number; // User's local country estimate
+    readonly philippine: number; // Philippine estimate
+  };
+  readonly complexity: TaskComplexity;
+  readonly createdAt: Date;
+  readonly aiGenerated: boolean;
+}
+
+// Enhanced predefined role with multi-country data
+export interface EnhancedRole {
+  readonly id: RoleId;
+  readonly title: string;
+  readonly icon: string;
+  readonly description: string;
+  readonly category: RoleCategory;
+  readonly type: 'predefined';
+  readonly color: string;
+  readonly tasks: readonly Task[];
+  readonly salaryData: MultiCountryRoleSalaryData;
+  readonly requiredSkills: readonly string[];
+  readonly optionalSkills: readonly string[];
+  readonly searchKeywords: readonly string[]; // For search functionality
+}
+
+// Union type for all roles
+export type AnyRole = EnhancedRole | CustomRole;
+
+// Role search and filter types
+export interface RoleSearchFilters {
+  query: string;
+  category?: RoleCategory;
+  showCustomRoles: boolean;
+  sortBy: 'name' | 'savings' | 'category' | 'recent';
+}
+
+// Detailed savings comparison
+export interface DetailedSavingsComparison {
+  readonly roleId: string;
+  readonly roleName: string;
+  readonly teamSize: number;
+  readonly experienceLevel: ExperienceLevel;
+  readonly localCountry: Country;
+  readonly localCost: {
+    readonly monthly: number;
+    readonly annual: number;
+    readonly breakdown: DetailedSalaryData;
+  };
+  readonly philippineCost: {
+    readonly monthly: number;
+    readonly annual: number;
+    readonly breakdown: DetailedSalaryData;
+  };
+  readonly savings: {
+    readonly monthly: number;
+    readonly annual: number;
+    readonly percentage: number;
+  };
+  readonly qualityFactors: readonly string[];
+  readonly riskFactors: readonly string[];
+}
+
+// Multi-level experience distribution for roles
+export interface RoleExperienceDistribution {
+  entry: number;      // Number of team members at entry level
+  moderate: number;   // Number of team members at moderate level
+  experienced: number; // Number of team members at experienced level
+  totalAssigned: number; // Sum of all levels
+  totalRequired: number; // Total team size for this role
+  isComplete: boolean;   // Whether all members are assigned
+}
 
 // Urgency options for premium signup
 export type UrgencyLevel = 
@@ -93,11 +215,16 @@ export interface CustomTask {
 // Form data structure - ANONYMOUS FREE TOOL
 export interface FormData {
   portfolioSize: PortfolioSize | '';
-  selectedRoles: Record<RoleId, boolean>;
+  manualPortfolioData?: ManualPortfolioData; // For manual input mode
+  selectedRoles: Record<string, boolean>; // Changed to string to support custom role IDs
+  customRoles: Record<string, CustomRole>; // Store custom role definitions
   selectedTasks: Record<string, boolean>; // key format: "roleId-taskId"
-  customTasks: Record<RoleId, readonly CustomTask[]>;
-  experienceLevel: ExperienceLevel | '';
-  teamSize: Record<RoleId, number>;
+  customTasks: Record<string, readonly CustomTask[]>; // Changed to string key
+  experienceLevel: ExperienceLevel | ''; // Legacy single level for backward compatibility
+  roleExperienceLevels: Record<string, ExperienceLevel>; // Per-role experience levels (deprecated)
+  roleExperienceDistribution: Record<string, RoleExperienceDistribution>; // Multi-level experience per role
+  teamSize: Record<string, number>; // Changed to string to support custom role IDs
+  userLocation?: LocationData; // Auto-detected or selected user location
   // NO email or contact info - anonymous until premium signup
   currentStep: CalculatorStep;
   completedSteps: readonly CalculatorStep[];
@@ -204,4 +331,22 @@ export interface StepStatus {
   readonly isAccessible: boolean;
   readonly completedAt?: Date;
   readonly validationErrors: readonly ValidationError[];
+}
+
+// Revenue ranges for manual input
+export type RevenueRange = 
+  | 'under-500k'
+  | '500k-1.5m'
+  | '1.5m-4m'
+  | '4m-15m'
+  | '15m-50m'
+  | '50m+'
+  | 'prefer-not-to-disclose';
+
+// Manual portfolio input data
+export interface ManualPortfolioData {
+  propertyCount: number;
+  currentTeamSize: number;
+  revenueRange: RevenueRange;
+  autoDetectedTier?: BusinessTier;
 } 

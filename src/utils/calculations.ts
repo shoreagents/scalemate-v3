@@ -6,18 +6,20 @@ import {
   ExperienceLevel,
   BusinessTier,
   PortfolioSize,
-  CustomTask,
-  Task
+  Task,
+  RoleExperienceDistribution
 } from '@/types';
 import { 
   SALARY_DATA, 
   PORTFOLIO_INDICATORS, 
   TASK_COMPLEXITY_MULTIPLIERS, 
-  ROLES 
+  ROLES,
+  detectBusinessTier
 } from './constants';
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling
+ * Updated to handle multi-level experience distribution per role
  */
 export const calculateSavings = (formData: FormData): CalculationResult => {
   const selectedRoles = Object.entries(formData.selectedRoles)
@@ -34,17 +36,60 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
 
   // Calculate savings for each selected role
   selectedRoles.forEach(roleId => {
-    const teamSize = formData.teamSize[roleId];
-    const experienceLevel = formData.experienceLevel as ExperienceLevel;
-    
-    // Get salary data for this role and experience level
+    const teamSize = formData.teamSize[roleId] || 1;
+    const roleData = ROLES[roleId];
     const roleSalaryData = SALARY_DATA[roleId];
-    const australianSalary = roleSalaryData.australian[experienceLevel];
-    const philippineSalary = roleSalaryData.philippine[experienceLevel];
+    
+    if (!roleData || !roleSalaryData) {
+      console.warn(`Missing data for role: ${roleId}`);
+      return;
+    }
 
-    // Calculate base costs
-    const australianCost = australianSalary.total * teamSize;
-    const philippineCost = philippineSalary.total * teamSize;
+    // Get experience distribution for this role
+    const experienceDistribution = formData.roleExperienceDistribution?.[roleId];
+    
+    let australianCost = 0;
+    let philippineCost = 0;
+    let weightedExperienceLevel: ExperienceLevel = 'moderate'; // Default for legacy support
+    
+    if (experienceDistribution && experienceDistribution.isComplete) {
+      // NEW: Multi-level experience calculation
+      const experienceLevels: ExperienceLevel[] = ['entry', 'moderate', 'experienced'];
+      let totalWeightedValue = 0;
+      let totalMembers = 0;
+      
+      experienceLevels.forEach(level => {
+        const memberCount = experienceDistribution[level];
+        if (memberCount > 0) {
+          const australianSalary = roleSalaryData.australian[level];
+          const philippineSalary = roleSalaryData.philippine[level];
+          
+          australianCost += australianSalary.total * memberCount;
+          philippineCost += philippineSalary.total * memberCount;
+          
+          // Calculate weighted experience level for risk assessment
+          const levelWeight = level === 'entry' ? 1 : level === 'moderate' ? 2 : 3;
+          totalWeightedValue += levelWeight * memberCount;
+          totalMembers += memberCount;
+        }
+      });
+      
+      // Determine weighted experience level for legacy compatibility
+      if (totalMembers > 0) {
+        const avgWeight = totalWeightedValue / totalMembers;
+        weightedExperienceLevel = avgWeight <= 1.5 ? 'entry' : avgWeight <= 2.5 ? 'moderate' : 'experienced';
+      }
+    } else {
+      // FALLBACK: Use legacy single experience level or default
+      const experienceLevel = formData.experienceLevel as ExperienceLevel || 'moderate';
+      weightedExperienceLevel = experienceLevel;
+      
+      const australianSalary = roleSalaryData.australian[experienceLevel];
+      const philippineSalary = roleSalaryData.philippine[experienceLevel];
+      
+      australianCost = australianSalary.total * teamSize;
+      philippineCost = philippineSalary.total * teamSize;
+    }
 
     // Count selected tasks for this role
     const selectedTasksForRole = Object.keys(formData.selectedTasks)
@@ -55,7 +100,6 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
     const customTasksForRole = formData.customTasks[roleId]?.length || 0;
 
     // Calculate task complexity multiplier
-    const roleData = ROLES[roleId];
     const selectedTasks = roleData.tasks.filter((task: Task) => 
       formData.selectedTasks[`${roleId}-${task.id}`]
     );
@@ -80,19 +124,36 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
 
     // Calculate savings
     const savings = australianCost - adjustedPhilippineCost;
-    const savingsPercentage = (savings / australianCost) * 100;
+    const savingsPercentage = australianCost > 0 ? (savings / australianCost) * 100 : 0;
 
     // Estimate implementation time (days)
-    const implementationTime = calculateImplementationTime(teamSize, totalTasks, experienceLevel);
+    const implementationTime = calculateImplementationTimeMultiLevel(
+      teamSize, 
+      totalTasks, 
+      experienceDistribution || { 
+        entry: 0, 
+        moderate: teamSize, 
+        experienced: 0, 
+        totalAssigned: teamSize, 
+        totalRequired: teamSize, 
+        isComplete: true 
+      }
+    );
 
     // Assess risk factors
-    const riskFactors = assessRiskFactors(roleId, teamSize, totalTasks, experienceLevel);
+    const riskFactors = assessRiskFactorsMultiLevel(
+      roleId, 
+      teamSize, 
+      totalTasks, 
+      experienceDistribution,
+      weightedExperienceLevel
+    );
 
     breakdown[roleId] = {
       roleId,
       roleName: roleData.title,
       teamSize,
-      experienceLevel,
+      experienceLevel: weightedExperienceLevel,
       australianCost,
       philippineCost: adjustedPhilippineCost,
       savings,
@@ -117,7 +178,7 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
     : 0;
 
   // Get portfolio tier
-  const portfolioTier = getPortfolioTier(formData.portfolioSize as PortfolioSize);
+  const portfolioTier = getPortfolioTier(formData);
 
   // Calculate lead score
   const leadScore = calculateLeadScore(formData, totalSavings, totalTeamSize);
@@ -149,7 +210,7 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
 };
 
 /**
- * Calculate implementation time for a specific role
+ * Calculate implementation time for a specific role (legacy single experience level)
  */
 const calculateImplementationTime = (
   teamSize: number, 
@@ -173,7 +234,42 @@ const calculateImplementationTime = (
 };
 
 /**
- * Assess risk factors for a specific role
+ * Calculate implementation time for multi-level experience distribution
+ */
+const calculateImplementationTimeMultiLevel = (
+  teamSize: number, 
+  totalTasks: number, 
+  experienceDistribution: RoleExperienceDistribution
+): number => {
+  const baseTime = 30; // 30 days base
+  const teamSizeMultiplier = Math.log(teamSize + 1) * 10; // logarithmic scaling
+  const taskComplexityMultiplier = totalTasks * 2; // 2 days per task
+  
+  // Calculate weighted experience multiplier
+  const experienceMultipliers = {
+    entry: 1.3,     // 30% longer for entry level
+    moderate: 1.0,  // baseline
+    experienced: 0.8 // 20% faster for experienced
+  };
+  
+  let weightedMultiplier = 1.0;
+  const totalMembers = experienceDistribution.totalAssigned;
+  
+  if (totalMembers > 0) {
+    weightedMultiplier = (
+      (experienceDistribution.entry * experienceMultipliers.entry) +
+      (experienceDistribution.moderate * experienceMultipliers.moderate) +
+      (experienceDistribution.experienced * experienceMultipliers.experienced)
+    ) / totalMembers;
+  }
+
+  return Math.round(
+    (baseTime + teamSizeMultiplier + taskComplexityMultiplier) * weightedMultiplier
+  );
+};
+
+/**
+ * Assess risk factors for a specific role (legacy single experience level)
  */
 const assessRiskFactors = (
   roleId: RoleId, 
@@ -205,22 +301,99 @@ const assessRiskFactors = (
   }
 
   // Role-specific risks
-  const roleSpecificRisks = {
+  const roleSpecificRisks: Record<string, string[]> = {
     assistantPropertyManager: ['Compliance requirements vary by location'],
     leasingCoordinator: ['Customer interaction requires cultural training'],
     marketingSpecialist: ['Brand consistency requires clear guidelines']
   };
 
-  risks.push(...roleSpecificRisks[roleId]);
+  const specificRisks = roleSpecificRisks[roleId];
+  if (specificRisks) {
+    risks.push(...specificRisks);
+  }
 
   return risks;
 };
 
 /**
- * Get portfolio tier from portfolio size
+ * Assess risk factors for multi-level experience distribution
  */
-const getPortfolioTier = (portfolioSize: PortfolioSize): BusinessTier => {
-  return PORTFOLIO_INDICATORS[portfolioSize]?.tier || 'growing';
+const assessRiskFactorsMultiLevel = (
+  roleId: RoleId, 
+  teamSize: number, 
+  totalTasks: number, 
+  experienceDistribution: RoleExperienceDistribution | undefined,
+  weightedExperienceLevel: ExperienceLevel
+): string[] => {
+  const risks: string[] = [];
+
+  // Team size risks
+  if (teamSize > 3) {
+    risks.push('Large team coordination complexity');
+  }
+  if (teamSize === 1) {
+    risks.push('Single point of failure risk');
+  }
+
+  // Task complexity risks
+  if (totalTasks > 6) {
+    risks.push('High task complexity requires extensive training');
+  }
+  if (totalTasks === 0) {
+    risks.push('Undefined scope may lead to underutilization');
+  }
+
+  // Multi-level experience risks
+  if (experienceDistribution) {
+    const { entry, moderate, experienced, totalAssigned } = experienceDistribution;
+    
+    if (totalAssigned > 0) {
+      const entryPercentage = (entry / totalAssigned) * 100;
+      const experiencedPercentage = (experienced / totalAssigned) * 100;
+      
+      if (entryPercentage > 70) {
+        risks.push('High percentage of entry-level staff requires extensive supervision');
+      }
+      if (entryPercentage > 0 && experienced === 0) {
+        risks.push('No senior staff for mentoring and guidance');
+      }
+      if (experiencedPercentage > 80) {
+        risks.push('Over-investment in senior staff may increase costs');
+      }
+      if (entry > 0 && moderate === 0 && experienced > 0) {
+        risks.push('Missing mid-level staff for knowledge transfer');
+      }
+    }
+  } else {
+    // Fallback to single experience level assessment
+    if (weightedExperienceLevel === 'entry') {
+      risks.push('Entry-level staff require more supervision');
+    }
+  }
+
+  // Role-specific risks
+  const roleSpecificRisks: Record<string, string[]> = {
+    assistantPropertyManager: ['Compliance requirements vary by location'],
+    leasingCoordinator: ['Customer interaction requires cultural training'],
+    marketingSpecialist: ['Brand consistency requires clear guidelines']
+  };
+
+  const specificRisks = roleSpecificRisks[roleId];
+  if (specificRisks) {
+    risks.push(...specificRisks);
+  }
+
+  return risks;
+};
+
+/**
+ * Get portfolio tier from portfolio size or manual data
+ */
+const getPortfolioTier = (formData: FormData): BusinessTier => {
+  if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
+    return formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData);
+  }
+  return PORTFOLIO_INDICATORS[formData.portfolioSize as Exclude<PortfolioSize, 'manual'>]?.tier || 'growing';
 };
 
 /**
@@ -238,9 +411,25 @@ const calculateLeadScore = (
     '500-999': 15,
     '1000-1999': 25,
     '2000-4999': 30,
-    '5000+': 30
+    '5000+': 30,
+    'manual': 20 // Default score for manual input, can be adjusted based on tier
   };
-  score += portfolioScoring[formData.portfolioSize as PortfolioSize] || 0;
+  
+  let portfolioScore = portfolioScoring[formData.portfolioSize as PortfolioSize] || 0;
+  
+  // If manual input, adjust score based on detected tier
+  if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
+    const tier = formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData);
+    const tierScoring = {
+      'growing': 15,
+      'large': 25,
+      'major': 30,
+      'enterprise': 30
+    };
+    portfolioScore = tierScoring[tier];
+  }
+  
+  score += portfolioScore;
 
   // Team size scoring (0-25 points)
   if (totalTeamSize >= 5) score += 25;

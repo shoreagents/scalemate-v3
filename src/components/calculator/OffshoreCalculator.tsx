@@ -213,7 +213,18 @@ export function OffshoreCalculator({
       case 2: return Object.values(formData.selectedRoles).some(Boolean);
       case 3: return Object.values(formData.selectedTasks).some(Boolean) || 
                      Object.values(formData.customTasks).some(tasks => tasks.length > 0);
-      case 4: return formData.experienceLevel !== '';
+      case 4: {
+        // NEW: Multi-level experience validation
+        const selectedRoles = Object.entries(formData.selectedRoles)
+          .filter(([_, selected]) => selected)
+          .map(([roleId]) => roleId);
+        
+        // Check if all selected roles have complete experience distribution
+        return selectedRoles.every(roleId => {
+          const distribution = formData.roleExperienceDistribution?.[roleId];
+          return distribution && distribution.isComplete;
+        });
+      }
       default: return true;
     }
   };
@@ -224,15 +235,26 @@ export function OffshoreCalculator({
         return (
           <PortfolioStep
             value={formData.portfolioSize}
-            onChange={(portfolioSize) => updateFormData({ portfolioSize })}
+            manualData={formData.manualPortfolioData}
+            onChange={(portfolioSize, manualData) => updateFormData({ 
+              portfolioSize, 
+              manualPortfolioData: manualData 
+            })}
           />
         );
       case 2:
         return (
           <RoleSelectionStep
             selectedRoles={formData.selectedRoles}
+            customRoles={formData.customRoles || {}}
             teamSize={formData.teamSize}
-            onChange={(selectedRoles, teamSize) => updateFormData({ selectedRoles, teamSize })}
+            userLocation={formData.userLocation}
+            onChange={(selectedRoles, teamSize, customRoles, userLocation) => updateFormData({ 
+              selectedRoles, 
+              teamSize, 
+              customRoles: customRoles || {},
+              userLocation 
+            })}
           />
         );
       case 3:
@@ -248,9 +270,15 @@ export function OffshoreCalculator({
         return (
           <ExperienceStep
             value={formData.experienceLevel}
-            onChange={(experienceLevel) => updateFormData({ experienceLevel })}
             selectedRoles={formData.selectedRoles}
+            customRoles={formData.customRoles || {}}
             teamSize={formData.teamSize}
+            roleExperienceLevels={formData.roleExperienceLevels || {}}
+            roleExperienceDistribution={formData.roleExperienceDistribution || {}}
+            userLocation={formData.userLocation}
+            onChange={(experienceLevel) => updateFormData({ experienceLevel })}
+            onRoleExperienceChange={(roleExperienceLevels) => updateFormData({ roleExperienceLevels })}
+            onRoleExperienceDistributionChange={(roleExperienceDistribution) => updateFormData({ roleExperienceDistribution })}
             onCalculate={calculateSavingsAsync}
             isCalculating={isCalculating}
           />
