@@ -352,7 +352,7 @@ export function OffshoreCalculator({
                   </div>
                   
                   <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
-                    Calculating Your Savings
+                    Calculating Your Savingss
                   </h3>
                   
                   <p className="text-neural-blue-600 font-medium">
