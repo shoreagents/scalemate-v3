@@ -23,7 +23,7 @@ interface ExperienceStepProps {
 }
 
 export function ExperienceStep({ 
-  value,
+  value, 
   selectedRoles, 
   customRoles,
   teamSize, 
@@ -58,7 +58,7 @@ export function ExperienceStep({
   // Get active roles (selected roles only)
   const activeRoles = React.useMemo(() => {
     return Object.entries(selectedRoles)
-      .filter(([_, isSelected]) => isSelected)
+    .filter(([_, isSelected]) => isSelected)
       .map(([roleId]) => {
         const role = allRoles.find(r => r.id === roleId);
         const distribution = roleExperienceDistribution[roleId] || {
@@ -263,7 +263,7 @@ export function ExperienceStep({
           const roleData = allRoles.find(r => r.id === role.id);
           const distribution = role.distribution;
           const unassignedCount = distribution.totalRequired - distribution.totalAssigned;
-          
+
           return (
             <motion.div
               key={role.id}
@@ -289,7 +289,7 @@ export function ExperienceStep({
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Assignment Status */}
                 <div className="text-right">
                   <div className={`text-sm font-medium ${
@@ -392,7 +392,7 @@ export function ExperienceStep({
                     </div>
                   );
                 })}
-              </div>
+                </div>
 
               {/* Status Message */}
               <div className="mt-4">
@@ -415,7 +415,7 @@ export function ExperienceStep({
                     {unassignedCount < 0 
                       ? `⚠️ Please reduce assignments by ${Math.abs(unassignedCount)} member${Math.abs(unassignedCount) !== 1 ? 's' : ''}`
                       : `📝 Please assign ${unassignedCount} more member${unassignedCount !== 1 ? 's' : ''} to complete this role`}
-                  </div>
+                </div>
                 )}
               </div>
             </motion.div>
@@ -426,21 +426,21 @@ export function ExperienceStep({
       {/* Consolidated Savings Summary */}
       <AnimatePresence>
         {getCompletionPercentage() > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="p-6 rounded-xl bg-gradient-to-r from-neural-blue-50/50 to-quantum-purple-50/50 border border-neural-blue-100/50 relative overflow-hidden"
-          >
+        >
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
-            <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
-            
-            <div className="relative z-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          
+          <div className="relative z-10">
               <div className="text-center mb-6">
                 <h3 className="text-xl font-bold text-neural-blue-900 mb-2">
                   Consolidated Team Summary
-                </h3>
+              </h3>
                 <p className="text-sm text-neutral-600">
                   Your complete offshore team configuration and savings breakdown
                 </p>
@@ -455,9 +455,9 @@ export function ExperienceStep({
                 <div className="text-center">
                   <div className="text-2xl font-bold text-quantum-purple-600">{totalAssignedMembers}</div>
                   <div className="text-sm text-neutral-600">Assigned Members</div>
-                </div>
+              </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-cyber-green-600">
+                <div className="text-2xl font-bold text-cyber-green-600">
                     {userLocation?.currencySymbol || '$'}{getTotalSavings().toLocaleString()}
                   </div>
                   <div className="text-sm text-neutral-600">Annual Savings</div>
@@ -465,7 +465,7 @@ export function ExperienceStep({
                 <div className="text-center">
                   <div className="text-2xl font-bold text-neural-blue-600">
                     {Math.round(getCompletionPercentage())}%
-                  </div>
+              </div>
                   <div className="text-sm text-neutral-600">Complete</div>
                 </div>
               </div>
@@ -511,12 +511,12 @@ export function ExperienceStep({
                   </div>
                 </div>
               )}
-            </div>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
+      )}
       </AnimatePresence>
 
-      {/* Completion Status & Calculate Button */}
+      {/* Status Messages */}
       <AnimatePresence>
         {allRolesConfigured && (
           <motion.div
@@ -525,8 +525,7 @@ export function ExperienceStep({
             exit={{ opacity: 0, y: -20 }}
             className="text-center"
           >
-            {/* All Complete Indicator */}
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+            <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
               <div className="flex items-center justify-center gap-3 mb-2">
                 <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
                   <Check className="w-5 h-5 text-white" />
@@ -538,30 +537,10 @@ export function ExperienceStep({
                 You can still make adjustments above, or proceed to calculate your savings.
               </p>
             </div>
-
-            <Button
-              onClick={onCalculate}
-              disabled={isCalculating}
-              className="w-full sm:w-auto px-8 py-4 text-lg shadow-lg"
-              size="lg"
-            >
-              {isCalculating ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Calculating...
-                </>
-              ) : (
-                'Calculate My Detailed Savings'
-              )}
-            </Button>
-            <p className="text-sm text-neutral-500 mt-2">
-              Get your personalized offshore scaling report with detailed experience-level analysis
-            </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Incomplete Roles Indicator */}
       <AnimatePresence>
         {!allRolesConfigured && activeRoles.length > 0 && (
           <motion.div
@@ -584,6 +563,7 @@ export function ExperienceStep({
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 } 

@@ -184,24 +184,24 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                         return (
                           <div className="space-y-4">
                             {/* Cost Breakdown */}
-                            <div className="grid grid-cols-2 gap-4 text-body-small">
-                              <div className="p-3 bg-neural-blue-50/50 rounded-lg">
-                                <p className="text-neutral-600 mb-1">Australian Cost</p>
-                                <p className="font-bold text-neutral-900">${role.australianCost.toLocaleString()}/year</p>
-                              </div>
-                              <div className="p-3 bg-cyber-green-50/50 rounded-lg">
-                                <p className="text-neutral-600 mb-1">Philippine Cost</p>
-                                <p className="font-bold text-neutral-900">${role.philippineCost.toLocaleString()}/year</p>
-                              </div>
-                              <div className="p-3 bg-quantum-purple-50/50 rounded-lg">
-                                <p className="text-neutral-600 mb-1">Tasks Selected</p>
-                                <p className="font-bold text-neutral-900">{role.selectedTasksCount} tasks</p>
-                              </div>
-                              <div className="p-3 bg-matrix-orange-50/50 rounded-lg">
-                                <p className="text-neutral-600 mb-1">Implementation</p>
-                                <p className="font-bold text-neutral-900">{role.estimatedImplementationTime} days</p>
-                              </div>
-                            </div>
+                      <div className="grid grid-cols-2 gap-4 text-body-small">
+                        <div className="p-3 bg-neural-blue-50/50 rounded-lg">
+                          <p className="text-neutral-600 mb-1">Australian Cost</p>
+                          <p className="font-bold text-neutral-900">${role.australianCost.toLocaleString()}/year</p>
+                        </div>
+                        <div className="p-3 bg-cyber-green-50/50 rounded-lg">
+                          <p className="text-neutral-600 mb-1">Philippine Cost</p>
+                          <p className="font-bold text-neutral-900">${role.philippineCost.toLocaleString()}/year</p>
+                        </div>
+                        <div className="p-3 bg-quantum-purple-50/50 rounded-lg">
+                          <p className="text-neutral-600 mb-1">Tasks Selected</p>
+                          <p className="font-bold text-neutral-900">{role.selectedTasksCount} tasks</p>
+                        </div>
+                        <div className="p-3 bg-matrix-orange-50/50 rounded-lg">
+                          <p className="text-neutral-600 mb-1">Implementation</p>
+                          <p className="font-bold text-neutral-900">{role.estimatedImplementationTime} days</p>
+                        </div>
+                      </div>
 
                             {/* Multi-Level Experience Breakdown */}
                             {experienceDistribution && experienceDistribution.totalAssigned > 0 && (
@@ -658,12 +658,12 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
       </motion.div>
 
       {/* Role Breakdown */}
-                  <RoleBreakdown 
-              breakdown={result.breakdown}
+      <RoleBreakdown 
+        breakdown={result.breakdown}
               formData={formData}
-              isExpanded={isBreakdownExpanded}
-              onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
-            />
+        isExpanded={isBreakdownExpanded}
+        onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
+      />
 
       {/* AI-Generated Implementation Plan */}
       <motion.div

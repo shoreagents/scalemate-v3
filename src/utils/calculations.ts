@@ -84,9 +84,9 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
       const experienceLevel = formData.experienceLevel as ExperienceLevel || 'moderate';
       weightedExperienceLevel = experienceLevel;
       
-      const australianSalary = roleSalaryData.australian[experienceLevel];
-      const philippineSalary = roleSalaryData.philippine[experienceLevel];
-      
+    const australianSalary = roleSalaryData.australian[experienceLevel];
+    const philippineSalary = roleSalaryData.philippine[experienceLevel];
+
       australianCost = australianSalary.total * teamSize;
       philippineCost = philippineSalary.total * teamSize;
     }

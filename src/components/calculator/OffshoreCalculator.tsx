@@ -487,6 +487,24 @@ export function OffshoreCalculator({
                     Continue
                   </Button>
                 )}
+                
+                {formData.currentStep === 4 && (
+                  <Button
+                    variant="neural-primary"
+                    onClick={calculateSavingsAsync}
+                    disabled={isCalculating || !canProceedFromStep(4)}
+                    className="w-40 h-12"
+                  >
+                    {isCalculating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Calculating...
+                      </>
+                    ) : (
+                      'Calculate Savings'
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -507,6 +525,25 @@ export function OffshoreCalculator({
                   className="w-full h-12"
                 >
                   Continue
+                </Button>
+              )}
+              
+              {/* Calculate button for step 4 */}
+              {formData.currentStep === 4 && (
+                <Button
+                  variant="neural-primary"
+                  onClick={calculateSavingsAsync}
+                  disabled={isCalculating || !canProceedFromStep(4)}
+                  className="w-full h-12"
+                >
+                  {isCalculating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Calculating...
+                    </>
+                  ) : (
+                    'Calculate My Detailed Savings'
+                  )}
                 </Button>
               )}
               
