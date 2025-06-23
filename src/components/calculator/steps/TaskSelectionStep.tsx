@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
-import { ROLES, ROLE_TASKS } from '@/utils/constants';
+import { ROLES, ROLE_TASKS, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/constants';
 import { Button } from '@/components/ui/Button';
 import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
 
@@ -20,6 +20,46 @@ export function TaskSelectionStep({
   customTasks, 
   onChange 
 }: TaskSelectionStepProps) {
+  // Helper function to get role data from all sources
+  const getRoleData = (roleId: RoleId) => {
+    // First check ENHANCED_PROPERTY_ROLES
+    if (roleId in ENHANCED_PROPERTY_ROLES) {
+      const enhancedRole = ENHANCED_PROPERTY_ROLES[roleId as keyof typeof ENHANCED_PROPERTY_ROLES];
+      return {
+        ...enhancedRole,
+        tasks: ROLE_TASKS[roleId] || []
+      };
+    }
+    
+    // Then check ADDITIONAL_PROPERTY_ROLES
+    if (roleId in ADDITIONAL_PROPERTY_ROLES) {
+      const additionalRole = ADDITIONAL_PROPERTY_ROLES[roleId as keyof typeof ADDITIONAL_PROPERTY_ROLES];
+      return {
+        id: roleId,
+        title: additionalRole?.title || `${roleId} Role`,
+        icon: additionalRole?.icon || '📋',
+        description: additionalRole?.description || 'Custom property management role',
+        tasks: [], // Additional roles don't have predefined tasks
+        category: additionalRole?.category || 'custom'
+      };
+    }
+    
+    // Finally check ROLES (legacy)
+    if (ROLES[roleId]) {
+      return ROLES[roleId];
+    }
+    
+    // Fallback for unknown roles
+    return {
+      id: roleId,
+      title: `${roleId} Role`,
+      icon: '📋',
+      description: 'Custom role',
+      tasks: [],
+      category: 'custom'
+    };
+  };
+
   const [expandedRoles, setExpandedRoles] = useState<Record<RoleId, boolean>>({
     assistantPropertyManager: true,
     leasingCoordinator: false,
@@ -105,9 +145,10 @@ export function TaskSelectionStep({
   };
 
   const getSelectedTasksCount = (roleId: RoleId) => {
-    const standardTasks = ROLE_TASKS[roleId].filter(task => 
+    const roleTasks = ROLE_TASKS[roleId];
+    const standardTasks = roleTasks ? roleTasks.filter(task => 
       selectedTasks[`${roleId}-${task.id}`]
-    ).length;
+    ).length : 0;
     const customTasksCount = customTasks[roleId]?.length || 0;
     return standardTasks + customTasksCount;
   };
@@ -170,7 +211,7 @@ export function TaskSelectionStep({
       {/* Role Task Lists */}
       <div className="space-y-4">
         {activeRoles.map((roleId) => {
-          const role = ROLES[roleId];
+          const role = getRoleData(roleId);
           const isExpanded = expandedRoles[roleId];
           const selectedCount = getSelectedTasksCount(roleId);
 

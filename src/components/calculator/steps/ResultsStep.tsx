@@ -87,12 +87,28 @@ function ResultCard({ icon, title, value, subtitle, color, delay = 0 }: ResultCa
 
 interface RoleBreakdownProps {
   breakdown: Record<RoleId, any>;
+  formData: FormData;
   isExpanded: boolean;
   onToggle: () => void;
 }
 
-function RoleBreakdown({ breakdown, isExpanded, onToggle }: RoleBreakdownProps) {
+function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakdownProps) {
   const breakdownArray = Object.values(breakdown);
+
+  // Helper function to get experience distribution for a role
+  const getExperienceDistribution = (roleId: string) => {
+    return formData.roleExperienceDistribution?.[roleId] || null;
+  };
+
+  // Helper function to get experience level colors
+  const getExperienceLevelColor = (level: string) => {
+    switch (level) {
+      case 'entry': return 'text-green-700 bg-green-100';
+      case 'moderate': return 'text-blue-700 bg-blue-100';
+      case 'experienced': return 'text-purple-700 bg-purple-100';
+      default: return 'text-gray-700 bg-gray-100';
+    }
+  };
 
   return (
     <motion.div
@@ -162,24 +178,104 @@ function RoleBreakdown({ breakdown, isExpanded, onToggle }: RoleBreakdownProps) 
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 text-body-small">
-                        <div className="p-3 bg-neural-blue-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Australian Cost</p>
-                          <p className="font-bold text-neutral-900">${role.australianCost.toLocaleString()}/year</p>
-                        </div>
-                        <div className="p-3 bg-cyber-green-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Philippine Cost</p>
-                          <p className="font-bold text-neutral-900">${role.philippineCost.toLocaleString()}/year</p>
-                        </div>
-                        <div className="p-3 bg-quantum-purple-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Tasks Selected</p>
-                          <p className="font-bold text-neutral-900">{role.selectedTasksCount} tasks</p>
-                        </div>
-                        <div className="p-3 bg-matrix-orange-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Implementation</p>
-                          <p className="font-bold text-neutral-900">{role.estimatedImplementationTime} days</p>
-                        </div>
-                      </div>
+                      {/* Enhanced Experience Distribution Display */}
+                      {(() => {
+                        const experienceDistribution = getExperienceDistribution(role.roleId);
+                        return (
+                          <div className="space-y-4">
+                            {/* Cost Breakdown */}
+                            <div className="grid grid-cols-2 gap-4 text-body-small">
+                              <div className="p-3 bg-neural-blue-50/50 rounded-lg">
+                                <p className="text-neutral-600 mb-1">Australian Cost</p>
+                                <p className="font-bold text-neutral-900">${role.australianCost.toLocaleString()}/year</p>
+                              </div>
+                              <div className="p-3 bg-cyber-green-50/50 rounded-lg">
+                                <p className="text-neutral-600 mb-1">Philippine Cost</p>
+                                <p className="font-bold text-neutral-900">${role.philippineCost.toLocaleString()}/year</p>
+                              </div>
+                              <div className="p-3 bg-quantum-purple-50/50 rounded-lg">
+                                <p className="text-neutral-600 mb-1">Tasks Selected</p>
+                                <p className="font-bold text-neutral-900">{role.selectedTasksCount} tasks</p>
+                              </div>
+                              <div className="p-3 bg-matrix-orange-50/50 rounded-lg">
+                                <p className="text-neutral-600 mb-1">Implementation</p>
+                                <p className="font-bold text-neutral-900">{role.estimatedImplementationTime} days</p>
+                              </div>
+                            </div>
+
+                            {/* Multi-Level Experience Breakdown */}
+                            {experienceDistribution && experienceDistribution.totalAssigned > 0 && (
+                              <div className="p-4 bg-gradient-to-r from-neural-blue-50/30 to-quantum-purple-50/30 rounded-xl border border-neural-blue-100">
+                                <h5 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+                                  <Users className="w-4 h-4" />
+                                  Team Composition ({experienceDistribution.totalAssigned} members)
+                                </h5>
+                                <div className="grid grid-cols-3 gap-3">
+                                  {experienceDistribution.entry > 0 && (
+                                    <div className="text-center">
+                                      <div className={`w-12 h-12 mx-auto rounded-xl ${getExperienceLevelColor('entry')} flex items-center justify-center mb-2`}>
+                                        <span className="text-lg font-bold">{experienceDistribution.entry}</span>
+                                      </div>
+                                      <div className="text-xs font-medium text-neutral-700">Entry Level</div>
+                                      <div className="text-xs text-neutral-500">Fresh talent</div>
+                                    </div>
+                                  )}
+                                  {experienceDistribution.moderate > 0 && (
+                                    <div className="text-center">
+                                      <div className={`w-12 h-12 mx-auto rounded-xl ${getExperienceLevelColor('moderate')} flex items-center justify-center mb-2`}>
+                                        <span className="text-lg font-bold">{experienceDistribution.moderate}</span>
+                                      </div>
+                                      <div className="text-xs font-medium text-neutral-700">Mid-Level</div>
+                                      <div className="text-xs text-neutral-500">Experienced</div>
+                                    </div>
+                                  )}
+                                  {experienceDistribution.experienced > 0 && (
+                                    <div className="text-center">
+                                      <div className={`w-12 h-12 mx-auto rounded-xl ${getExperienceLevelColor('experienced')} flex items-center justify-center mb-2`}>
+                                        <span className="text-lg font-bold">{experienceDistribution.experienced}</span>
+                                      </div>
+                                      <div className="text-xs font-medium text-neutral-700">Senior Level</div>
+                                      <div className="text-xs text-neutral-500">Leadership</div>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Experience Distribution Bar */}
+                                <div className="mt-3">
+                                  <div className="flex rounded-full overflow-hidden h-3 bg-neutral-200">
+                                    {experienceDistribution.entry > 0 && (
+                                      <div 
+                                        className="bg-green-500 transition-all duration-500"
+                                        style={{ width: `${(experienceDistribution.entry / experienceDistribution.totalAssigned) * 100}%` }}
+                                        title={`${experienceDistribution.entry} Entry Level (${Math.round((experienceDistribution.entry / experienceDistribution.totalAssigned) * 100)}%)`}
+                                      />
+                                    )}
+                                    {experienceDistribution.moderate > 0 && (
+                                      <div 
+                                        className="bg-blue-500 transition-all duration-500"
+                                        style={{ width: `${(experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100}%` }}
+                                        title={`${experienceDistribution.moderate} Mid-Level (${Math.round((experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100)}%)`}
+                                      />
+                                    )}
+                                    {experienceDistribution.experienced > 0 && (
+                                      <div 
+                                        className="bg-purple-500 transition-all duration-500"
+                                        style={{ width: `${(experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100}%` }}
+                                        title={`${experienceDistribution.experienced} Senior Level (${Math.round((experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100)}%)`}
+                                      />
+                                    )}
+                                  </div>
+                                  <div className="flex justify-between text-xs text-neutral-500 mt-1">
+                                    <span>Entry</span>
+                                    <span>Mid</span>
+                                    <span>Senior</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {role.riskFactors && role.riskFactors.length > 0 && (
                         <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl shadow-sm">
@@ -392,11 +488,128 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         />
       </div>
 
-      {/* Cost Comparison */}
+      {/* Enhanced Team Composition Overview */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <Card className="p-6 bg-gradient-to-br from-neural-blue-50/50 to-quantum-purple-50/50 border border-neural-blue-100 shadow-lg">
+          <div className="text-center mb-6">
+            <h3 className="text-headline-3 font-bold text-neural-blue-900 mb-2">
+              Complete Team Overview
+            </h3>
+            <p className="text-body-small text-neural-blue-700">
+              Your optimized offshore team configuration and experience distribution
+            </p>
+          </div>
+
+          {(() => {
+            // Calculate total experience distribution across all roles
+            let totalEntry = 0, totalModerate = 0, totalExperienced = 0;
+            Object.keys(result.breakdown).forEach(roleId => {
+              const distribution = formData.roleExperienceDistribution?.[roleId];
+              if (distribution) {
+                totalEntry += distribution.entry;
+                totalModerate += distribution.moderate;
+                totalExperienced += distribution.experienced;
+              }
+            });
+
+            const totalMembers = totalEntry + totalModerate + totalExperienced;
+
+            return (
+              <div className="space-y-6">
+                {/* Overall Experience Distribution */}
+                {totalMembers > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-green-100 text-green-700 flex items-center justify-center mb-3 shadow-sm">
+                        <div>
+                          <div className="text-2xl font-bold">{totalEntry}</div>
+                          <div className="text-xs">Entry</div>
+                        </div>
+                      </div>
+                      <h4 className="font-semibold text-green-700 mb-1">Entry Level</h4>
+                      <p className="text-sm text-neutral-600">Fresh talent, cost-effective</p>
+                      <p className="text-xs text-green-600 font-medium mt-1">
+                        {Math.round((totalEntry / totalMembers) * 100)}% of team
+                      </p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3 shadow-sm">
+                        <div>
+                          <div className="text-2xl font-bold">{totalModerate}</div>
+                          <div className="text-xs">Mid</div>
+                        </div>
+                      </div>
+                      <h4 className="font-semibold text-blue-700 mb-1">Mid-Level</h4>
+                      <p className="text-sm text-neutral-600">Experienced professionals</p>
+                      <p className="text-xs text-blue-600 font-medium mt-1">
+                        {Math.round((totalModerate / totalMembers) * 100)}% of team
+                      </p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 shadow-sm">
+                        <div>
+                          <div className="text-2xl font-bold">{totalExperienced}</div>
+                          <div className="text-xs">Senior</div>
+                        </div>
+                      </div>
+                      <h4 className="font-semibold text-purple-700 mb-1">Senior Level</h4>
+                      <p className="text-sm text-neutral-600">Leadership & expertise</p>
+                      <p className="text-xs text-purple-600 font-medium mt-1">
+                        {Math.round((totalExperienced / totalMembers) * 100)}% of team
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Visual Distribution Bar */}
+                {totalMembers > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-neutral-700">Team Distribution</span>
+                      <span className="text-neutral-600">{totalMembers} total members</span>
+                    </div>
+                    <div className="flex rounded-full overflow-hidden h-4 bg-neutral-200 shadow-inner">
+                      {totalEntry > 0 && (
+                        <div 
+                          className="bg-gradient-to-r from-green-500 to-green-600 transition-all duration-700"
+                          style={{ width: `${(totalEntry / totalMembers) * 100}%` }}
+                          title={`${totalEntry} Entry Level members (${Math.round((totalEntry / totalMembers) * 100)}%)`}
+                        />
+                      )}
+                      {totalModerate > 0 && (
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-700"
+                          style={{ width: `${(totalModerate / totalMembers) * 100}%` }}
+                          title={`${totalModerate} Mid-Level members (${Math.round((totalModerate / totalMembers) * 100)}%)`}
+                        />
+                      )}
+                      {totalExperienced > 0 && (
+                        <div 
+                          className="bg-gradient-to-r from-purple-500 to-purple-600 transition-all duration-700"
+                          style={{ width: `${(totalExperienced / totalMembers) * 100}%` }}
+                          title={`${totalExperienced} Senior Level members (${Math.round((totalExperienced / totalMembers) * 100)}%)`}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </Card>
+      </motion.div>
+
+      {/* Cost Comparison */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
       >
         <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
@@ -445,11 +658,12 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
       </motion.div>
 
       {/* Role Breakdown */}
-      <RoleBreakdown 
-        breakdown={result.breakdown}
-        isExpanded={isBreakdownExpanded}
-        onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
-      />
+                  <RoleBreakdown 
+              breakdown={result.breakdown}
+              formData={formData}
+              isExpanded={isBreakdownExpanded}
+              onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
+            />
 
       {/* AI-Generated Implementation Plan */}
       <motion.div
