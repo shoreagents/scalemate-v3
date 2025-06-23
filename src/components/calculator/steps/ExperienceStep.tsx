@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExperienceLevel, CustomRole, LocationData, RoleExperienceDistribution } from '@/types';
-import { ENHANCED_SALARY_DATA, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/constants';
+import { ENHANCED_SALARY_DATA, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/quoteCalculatorData';
 import { Button } from '@/components/ui/Button';
 import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb, GraduationCap, ChevronDown, ChevronUp, BarChart3, Plus, Minus } from 'lucide-react';
 

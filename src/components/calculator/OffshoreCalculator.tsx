@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
 import { calculateSavings } from '@/utils/calculations';
-import { DEFAULT_FORM_DATA } from '@/utils/constants';
+import { DEFAULT_FORM_DATA } from '@/utils/quoteCalculatorData';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
@@ -26,9 +26,36 @@ import {
   Zap,
   Cpu,
   Target,
-  Home
+  Home,
+  MapPin,
+  Globe,
+  Wifi,
+  Edit3,
+  Check,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
+
+interface LocationData {
+  ip: string;
+  city: string;
+  region: string;
+  country_name: string;
+  country_code: string;
+  timezone: string;
+  latitude: number;
+  longitude: number;
+  currency: string;
+  currency_name: string;
+  languages: string;
+  org: string;
+}
+
+interface ManualLocation {
+  country: string;
+  region: string;
+  city: string;
+}
 
 interface OffshoreCalculatorProps {
   className?: string;
@@ -56,9 +83,133 @@ export function OffshoreCalculator({
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [processingStage, setProcessingStage] = useState<string>('');
+  
+  // Location tracking state
+  const [locationData, setLocationData] = useState<LocationData | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  
+  // Manual location override state
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [manualLocation, setManualLocation] = useState<ManualLocation | null>(null);
+  const [tempLocation, setTempLocation] = useState<ManualLocation>({
+    country: '',
+    region: '',
+    city: ''
+  });
 
   // Use global exit intent context
   const exitIntentContext = useExitIntentContext();
+
+  // Expanded countries and their regions/states
+  const countryRegions = {
+    'United States': ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'],
+    'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
+    'Canada': ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Northwest Territories', 'Nova Scotia', 'Nunavut', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Yukon'],
+    'Australia': ['Australian Capital Territory', 'New South Wales', 'Northern Territory', 'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia'],
+    'Germany': ['Baden-Württemberg', 'Bavaria', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hesse', 'Lower Saxony', 'Mecklenburg-Vorpommern', 'North Rhine-Westphalia', 'Rhineland-Palatinate', 'Saarland', 'Saxony', 'Saxony-Anhalt', 'Schleswig-Holstein', 'Thuringia'],
+    'France': ['Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Brittany', 'Centre-Val de Loire', 'Corsica', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandy', 'Nouvelle-Aquitaine', 'Occitanie', 'Pays de la Loire', 'Provence-Alpes-Côte d\'Azur'],
+    'Netherlands': ['Drenthe', 'Flevoland', 'Friesland', 'Gelderland', 'Groningen', 'Limburg', 'North Brabant', 'North Holland', 'Overijssel', 'South Holland', 'Utrecht', 'Zeeland'],
+    'Singapore': ['Central Region', 'East Region', 'North Region', 'Northeast Region', 'West Region'],
+    'India': ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'],
+    'Brazil': ['Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 'Espírito Santo', 'Goiás', 'Maranhão', 'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco', 'Piauí', 'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins'],
+    'Mexico': ['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Coahuila', 'Colima', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'],
+    'Japan': ['Aichi', 'Akita', 'Aomori', 'Chiba', 'Ehime', 'Fukui', 'Fukuoka', 'Fukushima', 'Gifu', 'Gunma', 'Hiroshima', 'Hokkaido', 'Hyogo', 'Ibaraki', 'Ishikawa', 'Iwate', 'Kagawa', 'Kagoshima', 'Kanagawa', 'Kochi', 'Kumamoto', 'Kyoto', 'Mie', 'Miyagi', 'Miyazaki', 'Nagano', 'Nagasaki', 'Nara', 'Niigata', 'Oita', 'Okayama', 'Okinawa', 'Osaka', 'Saga', 'Saitama', 'Shiga', 'Shimane', 'Shizuoka', 'Tochigi', 'Tokushima', 'Tokyo', 'Tottori', 'Toyama', 'Wakayama', 'Yamagata', 'Yamaguchi', 'Yamanashi'],
+    'China': ['Anhui', 'Beijing', 'Chongqing', 'Fujian', 'Gansu', 'Guangdong', 'Guangxi', 'Guizhou', 'Hainan', 'Hebei', 'Heilongjiang', 'Henan', 'Hubei', 'Hunan', 'Inner Mongolia', 'Jiangsu', 'Jiangxi', 'Jilin', 'Liaoning', 'Ningxia', 'Qinghai', 'Shaanxi', 'Shandong', 'Shanghai', 'Shanxi', 'Sichuan', 'Tianjin', 'Tibet', 'Xinjiang', 'Yunnan', 'Zhejiang'],
+    'South Africa': ['Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal', 'Limpopo', 'Mpumalanga', 'Northern Cape', 'North West', 'Western Cape'],
+    'Italy': ['Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardy', 'Marche', 'Molise', 'Piedmont', 'Puglia', 'Sardinia', 'Sicily', 'Trentino-Alto Adige', 'Tuscany', 'Umbria', 'Valle d\'Aosta', 'Veneto'],
+    'Spain': ['Andalusia', 'Aragon', 'Asturias', 'Balearic Islands', 'Basque Country', 'Canary Islands', 'Cantabria', 'Castile and León', 'Castile-La Mancha', 'Catalonia', 'Ceuta', 'Extremadura', 'Galicia', 'La Rioja', 'Madrid', 'Melilla', 'Murcia', 'Navarre', 'Valencia'],
+    'Argentina': ['Buenos Aires', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'],
+    'New Zealand': ['Auckland', 'Bay of Plenty', 'Canterbury', 'Gisborne', 'Hawke\'s Bay', 'Manawatu-Wanganui', 'Marlborough', 'Nelson', 'Northland', 'Otago', 'Southland', 'Taranaki', 'Tasman', 'Waikato', 'Wellington', 'West Coast'],
+    'Norway': ['Agder', 'Innlandet', 'Møre og Romsdal', 'Nordland', 'Oslo', 'Rogaland', 'Troms og Finnmark', 'Trøndelag', 'Vestfold og Telemark', 'Vestland', 'Viken'],
+    'Sweden': ['Blekinge', 'Dalarna', 'Gävleborg', 'Gotland', 'Halland', 'Jämtland', 'Jönköping', 'Kalmar', 'Kronoberg', 'Norrbotten', 'Örebro', 'Östergötland', 'Skåne', 'Södermanland', 'Stockholm', 'Uppsala', 'Värmland', 'Västerbotten', 'Västernorrland', 'Västmanland', 'Västra Götaland'],
+    'Denmark': ['Capital Region', 'Central Denmark', 'North Denmark', 'Region Zealand', 'Southern Denmark'],
+    'Finland': ['Åland', 'Central Finland', 'Central Ostrobothnia', 'Kainuu', 'Kanta-Häme', 'Karelia', 'Kymenlaakso', 'Lapland', 'North Karelia', 'Northern Ostrobothnia', 'Northern Savonia', 'Ostrobothnia', 'Päijät-Häme', 'Pirkanmaa', 'Satakunta', 'South Karelia', 'Southern Ostrobothnia', 'Southern Savonia', 'Southwest Finland', 'Tavastia Proper', 'Uusimaa'],
+    'Switzerland': ['Aargau', 'Appenzell Ausserrhoden', 'Appenzell Innerrhoden', 'Basel-Landschaft', 'Basel-Stadt', 'Bern', 'Fribourg', 'Geneva', 'Glarus', 'Graubünden', 'Jura', 'Lucerne', 'Neuchâtel', 'Nidwalden', 'Obwalden', 'Schaffhausen', 'Schwyz', 'Solothurn', 'St. Gallen', 'Thurgau', 'Ticino', 'Uri', 'Valais', 'Vaud', 'Zug', 'Zurich'],
+    'Belgium': ['Antwerp', 'Brussels', 'East Flanders', 'Flemish Brabant', 'Hainaut', 'Liège', 'Limburg', 'Luxembourg', 'Namur', 'Walloon Brabant', 'West Flanders'],
+    'Austria': ['Burgenland', 'Carinthia', 'Lower Austria', 'Salzburg', 'Styria', 'Tirol', 'Upper Austria', 'Vienna', 'Vorarlberg'],
+    'Portugal': ['Aveiro', 'Beja', 'Braga', 'Bragança', 'Castelo Branco', 'Coimbra', 'Évora', 'Faro', 'Guarda', 'Leiria', 'Lisboa', 'Portalegre', 'Porto', 'Santarém', 'Setúbal', 'Viana do Castelo', 'Vila Real', 'Viseu'],
+    'Ireland': ['Carlow', 'Cavan', 'Clare', 'Cork', 'Donegal', 'Dublin', 'Galway', 'Kerry', 'Kildare', 'Kilkenny', 'Laois', 'Leitrim', 'Limerick', 'Longford', 'Louth', 'Mayo', 'Meath', 'Monaghan', 'Offaly', 'Roscommon', 'Sligo', 'Tipperary', 'Waterford', 'Westmeath', 'Wexford', 'Wicklow'],
+    'Other': ['Please specify in region field']
+  };
+
+  // Get effective location (manual override or auto-detected)
+  const getEffectiveLocation = () => {
+    if (manualLocation) {
+      return {
+        city: manualLocation.city,
+        region: manualLocation.region,
+        country_name: manualLocation.country
+      };
+    }
+    return locationData;
+  };
+
+  // Handle location edit save
+  const saveLocationEdit = () => {
+    if (tempLocation.country && tempLocation.region) {
+      setManualLocation({ ...tempLocation });
+      setIsEditingLocation(false);
+      console.log('📍 Location manually overridden:', tempLocation);
+    }
+  };
+
+  // Handle location edit cancel
+  const cancelLocationEdit = () => {
+    const currentLocation = getEffectiveLocation();
+    setTempLocation({
+      country: manualLocation?.country || currentLocation?.country_name || '',
+      region: manualLocation?.region || currentLocation?.region || '',
+      city: manualLocation?.city || currentLocation?.city || ''
+    });
+    setIsEditingLocation(false);
+  };
+
+  // Start editing location
+  const startLocationEdit = () => {
+    const currentLocation = getEffectiveLocation();
+    setTempLocation({
+      country: manualLocation?.country || currentLocation?.country_name || '',
+      region: manualLocation?.region || currentLocation?.region || '',
+      city: manualLocation?.city || currentLocation?.city || ''
+    });
+    setIsEditingLocation(true);
+  };
+
+  // Reset to auto-detected location
+  const resetToAutoLocation = () => {
+    setManualLocation(null);
+    setIsEditingLocation(false);
+    console.log('📍 Location reset to auto-detected');
+  };
+
+  // Fetch location data using ipapi
+  useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+        setIsLoadingLocation(true);
+        setLocationError(null);
+        
+        const response = await fetch('https://ipapi.co/json/');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data: LocationData = await response.json();
+        setLocationData(data);
+        
+        console.log('📍 Location detected:', data);
+      } catch (error) {
+        console.error('Failed to fetch location:', error);
+        setLocationError('Unable to detect location');
+        analytics.trackEvent('error', { type: 'location_error', error: error?.toString() });
+      } finally {
+        setIsLoadingLocation(false);
+      }
+    };
+
+    fetchLocation();
+  }, []);
 
   // Animation variants
   const containerVariants = {
@@ -236,6 +387,19 @@ export function OffshoreCalculator({
           <PortfolioStep
             value={formData.portfolioSize}
             manualData={formData.manualPortfolioData}
+            locationData={locationData}
+            isLoadingLocation={isLoadingLocation}
+            locationError={locationError}
+            isEditingLocation={isEditingLocation}
+            manualLocation={manualLocation}
+            tempLocation={tempLocation}
+            countryRegions={countryRegions}
+            onLocationEditStart={startLocationEdit}
+            onLocationEditSave={saveLocationEdit}
+            onLocationEditCancel={cancelLocationEdit}
+            onLocationReset={resetToAutoLocation}
+            onTempLocationChange={setTempLocation}
+            getEffectiveLocation={getEffectiveLocation}
             onChange={(portfolioSize, manualData) => updateFormData({ 
               portfolioSize, 
               ...(manualData !== undefined && { manualPortfolioData: manualData })
@@ -357,11 +521,8 @@ export function OffshoreCalculator({
             </Link>
           </div>
           
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">
-            <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
-              <Calculator className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-display-3 gradient-text-neural font-display leading-tight">
+          <div className="mb-6">
+            <h1 className="text-display-3 gradient-text-neural font-display leading-tight text-center">
               Offshore Scaling Calculator
             </h1>
           </div>
