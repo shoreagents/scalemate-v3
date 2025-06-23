@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 import { RoleId, Country, LocationData, CustomRole, RoleCategory } from '@/types';
 import { ENHANCED_SALARY_DATA, COUNTRY_DATA, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES, detectUserLocation } from '@/utils/constants';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { 
   Users, 
   Search, 
@@ -88,7 +90,7 @@ export function RoleSelectionStep({
   // All available roles (predefined + additional + custom)
   const allRoles = useMemo(() => {
     const predefinedRoles = Object.values(ENHANCED_PROPERTY_ROLES);
-    const additionalRoles = Object.entries(ADDITIONAL_PROPERTY_ROLES).map(([id, roleData]) => ({
+    const additionalRoles = Object.entries(ADDITIONAL_PROPERTY_ROLES).map(([id, roleData]: [string, any]) => ({
       id,
       title: roleData.title || '',
       icon: roleData.icon || '📋',
@@ -116,7 +118,7 @@ export function RoleSelectionStep({
         const searchableText = [
           role.title,
           role.description,
-          ...(role.searchKeywords || [])
+          ...((role as any).searchKeywords || [])
         ].join(' ').toLowerCase();
         
         if (!searchableText.includes(query)) return false;
@@ -487,13 +489,13 @@ export function RoleSelectionStep({
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-green-700 font-medium">{detectedLocation.countryName} Rate:</span>
                         <span className="text-sm font-bold text-green-900">
-                          {detectedLocation.currencySymbol}{(getSavingsForRole(role) + (role.salaryData?.PH?.moderate?.total || role.estimatedSalary?.philippine || 18000)).toLocaleString()}
+                          {detectedLocation.currencySymbol}{(getSavingsForRole(role) + ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000)).toLocaleString()}
                         </span>
                   </div>
                   <div className="flex items-center justify-between">
                         <span className="text-xs text-green-700 font-medium">Philippines Rate:</span>
                         <span className="text-sm font-bold text-green-900">
-                          {detectedLocation.currencySymbol}{(role.salaryData?.PH?.moderate?.total || role.estimatedSalary?.philippine || 18000).toLocaleString()}
+                          {detectedLocation.currencySymbol}{((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000).toLocaleString()}
                     </span>
                       </div>
                       <div className="border-t border-green-300 pt-2 mt-2">
@@ -504,7 +506,7 @@ export function RoleSelectionStep({
                               {detectedLocation.currencySymbol}{getSavingsForRole(role).toLocaleString()}
                             </div>
                             <div className="text-xs text-green-600">
-                              {Math.round((getSavingsForRole(role) / (getSavingsForRole(role) + (role.salaryData?.PH?.moderate?.total || role.estimatedSalary?.philippine || 18000))) * 100)}% savings
+                              {Math.round((getSavingsForRole(role) / (getSavingsForRole(role) + ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000))) * 100)}% savings
                             </div>
                           </div>
                         </div>
