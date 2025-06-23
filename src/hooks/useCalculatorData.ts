@@ -20,7 +20,6 @@ interface PortfolioIndicator {
   };
       averageRevenue: { min: number; max: number };
     implementationComplexity: 'basic' | 'intermediate' | 'advanced' | 'enterprise';
-    marketInsights?: string;
   }
 
 type PortfolioSize = '500-999' | '1000-1999' | '2000-4999' | '5000+';
@@ -29,6 +28,7 @@ interface CalculatorDataResponse {
   success: boolean;
   location: LocationData;
   portfolioData: Record<PortfolioSize, PortfolioIndicator>;
+  roleData: Record<string, any>;
   generatedAt: string;
   generatedBy: 'claude-ai' | 'fallback';
   note?: string;
@@ -38,6 +38,7 @@ interface CalculatorDataResponse {
 interface UseCalculatorDataReturn {
   location: LocationData | null;
   portfolioData: Record<PortfolioSize, PortfolioIndicator> | null;
+  roleData: Record<string, any> | null;
   isLoading: boolean;
   error: string | null;
   isAIGenerated: boolean;
@@ -47,6 +48,7 @@ interface UseCalculatorDataReturn {
 export function useCalculatorData(): UseCalculatorDataReturn {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [portfolioData, setPortfolioData] = useState<Record<PortfolioSize, PortfolioIndicator> | null>(null);
+  const [roleData, setRoleData] = useState<Record<string, any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAIGenerated, setIsAIGenerated] = useState(false);
@@ -70,12 +72,14 @@ export function useCalculatorData(): UseCalculatorDataReturn {
       if (data.location && data.portfolioData) {
         setLocation(data.location);
         setPortfolioData(data.portfolioData);
+        setRoleData(data.roleData || null);
         setIsAIGenerated(data.generatedBy === 'claude-ai');
         
         console.log('✅ Calculator data loaded:', {
           location: `${data.location.city}, ${data.location.country}`,
           isAI: data.generatedBy === 'claude-ai',
-          portfolioKeys: Object.keys(data.portfolioData)
+          portfolioKeys: Object.keys(data.portfolioData),
+          roleKeys: data.roleData ? Object.keys(data.roleData) : []
         });
       } else {
         throw new Error(data.error || 'Failed to get calculator data');
@@ -101,6 +105,7 @@ export function useCalculatorData(): UseCalculatorDataReturn {
   return {
     location,
     portfolioData,
+    roleData,
     isLoading,
     error,
     isAIGenerated,

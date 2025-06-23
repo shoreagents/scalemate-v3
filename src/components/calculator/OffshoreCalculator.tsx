@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
 import { calculateSavings, DEFAULT_FORM_DATA } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
@@ -63,37 +63,7 @@ export function OffshoreCalculator({
   const exitIntentContext = useExitIntentContext();
   const { isAIGenerated, location, isLoading, error } = useCalculatorData();
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
-      }
-    },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: { duration: 0.3 }
-    }
-  };
 
-  const stepVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { 
-      opacity: 1, 
-      x: 0,
-      transition: { duration: 0.5 }
-    },
-    exit: { 
-      opacity: 0, 
-      x: -20,
-      transition: { duration: 0.3 }
-    }
-  };
 
   // Initialize analytics tracking
   useEffect(() => {
@@ -310,12 +280,7 @@ export function OffshoreCalculator({
       <div className="absolute inset-0 pattern-neural-grid opacity-5 pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-neural-blue-400/10 to-quantum-purple-400/10 rounded-full blur-3xl animate-neural-float pointer-events-none" />
       
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10"
-      >
+      <div className="relative z-10">
         {/* Calculator Header */}
         <div className="mb-8 px-8 py-12 text-center">
           <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">
@@ -337,7 +302,7 @@ export function OffshoreCalculator({
               )}
               <Sparkles className={`w-4 h-4 relative z-10 ${isAIGenerated ? 'animate-neural-pulse' : ''}`} />
               <span className="text-sm font-medium relative z-10">
-                {isAIGenerated ? 'AI Powered' : 'Standard'}
+                AI Powered
               </span>
             </div>
           </div>
@@ -373,14 +338,8 @@ export function OffshoreCalculator({
         </div>
 
         {/* Processing Overlay */}
-        <AnimatePresence>
           {isCalculating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center"
-            >
+          <div className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center">
               <Card 
                 variant="quantum-glass" 
                 className="p-12 text-center max-w-md mx-4"
@@ -396,14 +355,9 @@ export function OffshoreCalculator({
                     Calculating Your Savings
                   </h3>
                   
-                  <motion.p 
-                    key={processingStage}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-neural-blue-600 font-medium"
-                  >
+                  <p className="text-neural-blue-600 font-medium">
                     {processingStage}
-                  </motion.p>
+                  </p>
                 </div>
                 
                 {/* Processing dots */}
@@ -413,30 +367,17 @@ export function OffshoreCalculator({
                   <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
                 </div>
               </Card>
-            </motion.div>
+          </div>
           )}
-        </AnimatePresence>
 
         {/* Step Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={formData.currentStep}
-            variants={stepVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
+        <div>
             {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+        </div>
 
         {/* Navigation */}
         {formData.currentStep < 5 && (
-          <Card 
-            variant="neural-elevated" 
-            className="mt-8 p-6"
-            hoverLift={false}
-          >
+          <div className="mt-8 p-6 rounded-xl border-2 border-neutral-200 bg-white">
             {/* Desktop Layout */}
             <div className="hidden sm:flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -523,9 +464,9 @@ export function OffshoreCalculator({
                 </Button>
               )}
             </div>
-          </Card>
+          </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 } 

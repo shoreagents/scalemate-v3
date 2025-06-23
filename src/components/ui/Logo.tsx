@@ -29,10 +29,10 @@ export const Logo: React.FC<LogoProps> = ({
   className
 }) => {
   const logoVariants = {
-    initial: { opacity: 0, scale: 0.8 },
+    initial: { opacity: 0, y: 20 },
     animate: { 
       opacity: 1, 
-      scale: 1,
+      y: 0,
       transition: {
         duration: 0.6
       }
@@ -89,8 +89,8 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Wordmark */}
       {variant !== 'mark' && (
         <motion.g
-          initial={animated ? { opacity: 0, x: -20 } : false}
-          animate={animated ? { opacity: 1, x: 0 } : false}
+          initial={animated ? { opacity: 0, y: 20 } : false}
+          animate={animated ? { opacity: 1, y: 0 } : false}
           transition={{ duration: 0.8, delay: 0.4 }}
         >
           <text

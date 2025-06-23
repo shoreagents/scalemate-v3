@@ -137,8 +137,8 @@ function RoleBreakdown({ breakdown, isExpanded, onToggle }: RoleBreakdownProps) 
                   return (
                     <motion.div
                       key={role.roleId}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.3 }}
                       className="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-colors"
                     >
@@ -863,8 +863,8 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                   ].map((phase, index) => (
                     <motion.div
                       key={phase.phase}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.3 }}
                       className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
                     >

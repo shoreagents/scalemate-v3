@@ -8,6 +8,7 @@ const anthropic = new Anthropic({
 // Portfolio data cache to reduce AI costs during testing
 interface CachedPortfolioData {
   portfolioData: Record<PortfolioSize, PortfolioIndicator>;
+  roleData: Record<string, any>; // Location-specific role data
   location: LocationData;
   generatedAt: string;
   generatedBy: 'claude-ai';
@@ -53,7 +54,6 @@ interface PortfolioIndicator {
   };
   averageRevenue: { min: number; max: number };
   implementationComplexity: 'basic' | 'intermediate' | 'advanced' | 'enterprise';
-  marketInsights?: string;
 }
 
 type PortfolioSize = string; // Dynamic location-based ranges (e.g. "100-299", "500-999", etc.)
@@ -105,6 +105,94 @@ async function getLocationFromIP(request: NextRequest): Promise<LocationData> {
   }
 }
 
+async function generateLocationSpecificRoles(location: LocationData): Promise<Record<string, any>> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('Anthropic API key not configured');
+  }
+
+  const isLocationUnknown = location.country === 'Unknown' || location.city === 'Unknown';
+  const locationContext = isLocationUnknown 
+    ? "global property management market" 
+    : `${location.city}, ${location.region}, ${location.country}`;
+
+  const prompt = `
+Generate location-specific property management role data for ${locationContext}.
+
+Research current salary data for these 3 roles:
+1. Assistant Property Manager
+2. Leasing Coordinator  
+3. Marketing Specialist
+
+For each role, provide location-specific job descriptions and realistic salary figures based on local market rates.
+
+Use this JSON structure:
+
+{
+  "assistantPropertyManager": {
+    "id": "assistantPropertyManager",
+    "title": "Assistant Property Manager",
+    "icon": "🏢",
+    "description": "[Location-specific description mentioning local property types and market conditions]",
+    "color": "brand-primary",
+    "averageSalary": {
+      "australian": [local market rate],
+      "philippine": [offshore equivalent rate]
+    }
+  },
+  "leasingCoordinator": {
+    "id": "leasingCoordinator", 
+    "title": "Leasing Coordinator",
+    "icon": "🤝",
+    "description": "[Location-specific description]",
+    "color": "brand-secondary",
+    "averageSalary": {
+      "australian": [local market rate],
+      "philippine": [offshore equivalent rate]
+    }
+  },
+  "marketingSpecialist": {
+    "id": "marketingSpecialist",
+    "title": "Marketing Specialist", 
+    "icon": "📈",
+    "description": "[Location-specific description]",
+    "color": "brand-accent",
+    "averageSalary": {
+      "australian": [local market rate],
+      "philippine": [offshore equivalent rate]
+    }
+  }
+}
+
+Return ONLY the JSON object, no additional text.`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 1500,
+      temperature: 0.3,
+      messages: [{
+        role: "user",
+        content: prompt
+      }]
+    });
+
+    const response = message.content[0]?.type === 'text' ? 
+      (message.content[0] as any).text : 
+      null;
+
+    if (!response) {
+      throw new Error('No response from Claude for role data');
+    }
+
+    return JSON.parse(response);
+  } catch (error) {
+    console.error('Claude AI role generation failed:', error);
+    // Return fallback static role data
+    const { ROLES } = await import('@/utils/calculator/data');
+    return ROLES;
+  }
+}
+
 async function generateLocationSpecificPortfolio(location: LocationData): Promise<Record<PortfolioSize, PortfolioIndicator>> {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error('Anthropic API key not configured');
@@ -117,70 +205,43 @@ async function generateLocationSpecificPortfolio(location: LocationData): Promis
     : `${location.city}, ${location.region}, ${location.country}`;
 
   const prompt = `
-You are a property management industry expert. Generate accurate, market-researched portfolio data for ${locationContext}.
+You are a property management industry expert. Generate portfolio selection options for ${locationContext} that users will choose from in a form.
 
-IMPORTANT: Research current property management market data for this specific location including:
-- Average property management fees (% of rental income)
-- Typical annual rental yields
-- Local property management fee structures
-- Cost of living and salary expectations
-- Common property types and market segments
+**CONTEXT:** Users will select the range that best matches their current property portfolio size to receive a tailored team structure recommendation.
 
-Create 4 portfolio size tiers:
-- Growing - Perfect for testing offshore teams
-- Large - Ideal for full team implementation  
-- Major - Multiple teams across departments
-- Enterprise - Full offshore operation
+**INSTRUCTIONS:**
+- Create 4 portfolio tiers: Growing, Large, Major, Enterprise
+- Each tier should represent a realistic number of properties commonly managed by property managers in ${locationContext}
+- Use realistic values for:
+  - **min** and **max** units
+  - **averageRevenue** (typical annual revenue for this portfolio size in ${locationContext})
+  - **recommendedTeamSize** (total staff needed based on operational needs at that portfolio scale)
+  - **implementationComplexity** (reflects operational sophistication needed: basic (single-person oversight), intermediate (department coordination), advanced (multiple specialists), enterprise (full organizational structure))
+- All amounts should be **annual** and use the correct **ISO currency code** for ${locationContext}
+- Avoid vague ranges (like "1–1000 units"); instead use tight, practical bands (e.g., 25–75, 76–200)
+- Tier descriptions should be **professional, accurate, and tailored to the size and scale** of operations — no references to roles, responsibilities, or speculative advice
+- Do not include placeholder text like "[realistic amount]" or "[number]" in your output
+- Use proper JSON syntax
 
-Calculate revenue based on:
-- Local property management fees (typically 6-12% of rental income annually)
-- Average rental prices for the location
-- Property mix (residential/commercial split)
-- Use local currency and realistic market rates
-
-Use this JSON structure:
-
+**OUTPUT FORMAT:**
+Provide the output in valid JSON using this exact structure:
 {
-  "[range1]": {
-    "min": [number],
-    "max": [number], 
-    "tier": "growing",
-    "description": "[Location-specific description mentioning local property types and market conditions]",
-    "recommendedTeamSize": {
-      "assistantPropertyManager": [number],
-      "leasingCoordinator": [number],
-      "marketingSpecialist": [number]
+  "[units range label]": {
+    "min": [integer],
+    "max": [integer],
+    "tier": "[growing|large|major|enterprise]",
+    "description": "[Accurate description of portfolio scale in ${locationContext}, without listing tasks or teams.]",
+    "recommendedTeamSize": [integer],
+    "averageRevenue": {
+      "min": [number],
+      "max": [number],
+      "currency": "[ISO currency code]",
+      "period": "annual"
     },
-    "averageRevenue": { 
-      "min": [realistic amount based on market research], 
-      "max": [realistic amount based on market research] 
-    },
-    "implementationComplexity": "basic",
-    "marketInsights": "[Brief note about local market characteristics]"
-  },
-  "[range2]": { 
-    "tier": "large", 
-    "implementationComplexity": "intermediate",
-    "marketInsights": "[Location-specific insights]",
-    ... 
-  },
-  "[range3]": { 
-    "tier": "major", 
-    "implementationComplexity": "advanced",
-    "marketInsights": "[Location-specific insights]",
-    ... 
-  },
-  "[range4]": { 
-    "tier": "enterprise", 
-    "implementationComplexity": "enterprise",
-    "marketInsights": "[Location-specific insights]",
-    ... 
+    "implementationComplexity": "[basic|intermediate|advanced|enterprise]"
   }
 }
-
-CRITICAL: Ensure revenue figures reflect actual local property management market rates. Research current data before generating figures.
-
-Return ONLY the JSON object with 4 portfolio tiers, no additional text.`;
+`;
 
   try {
     const message = await anthropic.messages.create({
@@ -240,6 +301,10 @@ export async function GET(request: NextRequest) {
     console.log('🌍 Starting location-based portfolio generation...');
     console.log('📊 Current cache size:', portfolioCache.size);
     
+    // Check for cache-busting parameter
+    const url = new URL(request.url);
+    const forceRefresh = url.searchParams.get('refresh') === 'true';
+    
     // Step 1: Get location from IP (FREE)
     const location = await getLocationFromIP(request);
     console.log('📍 Location detected:', location);
@@ -247,11 +312,12 @@ export async function GET(request: NextRequest) {
     // If location is unknown, skip AI and use static data to save costs
     if (location.country === 'Unknown') {
       console.log('⚠️ Location unknown, skipping AI to save costs - using static data');
-      const { fallbackPortfolioData } = await import('@/utils/calculator/data');
+      const { fallbackPortfolioData, ROLES } = await import('@/utils/calculator/data');
       
       return NextResponse.json({
         success: true,
         portfolioData: fallbackPortfolioData,
+        roleData: ROLES,
         location,
         generatedAt: new Date().toISOString(),
         generatedBy: 'static-fallback',
@@ -295,7 +361,7 @@ export async function GET(request: NextRequest) {
       console.log(`🎯 Fallback cache lookup result:`, cached ? 'HIT' : 'MISS');
     }
     
-    if (cached && Date.now() - cached.timestamp < PORTFOLIO_CACHE_DURATION) {
+    if (cached && Date.now() - cached.timestamp < PORTFOLIO_CACHE_DURATION && !forceRefresh) {
       const ageHours = Math.round((Date.now() - cached.timestamp) / (1000 * 60 * 60));
       const expiresInHours = Math.round((PORTFOLIO_CACHE_DURATION - (Date.now() - cached.timestamp)) / (1000 * 60 * 60));
       
@@ -319,10 +385,14 @@ export async function GET(request: NextRequest) {
     const portfolioData = await generateLocationSpecificPortfolio(location);
     console.log('✅ Portfolio data generated successfully');
     
+    // Generate location-specific role data
+    const roleData = await generateLocationSpecificRoles(location);
+    
     // Cache the successful result to save future AI costs
     const responseData: CachedPortfolioData = {
       location,
       portfolioData,
+      roleData,
       generatedAt: new Date().toISOString(),
       generatedBy: 'claude-ai',
       note: `Customized for ${location.city}, ${location.country}`

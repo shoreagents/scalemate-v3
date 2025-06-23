@@ -159,7 +159,6 @@ export interface PortfolioIndicator {
     readonly max: number;
       };
     readonly implementationComplexity: 'basic' | 'intermediate' | 'advanced' | 'enterprise';
-    readonly marketInsights?: string;
   }
 
 // Premium features

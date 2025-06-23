@@ -197,8 +197,8 @@ export function StepIndicator({
             return (
               <motion.div
                 key={step.number}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className={`
                   w-3 h-3 rounded-full transition-all duration-300 relative
