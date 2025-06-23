@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
 import { calculateSavings, DEFAULT_FORM_DATA } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -13,7 +13,6 @@ import { TaskSelectionStep } from './steps/TaskSelectionStep';
 import { ExperienceStep } from './steps/ExperienceStep';
 import { ResultsStep } from './steps/ResultsStep';
 import { useExitIntentContext } from '@/components/providers/ExitIntentProvider';
-import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { analytics } from '@/utils/analytics';
 import { 
   ArrowLeft, 
@@ -26,9 +25,7 @@ import {
   Zap,
   Cpu,
   Target,
-  Home,
-  MapPin,
-  Loader2
+  Home
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -59,11 +56,41 @@ export function OffshoreCalculator({
   const [isCalculating, setIsCalculating] = useState(false);
   const [processingStage, setProcessingStage] = useState<string>('');
 
-  // Use global exit intent context and calculator data
+  // Use global exit intent context
   const exitIntentContext = useExitIntentContext();
-  const { isAIGenerated, location, isLoading, error } = useCalculatorData();
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+        staggerChildren: 0.1
+      }
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      transition: { duration: 0.3 }
+    }
+  };
 
+  const stepVariants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      transition: { duration: 0.5, ease: "easeOut" }
+    },
+    exit: { 
+      opacity: 0, 
+      x: -20,
+      transition: { duration: 0.3 }
+    }
+  };
 
   // Initialize analytics tracking
   useEffect(() => {
@@ -86,7 +113,7 @@ export function OffshoreCalculator({
   }, [formData.currentStep, calculationResult, exitIntentContext]);
 
   const updateFormData = (updates: Partial<FormData>) => {
-    setFormData(prev => {
+    setFormData((prev: FormData) => {
       const updated = { ...prev, ...updates, lastUpdatedAt: new Date() };
       
       // Track analytics for significant updates
@@ -184,7 +211,7 @@ export function OffshoreCalculator({
       case 1: return formData.portfolioSize !== '';
       case 2: return Object.values(formData.selectedRoles).some(Boolean);
       case 3: return Object.values(formData.selectedTasks).some(Boolean) || 
-                     Object.values(formData.customTasks).some(tasks => tasks.length > 0);
+                     Object.values(formData.customTasks).some((tasks: any) => Array.isArray(tasks) && tasks.length > 0);
       case 4: return formData.experienceLevel !== '';
       default: return true;
     }
@@ -204,7 +231,10 @@ export function OffshoreCalculator({
           <RoleSelectionStep
             selectedRoles={formData.selectedRoles}
             teamSize={formData.teamSize}
-            onChange={(selectedRoles, teamSize) => updateFormData({ selectedRoles, teamSize })}
+            onChange={(selectedRoles, teamSize) => updateFormData({ 
+              selectedRoles, 
+              teamSize
+            })}
           />
         );
       case 3:
@@ -220,9 +250,9 @@ export function OffshoreCalculator({
         return (
           <ExperienceStep
             value={formData.experienceLevel}
-            onChange={(experienceLevel) => updateFormData({ experienceLevel })}
             selectedRoles={formData.selectedRoles}
             teamSize={formData.teamSize}
+            onChange={(experienceLevel) => updateFormData({ experienceLevel })}
             onCalculate={calculateSavingsAsync}
             isCalculating={isCalculating}
           />
@@ -280,49 +310,39 @@ export function OffshoreCalculator({
       <div className="absolute inset-0 pattern-neural-grid opacity-5 pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-neural-blue-400/10 to-quantum-purple-400/10 rounded-full blur-3xl animate-neural-float pointer-events-none" />
       
-      <div className="relative z-10">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10"
+      >
         {/* Calculator Header */}
         <div className="mb-8 px-8 py-12 text-center">
+          {/* ScaleMate Badge */}
+          <div className="flex justify-center mb-8">
+            <Link href="/" className="transition-transform hover:scale-105">
+              <Card>
+                <>
+                  <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer">
+                    <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
+                  </div>
+                </>
+              </Card>
+            </Link>
+          </div>
+          
           <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
+              <Calculator className="h-6 w-6 text-white" />
+            </div>
             <h1 className="text-display-3 gradient-text-neural font-display leading-tight">
               Offshore Scaling Calculator
             </h1>
-            <div className={`
-              flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden
-              ${isAIGenerated 
-                ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow border-0' 
-                : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
-              }
-            `}>
-              {isAIGenerated && (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/20 via-quantum-purple-400/30 to-cyber-green-400/20 animate-neural-pulse" />
-                </>
-              )}
-              <Sparkles className={`w-4 h-4 relative z-10 ${isAIGenerated ? 'animate-neural-pulse' : ''}`} />
-              <span className="text-sm font-medium relative z-10">
-                AI Powered
-              </span>
-            </div>
           </div>
           
-          {/* Location Status */}
-          {location && location.country !== 'Unknown' && (
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <MapPin className="w-4 h-4 text-brand-primary-500" />
-              <span className="text-sm text-neutral-600">
-                Customized for {location.city}, {location.country}
-              </span>
-            </div>
-          )}
-          
-          {isLoading && (
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Loader2 className="w-4 h-4 animate-spin text-brand-primary-500" />
-              <span className="text-sm text-neutral-600">Fetching location data...</span>
-            </div>
-          )}
+          <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
+            {getStepDescription(formData.currentStep)}
+          </p>
         </div>
 
         {/* Step Indicator */}
@@ -338,48 +358,75 @@ export function OffshoreCalculator({
         </div>
 
         {/* Processing Overlay */}
+        <AnimatePresence>
           {isCalculating && (
-          <div className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center"
+            >
               <Card 
                 variant="quantum-glass" 
                 className="p-12 text-center max-w-md mx-4"
                 aiPowered={true}
                 neuralGlow={true}
               >
-                <div className="mb-6">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neural-primary rounded-full flex items-center justify-center shadow-neural-glow">
-                    <Calculator className="h-8 w-8 text-white animate-neural-pulse" />
+                <>
+                  <div className="mb-6">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neural-primary rounded-full flex items-center justify-center shadow-neural-glow">
+                      <Calculator className="h-8 w-8 text-white animate-neural-pulse" />
+                    </div>
+                    
+                    <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
+                      Calculating Your Savings
+                    </h3>
+                    
+                    <motion.p 
+                      key={processingStage}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-neural-blue-600 font-medium"
+                    >
+                      {processingStage}
+                    </motion.p>
                   </div>
                   
-                  <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
-                    Calculating Your Savings
-                  </h3>
-                  
-                  <p className="text-neural-blue-600 font-medium">
-                    {processingStage}
-                  </p>
-                </div>
-                
-                {/* Processing dots */}
-                <div className="loading-neural-dots justify-center">
-                  <div className="animate-neural-pulse"></div>
-                  <div className="animate-neural-pulse [animation-delay:0.2s]"></div>
-                  <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
-                </div>
+                  {/* Processing dots */}
+                  <div className="loading-neural-dots justify-center">
+                    <div className="animate-neural-pulse"></div>
+                    <div className="animate-neural-pulse [animation-delay:0.2s]"></div>
+                    <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
+                  </div>
+                </>
               </Card>
-          </div>
+            </motion.div>
           )}
+        </AnimatePresence>
 
         {/* Step Content */}
-        <div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={formData.currentStep}
+            variants={stepVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
             {renderStep()}
-        </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Navigation */}
         {formData.currentStep < 5 && (
-          <div className="mt-8 p-6 rounded-xl border-2 border-neutral-200 bg-white">
-            {/* Desktop Layout */}
-            <div className="hidden sm:flex items-center justify-between">
+          <Card 
+            variant="neural-elevated" 
+            className="mt-8 p-6"
+            hoverLift={false}
+          >
+            <>
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {formData.currentStep === 1 ? (
                   <Link href="/">
@@ -464,9 +511,10 @@ export function OffshoreCalculator({
                 </Button>
               )}
             </div>
-          </div>
+            </>
+          </Card>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 } 
