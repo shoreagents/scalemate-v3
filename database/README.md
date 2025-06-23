@@ -1,199 +1,200 @@
-# ScaleMate Database Setup
+# 🗄️ ScaleMate Database
 
-This directory contains the database schema and configuration for the ScaleMate application using Drizzle ORM with PostgreSQL on Railway.
+## 📋 Overview
 
-## 🗂️ Structure
+This database setup uses **Drizzle ORM** with **TypeScript schemas** for a better development experience with full type safety, auto-completion, and compile-time error checking.
 
-```
-database/
-├── schema/              # Database table definitions
-│   ├── index.ts        # Schema exports
-│   ├── users.ts        # User accounts and authentication
-│   ├── leads.ts        # Lead management and tracking
-│   ├── calculations.ts # Calculator results and data
-│   └── sessions.ts     # Session tracking and analytics
-├── migrations/         # Auto-generated migration files
-├── index.ts           # Database connection and setup
-├── utils.ts           # Database utility functions
-└── README.md          # This file
-```
+## 🏗️ Architecture
 
-## 🚀 Setup Instructions
+### **Schema Files** (`database/schema/`)
+- `users.ts` - User accounts and anonymous sessions
+- `core.ts` - Main quote calculator tables
+- `masterData.ts` - Roles, tasks, and experience levels
+- `quoteCalculator.ts` - Quote calculator step data and calculations
+- `index.ts` - Exports all schemas and utilities
 
-### 1. Install Dependencies
+### **Migration Files** (`database/migrations/`)
+- Contains SQL migration files for deployment
+- Generated from TypeScript schemas using `drizzle-kit`
+
+## 🚀 Quick Start
+
+### **Development Commands**
 
 ```bash
-npm install drizzle-orm drizzle-kit postgres
-npm install -D @types/pg
+# Generate new migrations from schema changes
+npm run db:generate
+
+# Push schema changes directly to database (development only)
+npm run db:push
+
+# Run migrations (production)
+npm run db:migrate
+
+# Open Drizzle Studio (database GUI)
+npm run db:studio
+
+# Drop all tables (careful!)
+npm run db:drop
 ```
 
-### 2. Environment Variables
+### **Using the Database in Code**
 
-Add to your `.env.local`:
+```typescript
+import { db, users, quoteCalculator, eq } from '@/database';
 
-```env
-DATABASE_URL="postgresql://username:password@host:port/database?ssl=require"
+// Type-safe insertions
+const newUser = await db.insert(users).values({
+  email: 'user@example.com',
+  firstName: 'John',
+  lastName: 'Doe'
+}).returning();
+
+// Type-safe queries
+const user = await db.select()
+  .from(users)
+  .where(eq(users.email, 'user@example.com'));
+
+// Complex joins with full type safety
+const quotesWithUsers = await db.select({
+  quote: quoteCalculator,
+  user: users
+})
+.from(quoteCalculator)
+.leftJoin(users, eq(quoteCalculator.userId, users.id));
 ```
 
-### 3. Generate Migrations
+## 🔧 Schema Development Workflow
 
+### **1. Make Schema Changes**
+Edit files in `database/schema/` to modify your database structure.
+
+### **2. Generate Migration**
 ```bash
 npm run db:generate
 ```
+This creates a new SQL migration file in `database/migrations/`.
 
-### 4. Push to Database
+### **3. Review Migration**
+Check the generated SQL file to ensure it matches your intentions.
 
+### **4. Apply Migration**
 ```bash
+# Development
 npm run db:push
+
+# Production (Railway)
+npm run db:migrate
 ```
 
-### 5. Run Migrations (Production)
+## 📊 Database Tables
 
+### **Core Tables**
+- `users` - Registered user accounts
+- `anonymous_sessions` - Anonymous user sessions
+- `quote_calculator` - Main quote entities
+
+### **Master Data**
+- `roles` - Available roles (Property Manager, etc.)
+- `tasks` - Tasks associated with each role
+- `experience_levels` - Entry, Mid, Senior levels
+
+### **Quote Calculator Data**
+- `quote_calculator_basic_info` - Step 1: Portfolio info
+- `quote_calculator_roles` - Step 2: Selected roles
+- `quote_calculator_role_tasks` - Step 3: Task assignments
+- `quote_calculator_role_experience` - Step 4: Experience distribution
+- `quote_calculator_calculations` - Final calculations
+- `quote_calculator_role_costs` - Detailed cost breakdowns
+- `quote_calculator_activity_log` - Audit trail
+
+## 🌐 Railway Deployment
+
+### **Environment Variables**
+```bash
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+### **Migration on Railway**
+Railway will automatically run migrations on deployment if you have a build script that includes:
 ```bash
 npm run db:migrate
 ```
 
-## 📋 Database Tables
+## 🔒 Type Safety Benefits
 
-### Users Table
-- Stores user account information
-- Fields: id, email, name, company, role, phone, isActive
-- Used for authentication and user management
+### **Compile-Time Checks**
+- ✅ Column names are validated at compile time
+- ✅ Data types are enforced
+- ✅ Foreign key relationships are typed
+- ✅ Query results are fully typed
 
-### Leads Table
-- Stores lead information from the calculator
-- Fields: email, name, phone, company, portfolio data, calculation results
-- Used for lead management and CRM integration
+### **IDE Support**
+- 🔍 Auto-completion for table and column names
+- 📝 Inline documentation for schema fields
+- 🐛 Immediate error highlighting for invalid queries
+- 🔄 Automatic refactoring when schema changes
 
-### Calculations Table
-- Stores calculator results and session data
-- Fields: input data, results, recommendations, ROI metrics
-- Used for analytics and user history
+## 📚 Example Operations
 
-### Sessions Table
-- Stores user session and analytics data
-- Fields: session ID, user agent, UTM parameters, tracking events
-- Used for analytics and user behavior tracking
-
-## 🔧 Railway Integration
-
-### Automatic Deployments
-- Connect your GitHub repository to Railway
-- Railway will automatically deploy on pushes to main branch
-- Database migrations run automatically on deployment
-
-### Environment Setup
-1. Create a new Railway project
-2. Add PostgreSQL database service
-3. Connect your GitHub repository
-4. Set environment variables in Railway dashboard
-
-### Migration Strategy
-- Migrations are generated automatically from schema changes
-- Push migrations to GitHub for automatic deployment
-- Railway runs migrations on each deployment
-
-## 💡 Usage Examples
-
-### Creating a Lead
+### **User Management**
 ```typescript
-import { createLead } from '@/database/utils';
+import { createUser, getUserByEmail } from '@/database/utils';
 
-const lead = await createLead({
-  email: 'user@example.com',
-  name: 'John Doe',
-  company: 'ABC Property Management',
-  portfolioSize: 500,
-  calculationData: calculationResults
+// Create user with type safety
+const user = await createUser({
+  email: 'john@example.com',
+  firstName: 'John',
+  lastName: 'Doe',
+  companyName: 'ACME Corp'
 });
+
+// Get user with return type inference
+const foundUser = await getUserByEmail('john@example.com');
 ```
 
-### Saving Calculator Results
+### **Quote Calculator**
 ```typescript
-import { saveCalculation } from '@/database/utils';
+import { db, quoteCalculator, users, eq } from '@/database';
 
-const calculation = await saveCalculation({
-  sessionId: 'sess_123',
-  calculationType: 'offshore',
-  inputData: formData,
-  results: calculationResults,
-  monthlySavings: '5000.00'
-});
+// Create new quote
+const quote = await db.insert(quoteCalculator).values({
+  quoteId: 'QTE-2025-001',
+  userId: user.id,
+  status: 'draft',
+  currentStep: 1
+}).returning();
+
+// Get quotes with user details
+const quotesWithUsers = await db.select()
+  .from(quoteCalculator)
+  .leftJoin(users, eq(quoteCalculator.userId, users.id))
+  .where(eq(quoteCalculator.status, 'completed'));
 ```
 
-### Session Tracking
+## 🛠️ Utilities
+
+### **Database Connection**
 ```typescript
-import { createSession, updateSession } from '@/database/utils';
+import { db, connection } from '@/database';
 
-// Create session
-const session = await createSession({
-  sessionId: 'sess_123',
-  userAgent: req.headers['user-agent'],
-  utmSource: 'google'
-});
+// Use db for queries
+const results = await db.select().from(users);
 
-// Update session
-await updateSession('sess_123', {
-  calculatorStarted: new Date(),
-  pageViews: 3
-});
+// Close connection when needed
+await connection.end();
 ```
 
-## 🛠️ NPM Scripts
+### **Testing**
+```typescript
+import { testConnection } from '@/database/utils';
 
-Add these scripts to your `package.json`:
-
-```json
-{
-  "scripts": {
-    "db:generate": "drizzle-kit generate:pg",
-    "db:push": "drizzle-kit push:pg",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio",
-    "db:drop": "drizzle-kit drop"
-  }
-}
+// Test database connectivity
+const isConnected = await testConnection();
 ```
 
-## 🔐 Security Best Practices
-
-1. **Environment Variables**: Never commit database credentials
-2. **SSL**: Always use SSL in production (Railway enforces this)
-3. **Connection Limits**: Set appropriate connection limits for Railway
-4. **Backups**: Railway provides automatic backups
-5. **Access Control**: Use Railway's access control features
-
-## 📊 Analytics & Monitoring
-
-- Use Railway's built-in monitoring
-- Track query performance in Railway dashboard
-- Monitor connection usage and limits
-- Set up alerts for database errors
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-1. **Connection Errors**: Check DATABASE_URL format
-2. **Migration Failures**: Ensure schema syntax is correct
-3. **SSL Issues**: Verify SSL settings for production
-4. **Type Errors**: Install `@types/pg` for TypeScript support
-
-### Debug Commands
-
-```bash
-# Check database connection
-npm run db:studio
-
-# Validate schema
-npm run db:generate
-
-# Reset database (development only)
-npm run db:drop
-```
-
-## 📚 Documentation Links
+## 📖 Resources
 
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)
-- [Railway Documentation](https://docs.railway.app/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/) 
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Railway PostgreSQL Guide](https://docs.railway.app/databases/postgresql) 

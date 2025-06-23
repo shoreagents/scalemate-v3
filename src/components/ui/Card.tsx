@@ -101,8 +101,8 @@ export function Card({
         <div className="absolute top-4 right-4 z-10">
           <motion.div
             className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white text-xs font-medium rounded-full"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.3 }}
           >
             <Brain className="h-3 w-3 animate-neural-pulse" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
 import { calculateSavings, DEFAULT_FORM_DATA } from '@/utils/calculator';
 import { Button } from '@/components/ui/Button';
@@ -13,6 +13,7 @@ import { TaskSelectionStep } from './steps/TaskSelectionStep';
 import { ExperienceStep } from './steps/ExperienceStep';
 import { ResultsStep } from './steps/ResultsStep';
 import { useExitIntentContext } from '@/components/providers/ExitIntentProvider';
+import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { analytics } from '@/utils/analytics';
 import { 
   ArrowLeft, 
@@ -24,8 +25,12 @@ import {
   Sparkles,
   Zap,
   Cpu,
-  Target
+  Target,
+  Home,
+  MapPin,
+  Loader2
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface OffshoreCalculatorProps {
   className?: string;
@@ -54,40 +59,11 @@ export function OffshoreCalculator({
   const [isCalculating, setIsCalculating] = useState(false);
   const [processingStage, setProcessingStage] = useState<string>('');
 
-  // Use global exit intent context
+  // Use global exit intent context and calculator data
   const exitIntentContext = useExitIntentContext();
+  const { isAIGenerated, location, isLoading, error } = useCalculatorData();
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
-      }
-    },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: { duration: 0.3 }
-    }
-  };
 
-  const stepVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { 
-      opacity: 1, 
-      x: 0,
-      transition: { duration: 0.5 }
-    },
-    exit: { 
-      opacity: 0, 
-      x: -20,
-      transition: { duration: 0.3 }
-    }
-  };
 
   // Initialize analytics tracking
   useEffect(() => {
@@ -138,12 +114,16 @@ export function OffshoreCalculator({
   const nextStep = () => {
     if (formData.currentStep < 5) {
       updateFormData({ currentStep: (formData.currentStep + 1) as CalculatorStep });
+      // Scroll to top of the page to show the new step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const prevStep = () => {
     if (formData.currentStep > 1) {
       updateFormData({ currentStep: (formData.currentStep - 1) as CalculatorStep });
+      // Scroll to top of the page to show the new step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -164,7 +144,7 @@ export function OffshoreCalculator({
       ];
 
       for (let i = 0; i < processingStages.length; i++) {
-        setProcessingStage(processingStages[i] || '');
+        setProcessingStage(processingStages[i]!);
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
       
@@ -300,54 +280,66 @@ export function OffshoreCalculator({
       <div className="absolute inset-0 pattern-neural-grid opacity-5 pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-neural-blue-400/10 to-quantum-purple-400/10 rounded-full blur-3xl animate-neural-float pointer-events-none" />
       
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10"
-      >
+      <div className="relative z-10">
         {/* Calculator Header */}
-        <Card 
-          variant="quantum-glass" 
-          className="mb-8 p-8 text-center relative overflow-hidden"
-          aiPowered={true}
-          neuralGlow={true}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-500/5 to-transparent animate-neural-shimmer" />
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-neural-primary rounded-xl shadow-neural-glow">
-                <Calculator className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-headline-1 gradient-text-neural font-display">
-                Offshore Scaling Calculator
-              </h1>
+        <div className="mb-8 px-8 py-12 text-center">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 mb-6">
+            <h1 className="text-display-3 gradient-text-neural font-display leading-tight">
+              Offshore Scaling Calculator
+            </h1>
+            <div className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 relative overflow-hidden
+              ${isAIGenerated 
+                ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow border-0' 
+                : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
+              }
+            `}>
+              {isAIGenerated && (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/20 via-quantum-purple-400/30 to-cyber-green-400/20 animate-neural-pulse" />
+                </>
+              )}
+              <Sparkles className={`w-4 h-4 relative z-10 ${isAIGenerated ? 'animate-neural-pulse' : ''}`} />
+              <span className="text-sm font-medium relative z-10">
+                AI Powered
+              </span>
             </div>
-            
-            <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
-              {getStepDescription(formData.currentStep)}
-            </p>
           </div>
-        </Card>
+          
+          {/* Location Status */}
+          {location && location.country !== 'Unknown' && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <MapPin className="w-4 h-4 text-brand-primary-500" />
+              <span className="text-sm text-neutral-600">
+                Customized for {location.city}, {location.country}
+              </span>
+            </div>
+          )}
+          
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Loader2 className="w-4 h-4 animate-spin text-brand-primary-500" />
+              <span className="text-sm text-neutral-600">Fetching location data...</span>
+            </div>
+          )}
+        </div>
 
         {/* Step Indicator */}
-        <div className="mb-8">
-          <StepIndicator 
-            currentStep={formData.currentStep} 
-            completedSteps={[]}
-          />
+        <div className="my-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          <div className="relative z-10">
+            <StepIndicator 
+              currentStep={formData.currentStep} 
+              completedSteps={[]}
+            />
+          </div>
         </div>
 
         {/* Processing Overlay */}
-        <AnimatePresence>
           {isCalculating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center"
-            >
+          <div className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center">
               <Card 
                 variant="quantum-glass" 
                 className="p-12 text-center max-w-md mx-4"
@@ -363,14 +355,9 @@ export function OffshoreCalculator({
                     Calculating Your Savings
                   </h3>
                   
-                  <motion.p 
-                    key={processingStage}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-neural-blue-600 font-medium"
-                  >
+                  <p className="text-neural-blue-600 font-medium">
                     {processingStage}
-                  </motion.p>
+                  </p>
                 </div>
                 
                 {/* Processing dots */}
@@ -380,37 +367,36 @@ export function OffshoreCalculator({
                   <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
                 </div>
               </Card>
-            </motion.div>
+          </div>
           )}
-        </AnimatePresence>
 
         {/* Step Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={formData.currentStep}
-            variants={stepVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
+        <div>
             {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+        </div>
 
         {/* Navigation */}
         {formData.currentStep < 5 && (
-          <Card 
-            variant="neural-elevated" 
-            className="mt-8 p-6"
-            hoverLift={false}
-          >
-            <div className="flex items-center justify-between">
+          <div className="mt-8 p-6 rounded-xl border-2 border-neutral-200 bg-white">
+            {/* Desktop Layout */}
+            <div className="hidden sm:flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {formData.currentStep > 1 && (
+                {formData.currentStep === 1 ? (
+                  <Link href="/">
+                    <Button
+                      variant="quantum-secondary"
+                      leftIcon={<Home className="h-4 w-4" />}
+                      className="w-40 h-12"
+                    >
+                      Back to Home
+                    </Button>
+                  </Link>
+                ) : (
                   <Button
                     variant="quantum-secondary"
                     onClick={prevStep}
                     leftIcon={<ArrowLeft className="h-4 w-4" />}
+                    className="w-40 h-12"
                   >
                     Previous
                   </Button>
@@ -428,16 +414,59 @@ export function OffshoreCalculator({
                     onClick={nextStep}
                     disabled={!canProceedFromStep(formData.currentStep)}
                     rightIcon={<ArrowRight className="h-4 w-4" />}
-                    aiAssisted={true}
+                    className="w-40 h-12"
                   >
                     Continue
                   </Button>
                 )}
               </div>
             </div>
-          </Card>
+
+            {/* Mobile Layout (stacked vertically) */}
+            <div className="flex sm:hidden flex-col items-center gap-4">
+              {/* Step counter at top */}
+              <div className="text-sm text-neural-blue-600 font-medium">
+                Step {formData.currentStep} of 5
+              </div>
+              
+              {/* Continue button */}
+              {formData.currentStep < 4 && (
+                <Button
+                  variant="neural-primary"
+                  onClick={nextStep}
+                  disabled={!canProceedFromStep(formData.currentStep)}
+                  rightIcon={<ArrowRight className="h-4 w-4" />}
+                  className="w-full h-12"
+                >
+                  Continue
+                </Button>
+              )}
+              
+              {/* Back/Previous button at bottom */}
+              {formData.currentStep === 1 ? (
+                <Link href="/" className="w-full">
+                  <Button
+                    variant="quantum-secondary"
+                    leftIcon={<Home className="h-4 w-4" />}
+                    className="w-full h-12"
+                  >
+                    Back to Home
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="quantum-secondary"
+                  onClick={prevStep}
+                  leftIcon={<ArrowLeft className="h-4 w-4" />}
+                  className="w-full h-12"
+                >
+                  Previous
+                </Button>
+              )}
+            </div>
+          </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 } 

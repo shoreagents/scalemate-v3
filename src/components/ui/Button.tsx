@@ -54,17 +54,17 @@ export const Button: React.FC<ButtonProps> = ({
   const neuralButtonVariants = {
     initial: { scale: 1, y: 0 },
     hover: { 
-      scale: 1.02,
-      y: -2,
+      scale: 1,
+      y: 0,
       transition: { duration: 0.2 }
     },
     tap: { 
-      scale: 0.98,
+      scale: 1,
       y: 0,
       transition: { duration: 0.1 }
     },
     processing: {
-      scale: [1, 1.02, 1],
+      scale: [1, 1, 1],
       transition: { 
         duration: 2, 
         repeat: Infinity
@@ -174,8 +174,8 @@ export const Button: React.FC<ButtonProps> = ({
       {aiAssisted && !loading && !aiProcessing && (
         <motion.span
           className="ml-1 relative z-10"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <Sparkles className="h-3 w-3 opacity-70" />

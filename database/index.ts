@@ -1,9 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { users } from './schema/users';
-import { leads } from './schema/leads';
-import { calculations } from './schema/calculations';
-import { sessions } from './schema/sessions';
+import * as schema from './schema';
 
 // Railway Database Connection
 const connectionString = process.env.DATABASE_URL;
@@ -19,9 +16,10 @@ export const connection = postgres(connectionString, {
 });
 
 // Create the database instance with schema
-export const db = drizzle(connection, { 
-  schema: { users, leads, calculations, sessions } 
-});
+export const db = drizzle(connection, { schema });
 
-// Export all schema for easy access
-export { users, leads, calculations, sessions }; 
+// Export all schemas for easy access
+export * from './schema';
+
+// Export connection for migration scripts
+export default db; 

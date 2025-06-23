@@ -1,8 +1,9 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId } from '@/types';
-import { SALARY_DATA } from '@/utils/calculator';
+import { ROLES as STATIC_ROLE_DEFINITIONS } from '@/utils/calculator/data';
+import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { Users, TrendingUp, DollarSign, Plus, Minus } from 'lucide-react';
 
 interface RoleSelectionStepProps {
@@ -11,58 +12,39 @@ interface RoleSelectionStepProps {
   onChange: (selectedRoles: Record<RoleId, boolean>, teamSize: Record<RoleId, number>) => void;
 }
 
-const ROLES = [
-  {
-    id: 'assistantPropertyManager' as RoleId,
-    title: 'Assistant Property Manager',
-    description: 'Handle tenant applications, lease renewals, maintenance coordination, and compliance documentation.',
-    icon: '🏢',
-    color: 'brand-primary',
-    keyTasks: [
-      'Tenant Application Screening',
-      'Lease Renewal Processing', 
-      'Maintenance Coordination',
-      'Compliance Documentation'
-    ],
-    avgSalaryAU: 75000,
-    avgSalaryPH: 18000,
-    complexity: 'Medium'
-  },
-  {
-    id: 'leasingCoordinator' as RoleId,
-    title: 'Leasing Coordinator',
-    description: 'Manage inquiries, coordinate property tours, process applications, and conduct market research.',
-    icon: '🗝️',
-    color: 'brand-secondary',
-    keyTasks: [
-      'Inquiry Response Management',
-      'Virtual Tour Coordination',
-      'Application Processing',
-      'Market Research & Pricing'
-    ],
-    avgSalaryAU: 68000,
-    avgSalaryPH: 15000,
-    complexity: 'Medium'
-  },
-  {
-    id: 'marketingSpecialist' as RoleId,
-    title: 'Marketing Specialist',
-    description: 'Create property marketing content, manage social media, analyze performance, and optimize campaigns.',
-    icon: '📈',
-    color: 'brand-accent',
-    keyTasks: [
-      'Property Marketing Content',
-      'Social Media Management',
-      'Performance Analytics',
-      'Campaign Optimization'
-    ],
-    avgSalaryAU: 72000,
-    avgSalaryPH: 18000,
-    complexity: 'Medium-High'
-  }
-];
-
 export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSelectionStepProps) {
+  const { 
+    location, 
+    portfolioData,
+    roleData,
+    isLoading, 
+    error,
+    isAIGenerated,
+    refetch
+  } = useCalculatorData();
+
+  // Use API role data if available, fallback to static data
+  const ROLE_DEFINITIONS = roleData || STATIC_ROLE_DEFINITIONS;
+
+  // Create role display data from API or static definitions
+const ROLES = Object.values(ROLE_DEFINITIONS).map(role => ({
+  id: role.id,
+  title: role.title,
+  description: role.description,
+  icon: role.icon,
+  colors: {
+    border: 'border-neural-blue-500',
+    bg: 'bg-neural-blue-50',
+    text: 'text-neural-blue-700',
+    button: 'bg-neural-blue-100 text-neural-blue-600 hover:bg-neural-blue-200',
+    indicator: 'bg-neural-blue-500'
+  },
+    keyTasks: STATIC_ROLE_DEFINITIONS[role.id as RoleId]?.tasks?.slice(0, 4).map((task: any) => task.name) || [], // Get first 4 task names from static data
+    avgSalaryAU: role.averageSalary?.australian || 0,
+    avgSalaryPH: role.averageSalary?.philippine || 0,
+  complexity: 'Medium' // Default complexity for display
+}));
+
   const handleRoleToggle = (roleId: RoleId) => {
     const newSelectedRoles = {
       ...selectedRoles,
@@ -121,65 +103,98 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="mx-auto" style={{ maxWidth: '100%' }}>
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-brand-secondary-100 flex items-center justify-center">
-          <Users className="w-8 h-8 text-brand-secondary-600" />
-        </div>
-        <h2 className="text-headline-1 text-neutral-900 mb-2">
-          Which roles do you want to offshore?
-        </h2>
-        <p className="text-body-large text-neutral-600">
-          Select the property management roles you'd like to move offshore. 
-          You can adjust team sizes for each role.
-        </p>
-      </div>
+      <motion.div 
+        className="text-center mb-8"
+        initial="initial"
+        animate="animate"
+        variants={{
+          animate: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        <motion.div 
+          className="flex items-center justify-center gap-3 mb-4"
+          variants={{
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <h2 className="text-headline-1 text-neutral-900">
+            Which roles do you want to offshore?
+          </h2>
+        </motion.div>
+        
+        <motion.p 
+          className="text-body-large text-neutral-600"
+          variants={{
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 }
+          }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          Select the property management roles you'd like to offshore. You can adjust team sizes for each role.
+        </motion.p>
+      </motion.div>
 
       {/* Role Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {ROLES.map((role) => {
-          const isSelected = selectedRoles[role.id];
-          const currentTeamSize = teamSize[role.id] || 0;
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-stretch"
+        initial="initial"
+        animate="animate"
+        variants={{
+          animate: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
+        {ROLES.map((role, index) => {
+          const isSelected = selectedRoles[role.id as RoleId];
+          const currentTeamSize = teamSize[role.id as RoleId] || 0;
           const savings = (role.avgSalaryAU - role.avgSalaryPH) * currentTeamSize;
           
           return (
             <motion.div
               key={role.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative"
+              variants={{
+                initial: { opacity: 0, y: 20 },
+                animate: { opacity: 1, y: 0 }
+              }}
+              transition={{ 
+                delay: index * 0.1, 
+                duration: 0.6, 
+                ease: "easeOut"
+              }}
+              className="relative h-full"
             >
               <div
-                className={`
-                  p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer
-                  ${isSelected 
-                    ? `border-${role.color}-500 bg-${role.color}-50 shadow-lg` 
-                    : 'border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-md'
+                tabIndex={0}
+                style={{ 
+                  transition: 'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease'
+                }}
+                className={`p-6 rounded-2xl cursor-pointer h-full flex flex-col border overflow-hidden ${isSelected 
+                  ? 'bg-brand-primary-50 shadow border-brand-primary-400' 
+                  : 'bg-white border-brand-primary-100 shadow hover:bg-brand-primary-25 hover:border-brand-primary-200 hover:shadow-neural-glow focus:shadow-neural-glow focus:border-brand-primary-300'
+                }`}
+                onClick={() => handleRoleToggle(role.id as RoleId)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleRoleToggle(role.id as RoleId);
                   }
-                `}
-                onClick={() => handleRoleToggle(role.id)}
+                }}
               >
-                {/* Selected Indicator */}
-                {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className={`absolute top-4 right-4 w-6 h-6 rounded-full bg-${role.color}-500 flex items-center justify-center`}
-                  >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </motion.div>
-                )}
-
                 {/* Role Header */}
                 <div className="mb-4">
                   <div className="text-4xl mb-2">{role.icon}</div>
-                  <h3 className={`
-                    text-xl font-bold mb-1
-                    ${isSelected ? `text-${role.color}-700` : 'text-neutral-900'}
-                  `}>
+                  <h3 className="text-xl font-bold mb-1 text-neutral-900">
                     {role.title}
                   </h3>
                   <p className="text-sm text-neutral-600">
@@ -188,10 +203,10 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                 </div>
 
                 {/* Key Tasks */}
-                <div className="mb-4">
+                <div className="mb-4 flex-grow">
                   <h4 className="text-sm font-medium text-neutral-700 mb-2">Key Tasks:</h4>
                   <ul className="space-y-1">
-                    {role.keyTasks.slice(0, 3).map((task, index) => (
+                    {role.keyTasks.slice(0, 3).map((task: string, index: number) => (
                       <li key={index} className="text-xs text-neutral-600 flex items-center">
                         <div className="w-1 h-1 rounded-full bg-neutral-400 mr-2" />
                         {task}
@@ -205,62 +220,37 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                   </ul>
                 </div>
 
-                {/* Savings Preview */}
-                <div className="mb-4 p-3 rounded-lg bg-white/80">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-neutral-500">Potential Savings</span>
-                    <span className="text-xs text-neutral-500">Per Person/Year</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-green-600">
-                      ${(role.avgSalaryAU - role.avgSalaryPH).toLocaleString()}
-                    </span>
-                    <span className="text-xs text-neutral-500">
-                      {Math.round(((role.avgSalaryAU - role.avgSalaryPH) / role.avgSalaryAU) * 100)}% savings
-                    </span>
-                  </div>
-                </div>
-
                 {/* Team Size Selector */}
                 {isSelected && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="border-t border-neutral-200 pt-4"
+                  <div className="border-t border-brand-primary-200 bg-brand-primary-25 -mx-6 px-6 pt-4 pb-2 rounded-b-2xl"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-neutral-700">Team Size:</span>
+                      <span className="text-sm font-medium text-brand-primary-700">Team Size:</span>
                       <div className="flex items-center gap-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleTeamSizeChange(role.id, -1);
+                            handleTeamSizeChange(role.id as RoleId, -1);
                           }}
-                          className={`
-                            w-8 h-8 rounded-full flex items-center justify-center transition-colors
-                            ${currentTeamSize > 1 
-                              ? `bg-${role.color}-100 text-${role.color}-600 hover:bg-${role.color}-200` 
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${currentTeamSize > 1 
+                              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
                               : 'bg-neutral-100 text-neutral-400'
-                            }
-                          `}
+                            }`}
                           disabled={currentTeamSize <= 1}
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         
-                        <span className="w-8 text-center font-bold text-neutral-900">
+                        <span className="w-8 text-center font-bold text-brand-primary-700">
                           {currentTeamSize}
                         </span>
                         
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleTeamSizeChange(role.id, 1);
+                            handleTeamSizeChange(role.id as RoleId, 1);
                           }}
-                          className={`
-                            w-8 h-8 rounded-full bg-${role.color}-100 text-${role.color}-600 
-                            hover:bg-${role.color}-200 flex items-center justify-center transition-colors
-                          `}
+                          className="w-8 h-8 rounded-full bg-brand-primary-100 text-brand-primary-600 hover:bg-brand-primary-200 flex items-center justify-center transition-colors"
                           disabled={currentTeamSize >= 10}
                         >
                           <Plus className="w-4 h-4" />
@@ -269,64 +259,33 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
                     </div>
                     
                     {currentTeamSize > 0 && (
-                      <div className="mt-2 text-center">
-                        <div className="text-sm text-neutral-600">
-                          Total Savings: 
-                          <span className="font-bold text-green-600 ml-1">
-                            ${savings.toLocaleString()}/year
-                          </span>
+                      <div className="mt-3 p-3 bg-brand-primary-100 rounded-lg">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-brand-primary-700 mb-1">
+                            Total Savings
+                          </div>
+                          <div className="text-lg font-bold text-brand-primary-800">
+                            {(location?.currency && location.currency !== 'Unknown') ? location.currency : '$'}{savings.toLocaleString()}/year
+                          </div>
+                          <div className="text-xs text-brand-primary-600 mt-1">
+                            {Math.round(((role.avgSalaryAU - role.avgSalaryPH) / role.avgSalaryAU) * 100)}% savings per person
+                          </div>
                         </div>
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 )}
               </div>
             </motion.div>
           );
         })}
-      </div>
-
-      {/* Summary Card */}
-      {Object.values(selectedRoles).some(Boolean) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-r from-brand-primary-50 to-brand-secondary-50 border border-brand-primary-200"
-        >
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-neutral-900 mb-2">
-              Selection Summary
-            </h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-brand-primary-600">
-                {Object.values(selectedRoles).filter(Boolean).length}
-              </div>
-              <div className="text-sm text-neutral-600">Roles Selected</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-brand-secondary-600">
-                {getTotalTeamSize()}
-              </div>
-              <div className="text-sm text-neutral-600">Total Team Members</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                ${getTotalSavings().toLocaleString()}
-              </div>
-              <div className="text-sm text-neutral-600">Annual Savings</div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+      </motion.div>
 
       {/* Help Text */}
       <div className="mt-8 p-4 rounded-lg bg-neutral-50 border border-neutral-200">
         <div className="flex items-start gap-3">
-          <div className="w-6 h-6 rounded-full bg-brand-secondary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg className="w-3 h-3 text-brand-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-6 h-6 rounded-full bg-brand-primary-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="w-3 h-3 text-brand-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -341,6 +300,42 @@ export function RoleSelectionStep({ selectedRoles, teamSize, onChange }: RoleSel
           </div>
         </div>
       </div>
+
+      {/* Summary Card */}
+      {Object.values(selectedRoles).some(Boolean) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-6 rounded-xl bg-brand-primary-50 border border-brand-primary-200"
+        >
+            <div className="text-center mb-4">
+            <h3 className="text-lg font-bold text-brand-primary-900 mb-2">
+                Selection Summary
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+              <div className="text-2xl font-bold text-brand-primary-600">
+                  {Object.values(selectedRoles).filter(Boolean).length}
+                </div>
+              <div className="text-sm text-brand-primary-600">Roles Selected</div>
+              </div>
+              <div>
+              <div className="text-2xl font-bold text-brand-secondary-600">
+                  {getTotalTeamSize()}
+                </div>
+              <div className="text-sm text-brand-primary-600">Total Team Members</div>
+              </div>
+              <div>
+              <div className="text-2xl font-bold text-green-600">
+                  ${getTotalSavings().toLocaleString()}
+              </div>
+              <div className="text-sm text-brand-primary-600">Annual Savings</div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 } 

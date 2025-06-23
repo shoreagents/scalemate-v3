@@ -93,9 +93,9 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
             onClick={onClose}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               className="max-w-md mx-4"
             >
@@ -131,9 +131,9 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             onClick={(e) => e.stopPropagation()}
             className="max-w-lg w-full max-h-[90vh] overflow-y-auto"
           >
@@ -141,7 +141,7 @@ export function ExitIntentPopup({ isVisible, onClose, onSubmit, calculationResul
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="absolute top-4 right-4 p-2 rounded-lg"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>

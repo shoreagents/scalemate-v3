@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
-import { ROLES, ROLE_TASKS } from '@/utils/calculator';
+import { ROLES as STATIC_ROLES, ROLE_TASKS as STATIC_ROLE_TASKS } from '@/utils/calculator';
+import { useCalculatorData } from '@/hooks/useCalculatorData';
 import { Button } from '@/components/ui/Button';
-import { Plus, Check, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
+import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
 
 interface TaskSelectionStepProps {
   selectedRoles: Record<RoleId, boolean>;
@@ -20,6 +21,13 @@ export function TaskSelectionStep({
   customTasks, 
   onChange 
 }: TaskSelectionStepProps) {
+  const { roleData } = useCalculatorData();
+  
+  // Use API role data if available, fallback to static data
+  const ROLES = roleData || STATIC_ROLES;
+  // AI-generated roles don't have detailed tasks, so always use static task data
+  const ROLE_TASKS = STATIC_ROLE_TASKS;
+
   const [expandedRoles, setExpandedRoles] = useState<Record<RoleId, boolean>>({
     assistantPropertyManager: true,
     leasingCoordinator: false,
@@ -103,9 +111,9 @@ export function TaskSelectionStep({
   };
 
   const getSelectedTasksCount = (roleId: RoleId) => {
-    const standardTasks = ROLE_TASKS[roleId].filter(task => 
+    const standardTasks = ROLE_TASKS[roleId]?.filter((task: any) => 
       selectedTasks[`${roleId}-${task.id}`]
-    ).length;
+    ).length || 0;
     const customTasksCount = customTasks[roleId]?.length || 0;
     return standardTasks + customTasksCount;
   };
@@ -148,7 +156,12 @@ export function TaskSelectionStep({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Select Tasks to Offshore</h2>
+        <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <CheckSquare className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Select Tasks to Offshore</h2>
+        </div>
         <p className="text-gray-600">
           Choose which tasks you'd like to offshore for each role. You can also add custom tasks.
         </p>
@@ -184,7 +197,7 @@ export function TaskSelectionStep({
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-900">{role.title}</h3>
                     <p className="text-sm text-gray-600">
-                      {selectedCount} of {role.tasks.length + (customTasks[roleId]?.length || 0)} tasks selected
+                      {selectedCount} of {(role.tasks?.length || 0) + (customTasks[roleId]?.length || 0)} tasks selected
                     </p>
                   </div>
                 </div>
@@ -215,15 +228,15 @@ export function TaskSelectionStep({
                     <div className="p-6 space-y-4">
                       {/* Standard Tasks */}
                       <div className="space-y-3">
-                        {role.tasks.map((task) => {
+                        {role.tasks?.map((task: any) => {
                           const taskKey = `${roleId}-${task.id}`;
                           const isSelected = selectedTasks[taskKey];
 
                           return (
                             <motion.div
                               key={task.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
+                                                    initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
                               className={`p-4 border rounded-lg cursor-pointer transition-all ${
                                 isSelected 
                                   ? 'border-indigo-300 bg-indigo-50 ring-2 ring-indigo-100' 
