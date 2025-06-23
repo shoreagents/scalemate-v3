@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, Globe, Check, X, ChevronDown, MapPinIcon, Navigation } from 'lucide-react';
-import { fetchCountries, getMajorCities, getCountryRegions, getPopularCountries, searchCountries, type Country } from '@/utils/locationApi';
+import { fetchCountries, searchCountries, type Country } from '@/utils/locationApi';
 
 interface LocationData {
   country: string;
@@ -30,12 +30,10 @@ export function EnhancedLocationSelector({
 }: EnhancedLocationSelectorProps) {
   const [countries, setCountries] = useState<Country[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
-  const [popularCountries] = useState<string[]>(getPopularCountries());
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
   
   const [selectedLocation, setSelectedLocation] = useState<LocationData>(
     initialLocation || { country: '', region: '', city: '' }
@@ -85,34 +83,6 @@ export function EnhancedLocationSelector({
     }));
     setSearchQuery(''); // Clear search when country is selected
     setShowCountryDropdown(false);
-  };
-
-  const handleRegionSelect = (region: string) => {
-    setSelectedLocation(prev => ({
-      ...prev,
-      region,
-      city: '' // Reset city when region changes
-    }));
-  };
-
-  const handleCitySelect = (city: string) => {
-    setSelectedLocation(prev => ({
-      ...prev,
-      city
-    }));
-    setShowCityDropdown(false);
-  };
-
-  const getAvailableRegions = () => {
-    if (!selectedLocation.country) return [];
-    const regions = getCountryRegions(selectedLocation.country);
-    console.log('Available regions for', selectedLocation.country, ':', regions);
-    return regions;
-  };
-
-  const getAvailableCities = () => {
-    if (!selectedLocation.country) return [];
-    return getMajorCities(selectedLocation.country);
   };
 
   const isValid = selectedLocation.country;
