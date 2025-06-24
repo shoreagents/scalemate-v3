@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { SCALEMATE_BRAND } from '@/lib/brand';
 
 interface LogoProps {
-  variant?: 'primary' | 'mark' | 'wordmark';
+  variant?: 'primary' | 'mark' | 'wordmark' | 'badge';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   animated?: boolean;
   interactive?: boolean;
@@ -124,6 +124,41 @@ export const Logo: React.FC<LogoProps> = ({
     </svg>
   );
 
+  const LogoBadge = () => (
+    <div className={cn(
+      'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 rounded-xl flex items-center justify-center relative overflow-hidden shadow-neural-glow',
+      size === 'xs' && 'h-8 w-32 px-3',
+      size === 'sm' && 'h-10 w-40 px-4', 
+      size === 'md' && 'h-12 w-48 px-4',
+      size === 'lg' && 'h-14 w-56 px-5',
+      size === 'xl' && 'h-16 w-64 px-6'
+    )}>
+      <span className={cn(
+        'text-white font-display font-bold relative z-10',
+        size === 'xs' && 'text-sm',
+        size === 'sm' && 'text-base',
+        size === 'md' && 'text-xl',
+        size === 'lg' && 'text-2xl',
+        size === 'xl' && 'text-3xl'
+      )}>
+        ScaleMate
+      </span>
+      {animated && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          initial={{ x: '-100%' }}
+          animate={{ x: '100%' }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "loop",
+            ease: "linear"
+          }}
+        />
+      )}
+    </div>
+  );
+
   const LogoMark = () => (
     <svg
       viewBox="0 0 48 48"
@@ -167,7 +202,10 @@ export const Logo: React.FC<LogoProps> = ({
     </svg>
   );
 
-  const LogoComponent = variant === 'mark' ? LogoMark : ScaleMateLogo;
+  const LogoComponent = 
+    variant === 'mark' ? LogoMark : 
+    variant === 'badge' ? LogoBadge :
+    ScaleMateLogo;
 
   if (!interactive && !animated) {
     return (

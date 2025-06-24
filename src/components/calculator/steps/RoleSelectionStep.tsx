@@ -40,6 +40,7 @@ interface RoleSearchFilters {
   query: string;
   showCustomRoles: boolean;
   sortBy: 'name' | 'savings' | 'recent';
+  savingsView: 'annual' | 'monthly';
 }
 
 export function RoleSelectionStep({ 
@@ -52,7 +53,8 @@ export function RoleSelectionStep({
   const [searchFilters, setSearchFilters] = useState<RoleSearchFilters>({
     query: '',
     showCustomRoles: true,
-    sortBy: 'savings'
+    sortBy: 'savings',
+    savingsView: 'annual'
   });
   const [showCustomRoleForm, setShowCustomRoleForm] = useState(false);
   const [customRoleForm, setCustomRoleForm] = useState({
@@ -87,26 +89,12 @@ export function RoleSelectionStep({
     }
   }, []);
 
-  // All available roles (predefined + additional + custom)
+  // All available roles (predefined + additional + custom) - Limited to first 3
   const allRoles = useMemo(() => {
-    const predefinedRoles = Object.values(ENHANCED_PROPERTY_ROLES);
-    const additionalRoles = Object.entries(ADDITIONAL_PROPERTY_ROLES).map(([id, roleData]: [string, any]) => ({
-      id,
-      title: roleData.title || '',
-      icon: roleData.icon || '📋',
-      description: roleData.description || '',
-      category: roleData.category || 'custom',
-      type: 'predefined' as const,
-      color: 'neutral',
-      searchKeywords: roleData.searchKeywords || [],
-      estimatedSalary: {
-        local: 60000, // Default estimate
-        philippine: 18000
-      }
-    }));
+    const predefinedRoles = Object.values(ENHANCED_PROPERTY_ROLES).slice(0, 3); // Only first 3 roles
     const customRolesList = Object.values(customRoles);
     
-    return [...predefinedRoles, ...additionalRoles, ...customRolesList];
+    return [...predefinedRoles, ...customRolesList];
   }, [customRoles]);
 
   // Filtered and sorted roles
@@ -267,33 +255,11 @@ export function RoleSelectionStep({
         </p>
       </div>
 
-      {/* Location Display */}
-      {detectedLocation && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-blue-900">
-                  Calculating savings for: {detectedLocation.countryName}
-                </span>
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                  {detectedLocation.currency}
-                </span>
-              </div>
-              <p className="text-sm text-blue-600">
-                {detectedLocation.detected ? 'Auto-detected from your location' : 'Default location - change anytime'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Search and Filters */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col min-[468px]:flex-row gap-4">
           {/* Search Bar */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -309,7 +275,7 @@ export function RoleSelectionStep({
           {/* Add Custom Role Button */}
           <button
             onClick={() => setShowCustomRoleForm(true)}
-            className="px-6 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:shadow-neural-glow transition-all duration-200 flex items-center gap-2 font-medium"
+            className="px-6 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:shadow-neural-glow transition-all duration-200 flex items-center justify-center gap-2 font-medium whitespace-nowrap"
           >
             <Plus className="w-5 h-5" />
             Add Custom Role
@@ -324,18 +290,25 @@ export function RoleSelectionStep({
           </div>
           
           {/* Sort By */}
-          <select
-            value={searchFilters.sortBy}
-            onChange={(e) => setSearchFilters(prev => ({ 
-              ...prev, 
-              sortBy: e.target.value as any
-            }))}
-            className="px-3 py-1 border border-neutral-300 rounded-md text-sm"
-          >
-            <option value="savings">Highest Savings</option>
-            <option value="name">Name A-Z</option>
-            <option value="recent">Recently Added</option>
-          </select>
+          <div className="relative">
+            <select
+              value={searchFilters.sortBy}
+              onChange={(e) => setSearchFilters(prev => ({ 
+                ...prev, 
+                sortBy: e.target.value as any
+              }))}
+              className="px-3 py-1 pr-8 border border-neutral-300 rounded-md text-sm appearance-none bg-white focus:ring-2 focus:ring-brand-primary-500 focus:border-brand-primary-500 transition-colors"
+            >
+              <option value="savings">Highest Savings</option>
+              <option value="name">Name A-Z</option>
+              <option value="recent">Recently Added</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+              <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
 
           {/* Custom Roles Toggle */}
           <label className="flex items-center gap-2 text-sm">
@@ -350,6 +323,36 @@ export function RoleSelectionStep({
             />
             Show Custom Roles
           </label>
+
+          {/* Spacer to push savings view to the right */}
+          <div className="flex-1"></div>
+
+          {/* Savings View Toggle */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-600">View:</span>
+            <div className="flex bg-neutral-100 rounded-lg p-1">
+              <button
+                onClick={() => setSearchFilters(prev => ({ ...prev, savingsView: 'annual' }))}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  searchFilters.savingsView === 'annual'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Annual
+              </button>
+              <button
+                onClick={() => setSearchFilters(prev => ({ ...prev, savingsView: 'monthly' }))}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  searchFilters.savingsView === 'monthly'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -481,7 +484,9 @@ export function RoleSelectionStep({
                 {detectedLocation && (
                   <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
                     <div className="text-center mb-3">
-                      <span className="text-sm font-semibold text-green-800">Annual Cost Comparison</span>
+                      <span className="text-sm font-semibold text-green-800">
+                        {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost Comparison
+                      </span>
                 </div>
 
                     {/* Location vs Philippines Comparison */}
@@ -489,13 +494,21 @@ export function RoleSelectionStep({
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-green-700 font-medium">{detectedLocation.countryName} Rate:</span>
                         <span className="text-sm font-bold text-green-900">
-                          {detectedLocation.currencySymbol}{(getSavingsForRole(role) + ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000)).toLocaleString()}
+                          {detectedLocation.currencySymbol}
+                          {searchFilters.savingsView === 'monthly' 
+                            ? Math.round((getSavingsForRole(role) + ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000)) / 12).toLocaleString()
+                            : (getSavingsForRole(role) + ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000)).toLocaleString()
+                          }
                         </span>
                   </div>
                   <div className="flex items-center justify-between">
                         <span className="text-xs text-green-700 font-medium">Philippines Rate:</span>
                         <span className="text-sm font-bold text-green-900">
-                          {detectedLocation.currencySymbol}{((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000).toLocaleString()}
+                          {detectedLocation.currencySymbol}
+                          {searchFilters.savingsView === 'monthly' 
+                            ? Math.round(((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000) / 12).toLocaleString()
+                            : ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000).toLocaleString()
+                          }
                     </span>
                       </div>
                       <div className="border-t border-green-300 pt-2 mt-2">
@@ -503,7 +516,11 @@ export function RoleSelectionStep({
                           <span className="text-sm font-bold text-green-800">Your Savings:</span>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
-                              {detectedLocation.currencySymbol}{getSavingsForRole(role).toLocaleString()}
+                              {detectedLocation.currencySymbol}
+                              {searchFilters.savingsView === 'monthly' 
+                                ? Math.round(getSavingsForRole(role) / 12).toLocaleString()
+                                : getSavingsForRole(role).toLocaleString()
+                              }
                             </div>
                             <div className="text-xs text-green-600">
                               {Math.round((getSavingsForRole(role) / (getSavingsForRole(role) + ((role as any).salaryData?.PH?.moderate?.total || (role as any).estimatedSalary?.philippine || 18000))) * 100)}% savings
@@ -518,9 +535,16 @@ export function RoleSelectionStep({
                 {/* Team Size Selector */}
                 {isSelected && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl"
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -10 }}
+                    transition={{ 
+                      duration: 0.3, 
+                      ease: "easeOut",
+                      height: { duration: 0.3 },
+                      opacity: { duration: 0.2 }
+                    }}
+                    className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
@@ -566,7 +590,12 @@ export function RoleSelectionStep({
                             Total Savings
                           </div>
                           <div className="text-lg font-bold text-cyber-green-800">
-                            {detectedLocation?.currencySymbol || '$'}{savings.toLocaleString()}/year
+                            {detectedLocation?.currencySymbol || '$'}
+                            {searchFilters.savingsView === 'monthly' 
+                              ? Math.round(savings / 12).toLocaleString()
+                              : savings.toLocaleString()
+                            }
+                            /{searchFilters.savingsView === 'monthly' ? 'month' : 'year'}
                           </div>
                         </div>
                       </div>
@@ -630,9 +659,15 @@ export function RoleSelectionStep({
               </div>
               <div>
                 <div className="text-2xl font-bold text-cyber-green-600">
-                  {detectedLocation?.currencySymbol || '$'}{getTotalSavings().toLocaleString()}
+                  {detectedLocation?.currencySymbol || '$'}
+                  {searchFilters.savingsView === 'monthly' 
+                    ? Math.round(getTotalSavings() / 12).toLocaleString()
+                    : getTotalSavings().toLocaleString()
+                  }
                 </div>
-                <div className="text-sm text-neural-blue-600">Annual Savings</div>
+                <div className="text-sm text-neural-blue-600">
+                  {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Savings
+                </div>
               </div>
             </div>
           </div>

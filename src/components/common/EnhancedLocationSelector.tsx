@@ -88,10 +88,10 @@ export function EnhancedLocationSelector({
 
   return (
     <div className="w-full">
-      {/* Search and Buttons in Same Row */}
-      <div className="flex items-center gap-3">
+      {/* Responsive Search and Buttons Layout */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {/* Country Search/Dropdown */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <div className="relative">
             <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -114,7 +114,7 @@ export function EnhancedLocationSelector({
               }}
               placeholder="Search countries..."
               disabled={disabled}
-              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm sm:text-base"
             />
             <button
               onClick={() => setShowCountryDropdown(!showCountryDropdown)}
@@ -127,13 +127,13 @@ export function EnhancedLocationSelector({
 
           {/* Country Dropdown */}
           {showCountryDropdown && !disabled && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 sm:max-h-60 overflow-y-auto left-0 right-0">
               {isLoadingCountries ? (
-                <div className="p-4 text-center text-gray-500">
+                <div className="p-3 sm:p-4 text-center text-gray-500 text-sm">
                   Loading countries...
                 </div>
               ) : (searchQuery ? filteredCountries : countries).length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
+                <div className="p-3 sm:p-4 text-center text-gray-500 text-sm">
                   No countries found
                 </div>
               ) : (
@@ -142,18 +142,18 @@ export function EnhancedLocationSelector({
                     key={country.cca2}
                     onClick={() => handleCountrySelect(country.name.common)}
                     onMouseDown={(e) => e.preventDefault()} // Prevent blur on click
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between group"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-left hover:bg-gray-50 flex items-center justify-between group"
                   >
-                    <div>
-                      <div className="font-medium text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-gray-900 text-sm sm:text-base truncate">
                         {country.name.common}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 truncate">
                         {country.region} • {country.subregion}
                       </div>
                     </div>
                     {selectedLocation.country === country.name.common && (
-                      <Check className="w-4 h-4 text-blue-600" />
+                      <Check className="w-4 h-4 text-blue-600 flex-shrink-0 ml-2" />
                     )}
                   </button>
                 ))
@@ -162,23 +162,25 @@ export function EnhancedLocationSelector({
           )}
         </div>
 
-        {/* Action Buttons */}
-        <button
-          onClick={onCancel}
-          disabled={disabled}
-          className="px-4 py-3 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-        >
-          <X className="w-4 h-4" />
-          Cancel
-        </button>
-        <button
-          onClick={onSave}
-          disabled={!isValid || disabled}
-          className="px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors whitespace-nowrap"
-        >
-          <Check className="w-4 h-4" />
-          Save Location
-        </button>
+        {/* Action Buttons - Responsive Layout */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:flex-shrink-0">
+          <button
+            onClick={onCancel}
+            disabled={disabled}
+            className="px-4 py-3 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed order-2 sm:order-1"
+          >
+            <X className="w-4 h-4" />
+            <span>Cancel</span>
+          </button>
+          <button
+            onClick={onSave}
+            disabled={!isValid || disabled}
+            className="px-4 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white text-sm font-medium rounded-lg hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-200 order-1 sm:order-2 shadow-lg disabled:shadow-none"
+          >
+            <Check className="w-4 h-4" />
+            <span>Save Location</span>
+          </button>
+        </div>
       </div>
 
       {/* Selected Location Preview */}

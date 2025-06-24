@@ -36,6 +36,7 @@ export function ExperienceStep({
   onCalculate, 
   isCalculating 
 }: ExperienceStepProps) {
+  const [savingsView, setSavingsView] = React.useState<'annual' | 'monthly'>('annual');
   
   // Get all available roles (predefined + additional + custom)
   const allRoles = React.useMemo(() => {
@@ -259,6 +260,35 @@ export function ExperienceStep({
           Configure Each Role ({activeRoles.length} role{activeRoles.length !== 1 ? 's' : ''})
         </h3>
         
+        {/* Savings View Toggle */}
+        <div className="flex justify-center">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-600">Savings view:</span>
+            <div className="flex bg-neutral-100 rounded-lg p-1">
+              <button
+                onClick={() => setSavingsView('annual')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  savingsView === 'annual'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Annual
+              </button>
+              <button
+                onClick={() => setSavingsView('monthly')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  savingsView === 'monthly'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+          </div>
+        </div>
+        
         {activeRoles.map((role, index) => {
           const roleData = allRoles.find(r => r.id === role.id);
           const distribution = role.distribution;
@@ -355,13 +385,11 @@ export function ExperienceStep({
                       {/* Key Details */}
                       <div className="space-y-2 mb-4">
                         <div className="bg-white/70 p-2 rounded text-center">
-                          <div className="flex items-center justify-center text-xs text-neutral-600 mb-1">
-                            <Clock className="w-3 h-3 mr-1" />
-                            <span>{option.timeToProductivity}</span>
+                          <div className="text-xs text-neutral-600 mb-1">
+                            <strong>Time to productivity:</strong> {option.timeToProductivity}
                           </div>
-                          <div className="flex items-center justify-center text-xs text-neutral-600">
-                            <DollarSign className="w-3 h-3 mr-1" />
-                            <span>{option.salaryRange}</span>
+                          <div className="text-xs text-neutral-600">
+                            <strong>Salary range:</strong> {option.salaryRange}
                           </div>
                         </div>
                         <div className="text-xs text-neutral-600 text-center px-2">
@@ -373,12 +401,22 @@ export function ExperienceStep({
                       {userLocation && currentCount > 0 && totalSavingsForLevel > 0 && (
                         <div className="bg-white/80 p-3 rounded-lg text-center border border-green-200">
                           <div className="text-lg font-bold text-green-600 mb-1">
-                            {userLocation.currencySymbol}{totalSavingsForLevel.toLocaleString()}
+                            {userLocation.currencySymbol}
+                            {savingsView === 'monthly' 
+                              ? Math.round(totalSavingsForLevel / 12).toLocaleString()
+                              : totalSavingsForLevel.toLocaleString()
+                            }
                           </div>
                           <div className="text-xs text-neutral-600">
-                            {currentCount} member{currentCount !== 1 ? 's' : ''} × {userLocation.currencySymbol}{savings.toLocaleString()}
+                            {currentCount} member{currentCount !== 1 ? 's' : ''} × {userLocation.currencySymbol}
+                            {savingsView === 'monthly' 
+                              ? Math.round(savings / 12).toLocaleString()
+                              : savings.toLocaleString()
+                            }
                           </div>
-                          <div className="text-xs text-green-600 font-medium">Annual savings</div>
+                          <div className="text-xs text-green-600 font-medium">
+                            {savingsView === 'monthly' ? 'Monthly' : 'Annual'} savings
+                          </div>
                         </div>
                       )}
 
@@ -458,9 +496,15 @@ export function ExperienceStep({
               </div>
                 <div className="text-center">
                 <div className="text-2xl font-bold text-cyber-green-600">
-                    {userLocation?.currencySymbol || '$'}{getTotalSavings().toLocaleString()}
+                    {userLocation?.currencySymbol || '$'}
+                    {savingsView === 'monthly' 
+                      ? Math.round(getTotalSavings() / 12).toLocaleString()
+                      : getTotalSavings().toLocaleString()
+                    }
                   </div>
-                  <div className="text-sm text-neutral-600">Annual Savings</div>
+                  <div className="text-sm text-neutral-600">
+                    {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Savings
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-neural-blue-600">
@@ -501,9 +545,15 @@ export function ExperienceStep({
                           </div>
                           <div className="text-center">
                             <div className="text-sm font-bold text-green-600">
-                              {userLocation?.currencySymbol || '$'}{totalRoleSavings.toLocaleString()}
+                              {userLocation?.currencySymbol || '$'}
+                              {savingsView === 'monthly' 
+                                ? Math.round(totalRoleSavings / 12).toLocaleString()
+                                : totalRoleSavings.toLocaleString()
+                              }
                             </div>
-                            <div className="text-xs text-neutral-600">Annual savings</div>
+                            <div className="text-xs text-neutral-600">
+                              {savingsView === 'monthly' ? 'Monthly' : 'Annual'} savings
+                            </div>
                           </div>
                         </div>
                       );

@@ -37,7 +37,7 @@ export function Header({ className = '' }: HeaderProps) {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center hover:-translate-y-0.5 transition-transform duration-300">
-              <Logo className="h-8 w-auto sm:h-10" />
+              <Logo variant="badge" size="sm" />
             </Link>
           </div>
 

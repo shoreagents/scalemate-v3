@@ -114,27 +114,33 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 0.6, duration: 0.5 }}
+      transition={{ delay: 0.7, duration: 0.5 }}
     >
-      <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+      <Card className="p-4 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
         <div 
           className="flex items-center justify-between cursor-pointer group"
           onClick={onToggle}
         >
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm group-hover:bg-neural-blue-200 transition-colors duration-300">
-              <BarChart3 className="w-6 h-6 text-neural-blue-600" />
+            <div className="p-2 lg:p-3 bg-neural-blue-100 rounded-xl shadow-sm group-hover:bg-neural-blue-200 transition-colors duration-300">
+              <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
             </div>
             <div>
-              <h3 className="text-headline-3 font-bold text-neutral-900">Role-by-Role Breakdown</h3>
-              <p className="text-body-small text-neutral-600">Detailed savings analysis for each role</p>
+              <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Role-by-Role Breakdown</h3>
+              <p className="text-sm lg:text-base text-neutral-600 hidden sm:block">Detailed savings analysis for each role</p>
+              <p className="text-xs text-neutral-600 sm:hidden">Tap to expand details</p>
             </div>
           </div>
-          {isExpanded ? (
-            <ChevronUp className="w-6 h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-          ) : (
-            <ChevronDown className="w-6 h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-          )}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center text-sm text-neutral-500">
+              <span className="mr-2">{breakdownArray.length} roles</span>
+            </div>
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
+            ) : (
+              <ChevronDown className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
+            )}
+          </div>
         </div>
 
         <AnimatePresence>
@@ -156,24 +162,25 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.3 }}
-                      className="p-5 border border-neural-blue-100 bg-white/60 backdrop-blur-sm rounded-xl hover:border-neural-blue-300 hover:shadow-lg transition-all duration-300 group"
+                      className="p-4 lg:p-5 border border-neural-blue-100 bg-white/60 backdrop-blur-sm rounded-xl hover:border-neural-blue-300 hover:shadow-lg transition-all duration-300 group"
                     >
-                      <div className="flex items-start justify-between mb-4">
+                      {/* Mobile-first header */}
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
                         <div className="flex items-center gap-3">
-                          <div className={`p-3 rounded-xl shadow-sm ${roleData.color.replace('bg-', 'bg-').replace('-600', '-100')} group-hover:scale-105 transition-transform duration-300`}>
-                            <span className="text-xl">{roleData.icon}</span>
+                          <div className={`p-2 lg:p-3 rounded-xl shadow-sm ${roleData.color.replace('bg-', 'bg-').replace('-600', '-100')} group-hover:scale-105 transition-transform duration-300`}>
+                            <span className="text-lg lg:text-xl">{roleData.icon}</span>
                           </div>
-                          <div>
-                            <h4 className="text-body-large font-bold text-neutral-900">{role.roleName}</h4>
-                            <p className="text-body-small text-neutral-600">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-base lg:text-lg font-bold text-neutral-900 truncate">{role.roleName}</h4>
+                            <p className="text-sm text-neutral-600">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-body-large font-bold text-cyber-green-600">
-                            ${role.savings.toLocaleString()}/year
+                        <div className="text-right sm:text-left lg:text-right">
+                          <p className="text-lg lg:text-xl font-bold text-cyber-green-600">
+                            ${role.savings.toLocaleString()}
                           </p>
-                          <p className="text-body-small text-neutral-600">
-                            {role.savingsPercentage.toFixed(1)}% savings
+                          <p className="text-sm text-neutral-600">
+                            {role.savingsPercentage.toFixed(1)}% savings/year
                           </p>
                         </div>
                       </div>
@@ -183,59 +190,81 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                         const experienceDistribution = getExperienceDistribution(role.roleId);
                         return (
                           <div className="space-y-4">
-                            {/* Cost Breakdown */}
-                      <div className="grid grid-cols-2 gap-4 text-body-small">
-                        <div className="p-3 bg-neural-blue-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Australian Cost</p>
-                          <p className="font-bold text-neutral-900">${role.australianCost.toLocaleString()}/year</p>
+                            {/* Enhanced Cost Breakdown */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                        <div className="p-3 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <p className="text-red-700 font-medium text-xs">Current Cost</p>
+                          </div>
+                          <p className="font-bold text-red-800 text-base">${role.australianCost.toLocaleString()}</p>
+                          <p className="text-xs text-red-600 mt-1">Australian workforce</p>
                         </div>
-                        <div className="p-3 bg-cyber-green-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Philippine Cost</p>
-                          <p className="font-bold text-neutral-900">${role.philippineCost.toLocaleString()}/year</p>
+                        <div className="p-3 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
+                            <p className="text-cyber-green-700 font-medium text-xs">Offshore Cost</p>
+                          </div>
+                          <p className="font-bold text-cyber-green-800 text-base">${role.philippineCost.toLocaleString()}</p>
+                          <p className="text-xs text-cyber-green-600 mt-1">Philippine workforce</p>
                         </div>
-                        <div className="p-3 bg-quantum-purple-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Tasks Selected</p>
-                          <p className="font-bold text-neutral-900">{role.selectedTasksCount} tasks</p>
+                        <div className="p-3 bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
+                            <p className="text-neural-blue-700 font-medium text-xs">Core Tasks</p>
+                          </div>
+                          <p className="font-bold text-neural-blue-800 text-base">{role.selectedTasksCount}</p>
+                          <p className="text-xs text-neural-blue-600 mt-1">Standard tasks</p>
                         </div>
-                        <div className="p-3 bg-matrix-orange-50/50 rounded-lg">
-                          <p className="text-neutral-600 mb-1">Implementation</p>
-                          <p className="font-bold text-neutral-900">{role.estimatedImplementationTime} days</p>
+                        <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                            <p className="text-amber-700 font-medium text-xs">Implementation</p>
+                          </div>
+                          <p className="font-bold text-amber-800 text-base">{role.estimatedImplementationTime}</p>
+                          <p className="text-xs text-amber-600 mt-1">days to deploy</p>
                         </div>
                       </div>
 
-                            {/* Multi-Level Experience Breakdown */}
+                            {/* Enhanced Multi-Level Experience Breakdown */}
                             {experienceDistribution && experienceDistribution.totalAssigned > 0 && (
                               <div className="p-4 bg-gradient-to-r from-neural-blue-50/30 to-quantum-purple-50/30 rounded-xl border border-neural-blue-100">
                                 <h5 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
                                   <Users className="w-4 h-4" />
                                   Team Composition ({experienceDistribution.totalAssigned} members)
                                 </h5>
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                   {experienceDistribution.entry > 0 && (
-                                    <div className="text-center">
-                                      <div className={`w-12 h-12 mx-auto rounded-xl ${getExperienceLevelColor('entry')} flex items-center justify-center mb-2`}>
-                                        <span className="text-lg font-bold">{experienceDistribution.entry}</span>
+                                    <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
+                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('entry')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
+                                        <span className="text-base sm:text-lg font-bold">{experienceDistribution.entry}</span>
                                       </div>
-                                      <div className="text-xs font-medium text-neutral-700">Entry Level</div>
-                                      <div className="text-xs text-neutral-500">Fresh talent</div>
+                                      <div className="flex-1 sm:flex-none">
+                                        <div className="text-sm sm:text-xs font-medium text-neutral-700">Entry Level</div>
+                                        <div className="text-xs text-neutral-500">Fresh talent</div>
+                                      </div>
                                     </div>
                                   )}
                                   {experienceDistribution.moderate > 0 && (
-                                    <div className="text-center">
-                                      <div className={`w-12 h-12 mx-auto rounded-xl ${getExperienceLevelColor('moderate')} flex items-center justify-center mb-2`}>
-                                        <span className="text-lg font-bold">{experienceDistribution.moderate}</span>
+                                    <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
+                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('moderate')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
+                                        <span className="text-base sm:text-lg font-bold">{experienceDistribution.moderate}</span>
                                       </div>
-                                      <div className="text-xs font-medium text-neutral-700">Mid-Level</div>
-                                      <div className="text-xs text-neutral-500">Experienced</div>
+                                      <div className="flex-1 sm:flex-none">
+                                        <div className="text-sm sm:text-xs font-medium text-neutral-700">Mid-Level</div>
+                                        <div className="text-xs text-neutral-500">Experienced</div>
+                                      </div>
                                     </div>
                                   )}
                                   {experienceDistribution.experienced > 0 && (
-                                    <div className="text-center">
-                                      <div className={`w-12 h-12 mx-auto rounded-xl ${getExperienceLevelColor('experienced')} flex items-center justify-center mb-2`}>
-                                        <span className="text-lg font-bold">{experienceDistribution.experienced}</span>
+                                    <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
+                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('experienced')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
+                                        <span className="text-base sm:text-lg font-bold">{experienceDistribution.experienced}</span>
                                       </div>
-                                      <div className="text-xs font-medium text-neutral-700">Senior Level</div>
-                                      <div className="text-xs text-neutral-500">Leadership</div>
+                                      <div className="flex-1 sm:flex-none">
+                                        <div className="text-sm sm:text-xs font-medium text-neutral-700">Senior Level</div>
+                                        <div className="text-xs text-neutral-500">Leadership</div>
+                                      </div>
                                     </div>
                                   )}
                                 </div>
@@ -365,78 +394,97 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         </p>
       </motion.div>
 
-      {/* Tab Navigation */}
+      {/* Enhanced Tab Navigation */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
         className="flex justify-center"
       >
         {/* Desktop Tab Navigation */}
-        <div className="hidden sm:block bg-white border border-neural-blue-200 rounded-2xl p-1 shadow-lg">
+        <div className="hidden md:block bg-white/80 backdrop-blur-sm border border-neural-blue-200 rounded-2xl p-1 shadow-lg">
           <div className="flex">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-4 lg:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === 'overview'
-                  ? 'bg-neural-blue-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg transform scale-105'
                   : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              Overview & Analysis
+              <span className="hidden lg:inline">Overview & Analysis</span>
+              <span className="lg:hidden">Overview</span>
             </button>
-            
-            {/* Divider */}
-            <div className="w-px bg-neural-blue-200 mx-1 my-2"></div>
             
             <button
               onClick={() => setActiveTab('implementation')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-4 lg:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === 'implementation'
-                  ? 'bg-neural-blue-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg transform scale-105'
                   : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
               }`}
             >
               <ClipboardList className="w-4 h-4" />
-              Implementation Plan
+              <span className="hidden lg:inline">Implementation Plan</span>
+              <span className="lg:hidden">Plan</span>
             </button>
-            
-            {/* Divider */}
-            <div className="w-px bg-neural-blue-200 mx-1 my-2"></div>
             
             <button
               onClick={() => setActiveTab('pitch')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center gap-2 px-4 lg:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === 'pitch'
-                  ? 'bg-neural-blue-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg transform scale-105'
                   : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
               }`}
             >
               <Presentation className="w-4 h-4" />
-              Pitch Deck
+              <span className="hidden lg:inline">Pitch Deck</span>
+              <span className="lg:hidden">Pitch</span>
             </button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Navigation */}
-        <div className="sm:hidden w-full">
-          <div className="relative">
-            <div className="absolute left-5 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none">
-              {activeTab === 'overview' && <BarChart3 className="w-5 h-5 text-neural-blue-600" />}
-              {activeTab === 'implementation' && <ClipboardList className="w-5 h-5 text-neural-blue-600" />}
-              {activeTab === 'pitch' && <Presentation className="w-5 h-5 text-neural-blue-600" />}
+        {/* Mobile Tab Buttons */}
+        <div className="md:hidden w-full max-w-sm">
+          <div className="bg-white/80 backdrop-blur-sm border border-neural-blue-200 rounded-2xl p-1 shadow-lg">
+            <div className="grid grid-cols-3 gap-1">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 ${
+                  activeTab === 'overview'
+                    ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg'
+                    : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Overview
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('implementation')}
+                className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 ${
+                  activeTab === 'implementation'
+                    ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg'
+                    : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+                Plan
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('pitch')}
+                className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 ${
+                  activeTab === 'pitch'
+                    ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg'
+                    : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-50'
+                }`}
+              >
+                <Presentation className="w-4 h-4" />
+                Pitch
+              </button>
             </div>
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value as 'overview' | 'implementation' | 'pitch')}
-              className="w-full bg-white border border-neural-blue-200 rounded-2xl pl-14 pr-12 py-4 text-base font-medium text-neural-blue-700 shadow-lg appearance-none cursor-pointer focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 transition-all duration-300"
-            >
-              <option value="overview">Overview & Analysis</option>
-              <option value="implementation">Implementation Plan</option>
-              <option value="pitch">Pitch Deck</option>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-neural-blue-500 pointer-events-none" />
           </div>
         </div>
       </motion.div>
@@ -452,40 +500,87 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             transition={{ duration: 0.3 }}
             className="space-y-8"
           >
-            {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-stretch">
-        <ResultCard
-          icon={<DollarSign className="w-6 h-6 text-neural-blue-600" />}
-          title="Total Annual Savings"
-          value={formatCurrency(result.totalSavings)}
-          subtitle={`${formatPercentage(result.averageSavingsPercentage)} average savings`}
-          color="border-l-neural-blue-500"
-          delay={0.1}
-        />
-        <ResultCard
-          icon={<Users className="w-6 h-6 text-neural-blue-600" />}
-          title="Team Size"
-          value={`${result.totalTeamSize} members`}
-          subtitle={`Across ${Object.keys(result.breakdown).length} roles`}
-          color="border-l-neural-blue-500"
-          delay={0.2}
-        />
-        <ResultCard
-          icon={<TrendingUp className="w-6 h-6 text-neural-blue-600" />}
-          title="ROI Estimate"
-          value={`${result.estimatedROI.toFixed(1)}x`}
-          subtitle="Return on investment"
-          color="border-l-neural-blue-500"
-          delay={0.3}
-        />
-        <ResultCard
-          icon={<Clock className="w-6 h-6 text-neural-blue-600" />}
-          title="Implementation"
-          value={`${result.implementationTimeline.fullImplementation} weeks`}
-          subtitle="Full deployment timeline"
-          color="border-l-neural-blue-500"
-          delay={0.4}
-        />
+            {/* Key Metrics - Enhanced Responsive Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="sm:col-span-2 xl:col-span-1"
+        >
+          <Card className="p-4 lg:p-6 border-l-4 border-l-cyber-green-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-cyber-green-50/30 h-full">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <div className="p-2 lg:p-3 rounded-xl bg-cyber-green-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-cyber-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs lg:text-sm font-medium text-cyber-green-700 mb-1 truncate">Total Annual Savings</p>
+                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-cyber-green-800 truncate">{formatCurrency(result.totalSavings)}</p>
+                <p className="text-xs lg:text-sm text-cyber-green-600 mt-1 truncate">{formatPercentage(result.averageSavingsPercentage)} average savings</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="xl:col-span-1"
+        >
+          <Card className="p-4 lg:p-6 border-l-4 border-l-neural-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-neural-blue-50/30 h-full">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <div className="p-2 lg:p-3 rounded-xl bg-neural-blue-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                <Users className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs lg:text-sm font-medium text-neural-blue-700 mb-1 truncate">Team Size</p>
+                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-neural-blue-800 truncate">{result.totalTeamSize}</p>
+                <p className="text-xs lg:text-sm text-neural-blue-600 mt-1 truncate">Across {Object.keys(result.breakdown).length} roles</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="xl:col-span-1"
+        >
+          <Card className="p-4 lg:p-6 border-l-4 border-l-quantum-purple-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-quantum-purple-50/30 h-full">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <div className="p-2 lg:p-3 rounded-xl bg-quantum-purple-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-quantum-purple-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs lg:text-sm font-medium text-quantum-purple-700 mb-1 truncate">ROI Estimate</p>
+                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-quantum-purple-800 truncate">{result.estimatedROI.toFixed(1)}x</p>
+                <p className="text-xs lg:text-sm text-quantum-purple-600 mt-1 truncate">Return on investment</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="xl:col-span-1"
+        >
+          <Card className="p-4 lg:p-6 border-l-4 border-l-amber-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-amber-50/30 h-full">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <div className="p-2 lg:p-3 rounded-xl bg-amber-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs lg:text-sm font-medium text-amber-700 mb-1 truncate">Implementation</p>
+                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-amber-800 truncate">{result.implementationTimeline.fullImplementation}</p>
+                <p className="text-xs lg:text-sm text-amber-600 mt-1 truncate">weeks to deploy</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Enhanced Team Composition Overview */}
@@ -605,52 +700,109 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         </Card>
       </motion.div>
 
-      {/* Cost Comparison */}
+      {/* Enhanced Cost Comparison */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+        <Card className="p-4 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
-              <PieChart className="w-6 h-6 text-neural-blue-600" />
+            <div className="p-2 lg:p-3 bg-neural-blue-100 rounded-xl shadow-sm">
+              <PieChart className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
             </div>
             <div>
-              <h3 className="text-headline-3 font-bold text-neutral-900">Cost Comparison</h3>
-              <p className="text-body-small text-neutral-600">Australian vs Philippine workforce costs</p>
+              <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Cost Comparison</h3>
+              <p className="text-sm lg:text-base text-neutral-600">Australian vs Philippine workforce costs</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <div className="text-center">
-              <div className="p-4 sm:p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <Globe className="w-10 h-10 text-red-600 mx-auto mb-3" />
-                <p className="text-body-small font-medium text-red-800 mb-2">Australian Workforce</p>
-                <p className="text-headline-3 font-bold text-red-600">
+          {/* Mobile-first layout */}
+          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
+            {/* Current Cost */}
+            <div className="relative">
+              <div className="p-4 lg:p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 text-center">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="p-2 bg-red-200 rounded-full">
+                    <Globe className="w-6 h-6 lg:w-8 lg:h-8 text-red-600" />
+                  </div>
+                </div>
+                <p className="text-xs lg:text-sm font-medium text-red-800 mb-2">Current Australian Cost</p>
+                <p className="text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 mb-1">
                   {formatCurrency(result.totalAustralianCost)}
                 </p>
-                <p className="text-caption text-red-600 mt-1">per year</p>
+                <p className="text-xs lg:text-sm text-red-600">per year</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-center">
+            {/* Savings Arrow - Hidden on mobile, shown on desktop */}
+            <div className="hidden lg:flex items-center justify-center">
               <div className="text-center">
-                <ArrowRight className="w-10 h-10 text-neural-blue-400 mx-auto mb-3" />
-                <div className="px-6 py-3 bg-gradient-to-r from-cyber-green-100 to-cyber-green-200 text-cyber-green-800 rounded-full shadow-md">
-                  <p className="text-body-large font-bold">Save {formatPercentage(result.averageSavingsPercentage)}</p>
+                <motion.div
+                  animate={{ x: [0, 10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ArrowRight className="w-8 h-8 lg:w-10 lg:h-10 text-neural-blue-400 mx-auto mb-3" />
+                </motion.div>
+                <div className="px-4 lg:px-6 py-2 lg:py-3 bg-gradient-to-r from-cyber-green-100 to-cyber-green-200 text-cyber-green-800 rounded-full shadow-md">
+                  <p className="text-sm lg:text-base font-bold">Save {formatPercentage(result.averageSavingsPercentage)}</p>
                 </div>
               </div>
             </div>
 
-            <div className="text-center">
-              <div className="p-4 sm:p-6 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <Globe className="w-10 h-10 text-cyber-green-600 mx-auto mb-3" />
-                <p className="text-body-small font-medium text-cyber-green-800 mb-2">Philippine Workforce</p>
-                <p className="text-headline-3 font-bold text-cyber-green-600">
+            {/* Mobile Savings Badge */}
+            <div className="lg:hidden flex justify-center">
+              <div className="px-6 py-3 bg-gradient-to-r from-cyber-green-100 to-cyber-green-200 text-cyber-green-800 rounded-full shadow-md">
+                <p className="text-base font-bold flex items-center gap-2">
+                  <TrendingDown className="w-5 h-5" />
+                  Save {formatPercentage(result.averageSavingsPercentage)}
+                </p>
+              </div>
+            </div>
+
+            {/* Offshore Cost */}
+            <div className="relative">
+              <div className="p-4 lg:p-6 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 text-center">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="p-2 bg-cyber-green-200 rounded-full">
+                    <Globe className="w-6 h-6 lg:w-8 lg:h-8 text-cyber-green-600" />
+                  </div>
+                </div>
+                <p className="text-xs lg:text-sm font-medium text-cyber-green-800 mb-2">Offshore Philippine Cost</p>
+                <p className="text-xl lg:text-2xl xl:text-3xl font-bold text-cyber-green-600 mb-1">
                   {formatCurrency(result.totalPhilippineCost)}
                 </p>
-                <p className="text-caption text-cyber-green-600 mt-1">per year</p>
+                <p className="text-xs lg:text-sm text-cyber-green-600">per year</p>
+              </div>
+              
+              {/* Mobile savings badge overlay */}
+              <div className="lg:hidden absolute -top-2 -right-2">
+                <div className="w-8 h-8 bg-cyber-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Savings Summary */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-cyber-green-50 to-emerald-50 border border-cyber-green-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-cyber-green-100 rounded-lg">
+                  <Star className="w-5 h-5 text-cyber-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-cyber-green-800">Your Annual Savings</p>
+                  <p className="text-xs text-cyber-green-600">By switching to offshore talent</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xl lg:text-2xl font-bold text-cyber-green-700">
+                  {formatCurrency(result.totalSavings)}
+                </p>
+                <p className="text-xs lg:text-sm text-cyber-green-600">
+                  {formatPercentage(result.averageSavingsPercentage)} reduction
+                </p>
               </div>
             </div>
           </div>

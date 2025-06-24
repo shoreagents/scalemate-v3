@@ -134,48 +134,48 @@ export function PortfolioStep({
         </div>
         
         {/* Location Section with Background */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-6 max-w-4xl mx-auto">
-          <div className="text-center mb-4">
-            <h3 className="text-xl font-bold text-neutral-900 mb-2">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-6 max-w-5xl mx-auto">
+          <div className="text-center mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-neutral-900 mb-2">
               Where is your property management business primarily located?
             </h3>
-            <p className="text-neutral-600">
+            <p className="text-sm sm:text-base text-neutral-600 px-2">
               We'll use this to show you accurate cost comparisons and savings calculations in your local currency.
             </p>
           </div>
           
-          {/* Horizontal Location Row */}
-          <div className="flex items-center justify-center gap-4 flex-wrap">
+          {/* Responsive Location Row */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             {isLoadingLocation ? (
               <div className="flex items-center gap-3">
                 <div className="animate-spin">
                   <Wifi className="w-5 h-5 text-blue-500" />
                 </div>
-                <span className="text-neutral-700 font-medium">
+                <span className="text-neutral-700 font-medium text-sm sm:text-base">
                   Detecting your location...
                 </span>
               </div>
             ) : locationError && !isLoadingLocation && !manualLocation ? (
-              <>
-                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
-                  <Globe className="w-5 h-5 text-neutral-500" />
-                  <span className="text-neutral-700 font-medium">
+              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-3 bg-white rounded-lg border border-neutral-200 w-full sm:w-auto justify-center sm:justify-start">
+                  <Globe className="w-4 sm:w-5 h-4 sm:h-5 text-neutral-500" />
+                  <span className="text-neutral-700 font-medium text-sm sm:text-base">
                     {locationError}
                   </span>
                 </div>
                 <button
                   onClick={onLocationEditStart}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="px-4 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow transition-all duration-200 font-medium text-sm sm:text-base w-full sm:w-auto shadow-lg"
                 >
                   Set Location Manually
                 </button>
-              </>
+              </div>
             ) : (getEffectiveLocation?.()) ? (
-              <>
+              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
                 {/* Location Display */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-blue-200 shadow-sm">
-                  <span className="text-lg">🌏</span>
-                  <span className="font-medium text-neutral-900">
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-lg border border-blue-200 shadow-sm w-full sm:w-auto justify-center sm:justify-start">
+                  <span className="text-base sm:text-lg">🌏</span>
+                  <span className="font-medium text-neutral-900 text-sm sm:text-base">
                     {getEffectiveLocation?.()?.country_name}
                   </span>
                 </div>
@@ -183,28 +183,29 @@ export function PortfolioStep({
                 {/* Change Button */}
                 <button
                   onClick={onLocationEditStart}
-                  className="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-lg hover:bg-blue-100 bg-white shadow-sm"
+                  className="px-3 sm:px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-lg hover:bg-blue-100 bg-white shadow-sm text-sm sm:text-base w-full sm:w-auto justify-center"
                 >
                   <Edit3 className="w-4 h-4" />
-                  Change Location
+                  <span className="sm:inline">Change Location</span>
+                  <span className="sm:hidden">Change</span>
                 </button>
                 
                 {manualLocation && (
                   <button
                     onClick={onLocationReset}
-                    className="text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors"
+                    className="text-xs sm:text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors mt-2 sm:mt-0"
                   >
                     Reset to auto-detected
                   </button>
                 )}
-              </>
+              </div>
             ) : null}
           </div>
           
           {/* Location Edit Modal */}
           {isEditingLocation && (
-            <div className="mt-6">
-              <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
+            <div className="mt-4 sm:mt-6">
+              <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-6 shadow-lg">
                 <EnhancedLocationSelector
                   {...(tempLocation && tempLocation.country && {
                     initialLocation: {

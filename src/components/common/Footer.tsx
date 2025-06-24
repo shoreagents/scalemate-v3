@@ -105,7 +105,7 @@ export function Footer({ className = '' }: FooterProps) {
           {/* Company Info */}
           <div className="lg:col-span-4">
             <Link href="/" className="inline-block mb-6 hover:-translate-y-0.5 transition-transform duration-300">
-              <Logo className="h-10 w-auto" />
+              <Logo variant="badge" size="sm" />
             </Link>
             <p className="text-neural-blue-200 mb-6 max-w-md">
               ScaleMate empowers property management companies to scale efficiently through AI-powered offshore teams and intelligent automation.
