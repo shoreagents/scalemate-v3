@@ -1298,47 +1298,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
 
 
 
-      {/* Call to Action */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.0, duration: 0.5 }}
-      >
-        <Card className="p-8 bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium mb-4">
-              <Star className="w-4 h-4" />
-              Ready to Get Started?
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Turn These Savings Into Reality
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Connect with our offshore scaling experts to implement your personalized strategy 
-              and start saving {formatCurrency(result.totalSavings)} annually.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                variant="primary" 
-                leftIcon={<Target className="w-5 h-5" />}
-                className="w-full sm:w-[256px] px-6 py-3 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
-              >
-                Get Implementation Plan
-              </Button>
-              
-              <div className="flex gap-2 items-center w-full sm:w-auto">
-                <Button 
-                  variant="outline" 
-                  leftIcon={<Calendar className="w-5 h-5" />}
-                  className="flex-1 sm:min-w-[200px] sm:flex-initial px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  Schedule Consultation
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
+
 
           </motion.div>
         )}
@@ -1780,38 +1740,44 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         )}
       </AnimatePresence>
 
-      {/* Universal Action Buttons */}
+      {/* Universal Action Buttons with StepIndicator Style Background */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
-        className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+        className="mt-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-8 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden"
       >
-        {/* Download Button Container */}
-        <Button 
-          variant="primary" 
-          leftIcon={<Download className="w-5 h-5" />}
-          className="w-full sm:w-[256px] px-6 py-3 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
-        >
-          Download Complete Report
-        </Button>
-        
-        {/* Start New Calculation + Share Icon Container */}
-        <div className="flex gap-2 items-center w-full sm:w-auto">
-          <Button 
-            variant="outline" 
-            onClick={onRestart} 
-            leftIcon={<Calculator className="w-5 h-5" />}
-            className="flex-1 sm:min-w-[200px] sm:flex-initial px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300"
-          >
-            Start New Calculation
-          </Button>
-          <Button 
-            variant="secondary" 
-            className="w-12 h-12 p-3 border-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center flex-shrink-0"
-          >
-            <Share2 className="w-5 h-5" />
-          </Button>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+        <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {/* Download Button Container */}
+            <Button 
+              variant="primary" 
+              leftIcon={<Download className="w-5 h-5" />}
+              className="w-full sm:w-[256px] px-6 py-3 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+            >
+              Download Complete Report
+            </Button>
+            
+            {/* Start New Calculation + Share Icon Container */}
+            <div className="flex gap-2 items-center w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                onClick={onRestart} 
+                leftIcon={<Calculator className="w-5 h-5" />}
+                className="flex-1 sm:min-w-[200px] sm:flex-initial px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300"
+              >
+                Start New Calculation
+              </Button>
+              <Button 
+                variant="secondary" 
+                className="w-12 h-12 p-3 border-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center flex-shrink-0"
+              >
+                <Share2 className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </motion.div>
 
