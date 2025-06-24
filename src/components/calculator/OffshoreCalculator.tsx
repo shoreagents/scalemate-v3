@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
 import { calculateSavings } from '@/utils/calculations';
-import { DEFAULT_FORM_DATA } from '@/utils/quoteCalculatorData';
+import { DEFAULT_FORM_DATA } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
@@ -331,7 +331,7 @@ export function OffshoreCalculator({
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
       
-      const result = calculateSavings(formData);
+      const result = calculateSavings(formData, formData.portfolioIndicators);
       setCalculationResult(result);
       setProcessingStage('');
       
@@ -404,9 +404,10 @@ export function OffshoreCalculator({
             onLocationReset={resetToAutoLocation}
             onTempLocationChange={setTempLocation}
             getEffectiveLocation={getEffectiveLocation}
-            onChange={(portfolioSize, manualData) => updateFormData({ 
+            onChange={(portfolioSize, manualData, portfolioIndicators) => updateFormData({ 
               portfolioSize, 
-              ...(manualData !== undefined && { manualPortfolioData: manualData })
+              ...(manualData !== undefined && { manualPortfolioData: manualData }),
+              ...(portfolioIndicators !== undefined && { portfolioIndicators })
             })}
           />
         );

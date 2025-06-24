@@ -216,6 +216,7 @@ export interface CustomTask {
 export interface FormData {
   portfolioSize: PortfolioSize | '';
   manualPortfolioData?: ManualPortfolioData; // For manual input mode
+  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>; // Dynamic location-based indicators
   selectedRoles: Record<string, boolean>; // Changed to string to support custom role IDs
   customRoles: Record<string, CustomRole>; // Store custom role definitions
   selectedTasks: Record<string, boolean>; // key format: "roleId-taskId"

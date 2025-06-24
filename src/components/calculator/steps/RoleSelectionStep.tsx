@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 import { RoleId, Country, LocationData, CustomRole, RoleCategory } from '@/types';
-import { ENHANCED_SALARY_DATA, COUNTRY_DATA, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES, detectUserLocation } from '@/utils/quoteCalculatorData';
+import { ENHANCED_SALARY_DATA, COUNTRY_DATA, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES, detectUserLocation } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { 

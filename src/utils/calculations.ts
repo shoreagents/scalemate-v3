@@ -7,21 +7,24 @@ import {
   BusinessTier,
   PortfolioSize,
   Task,
-  RoleExperienceDistribution
+  RoleExperienceDistribution,
+  PortfolioIndicator
 } from '@/types';
 import { 
   SALARY_DATA, 
-  PORTFOLIO_INDICATORS, 
   TASK_COMPLEXITY_MULTIPLIERS, 
   ROLES,
   detectBusinessTier
-} from './quoteCalculatorData';
+} from './dataQuoteCalculator';
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling
  * Updated to handle multi-level experience distribution per role
  */
-export const calculateSavings = (formData: FormData): CalculationResult => {
+export const calculateSavings = (
+  formData: FormData, 
+  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>
+): CalculationResult => {
   const selectedRoles = Object.entries(formData.selectedRoles)
     .filter(([_, selected]) => selected)
     .map(([roleId]) => roleId as RoleId);
@@ -178,7 +181,7 @@ export const calculateSavings = (formData: FormData): CalculationResult => {
     : 0;
 
   // Get portfolio tier
-  const portfolioTier = getPortfolioTier(formData);
+  const portfolioTier = getPortfolioTier(formData, portfolioIndicators);
 
   // Calculate lead score
   const leadScore = calculateLeadScore(formData, totalSavings, totalTeamSize);
@@ -389,11 +392,20 @@ const assessRiskFactorsMultiLevel = (
 /**
  * Get portfolio tier from portfolio size or manual data
  */
-const getPortfolioTier = (formData: FormData): BusinessTier => {
+const getPortfolioTier = (
+  formData: FormData, 
+  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>
+): BusinessTier => {
   if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
     return formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData);
   }
-  return PORTFOLIO_INDICATORS[formData.portfolioSize as Exclude<PortfolioSize, 'manual'>]?.tier || 'growing';
+  
+  if (portfolioIndicators) {
+    return portfolioIndicators[formData.portfolioSize as Exclude<PortfolioSize, 'manual'>]?.tier || 'growing';
+  }
+  
+  // Fallback to default tier
+  return 'growing';
 };
 
 /**

@@ -1,10 +1,11 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import { PortfolioSize, ManualPortfolioData, RevenueRange } from '@/types';
-import { PORTFOLIO_INDICATORS, REVENUE_RANGES, detectBusinessTier } from '@/utils/quoteCalculatorData';
-import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, Sparkles, CheckCircle, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PortfolioSize, ManualPortfolioData, RevenueRange, PortfolioIndicator } from '@/types';
+import { REVENUE_RANGES, detectBusinessTier } from '@/utils/dataQuoteCalculator';
+import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, Sparkles, CheckCircle, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X, RefreshCw } from 'lucide-react';
 import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
 
 interface LocationData {
@@ -44,7 +45,7 @@ interface PortfolioStepProps {
   onLocationReset?: () => void;
   onTempLocationChange?: (location: ManualLocation) => void;
   getEffectiveLocation?: () => LocationData | { city: string; region: string; country_name: string; } | null | undefined;
-  onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined) => void;
+  onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => void;
 }
 
 export function PortfolioStep({ 
@@ -74,13 +75,27 @@ export function PortfolioStep({
     }
   );
 
-  const portfolioOptions = Object.entries(PORTFOLIO_INDICATORS)
+  // Use dynamic portfolio indicators based on location
+  const { 
+    portfolioIndicators, 
+    isLoading: isLoadingIndicators, 
+    error: indicatorsError,
+    refreshIndicators,
+    isUsingDynamicData 
+  } = useQuoteCalculatorData(locationData, manualLocation);
+
+  const portfolioOptions = Object.entries(portfolioIndicators)
     .filter(([size]) => size !== 'manual')
     .map(([size, data]) => ({
       value: size as PortfolioSize,
       label: `${data.min}${data.max === 99999 ? '+' : `-${data.max}`} Properties`,
       ...data
     }));
+
+  // Update form data with portfolio indicators when they change
+  useEffect(() => {
+    onChange(value, manualData, portfolioIndicators);
+  }, [portfolioIndicators]); // Only trigger when portfolio indicators change
 
   const handlePresetSelection = (portfolioSize: PortfolioSize) => {
     setShowPreciseInput(false);
@@ -141,6 +156,45 @@ export function PortfolioStep({
             transition={{ delay: 0.5 }}
             className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4"
           >
+            {/* Dynamic Data Indicator */}
+            {isUsingDynamicData && (
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <span className="text-xs text-blue-600 font-medium">
+                  Location-optimized data
+                </span>
+                <button
+                  onClick={refreshIndicators}
+                  disabled={isLoadingIndicators}
+                  className="ml-2 p-1 text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                  title="Refresh location data"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isLoadingIndicators ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            )}
+            
+            {/* Loading Indicator for Portfolio Data */}
+            {isLoadingIndicators && (
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="animate-spin">
+                  <RefreshCw className="w-4 h-4 text-blue-500" />
+                </div>
+                <span className="text-xs text-blue-600 font-medium">
+                  Loading location-specific data...
+                </span>
+              </div>
+            )}
+            
+            {/* Error Indicator */}
+            {indicatorsError && (
+              <div className="flex items-center justify-center gap-2 mb-2 text-orange-600">
+                <X className="w-4 h-4" />
+                <span className="text-xs font-medium">
+                  Using fallback data - {indicatorsError}
+                </span>
+              </div>
+            )}
             {!isEditingLocation ? (
               <div className="flex items-center justify-center gap-3">
                 {isLoadingLocation ? (
