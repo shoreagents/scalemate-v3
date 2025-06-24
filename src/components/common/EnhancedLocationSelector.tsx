@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Globe, Check, X, ChevronDown, MapPinIcon, Navigation } from 'lucide-react';
-import { fetchCountries, getMajorCities, getCountryRegions, getPopularCountries, searchCountries, type Country } from '@/utils/locationApi';
+import { motion } from 'framer-motion';
+import { MapPin, Globe, Check, X, ChevronDown, MapPinIcon } from 'lucide-react';
+import { fetchCountries, searchCountries, type Country } from '@/utils/locationApi';
 
 interface LocationData {
   country: string;
@@ -30,12 +30,9 @@ export function EnhancedLocationSelector({
 }: EnhancedLocationSelectorProps) {
   const [countries, setCountries] = useState<Country[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
-  const [popularCountries] = useState<string[]>(getPopularCountries());
   const [isLoadingCountries, setIsLoadingCountries] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
   
   const [selectedLocation, setSelectedLocation] = useState<LocationData>(
     initialLocation || { country: '', region: '', city: '' }
@@ -87,54 +84,14 @@ export function EnhancedLocationSelector({
     setShowCountryDropdown(false);
   };
 
-  const handleRegionSelect = (region: string) => {
-    setSelectedLocation(prev => ({
-      ...prev,
-      region,
-      city: '' // Reset city when region changes
-    }));
-  };
-
-  const handleCitySelect = (city: string) => {
-    setSelectedLocation(prev => ({
-      ...prev,
-      city
-    }));
-    setShowCityDropdown(false);
-  };
-
-  const getAvailableRegions = () => {
-    if (!selectedLocation.country) return [];
-    const regions = getCountryRegions(selectedLocation.country);
-    console.log('Available regions for', selectedLocation.country, ':', regions);
-    return regions;
-  };
-
-  const getAvailableCities = () => {
-    if (!selectedLocation.country) return [];
-    return getMajorCities(selectedLocation.country);
-  };
-
   const isValid = selectedLocation.country;
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <MapPinIcon className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">
-            Set Your Location
-          </h3>
-        </div>
-        <p className="text-sm text-gray-600">
-          Choose your country for location-specific insights
-        </p>
-      </div>
-
-            {/* Country Selection */}
-      <div className="space-y-2">
+    <div className="w-full">
+      {/* Search and Buttons in Same Row */}
+      <div className="flex items-center gap-3">
         {/* Country Search/Dropdown */}
-        <div className="relative">
+        <div className="relative flex-1">
           <div className="relative">
             <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -180,7 +137,7 @@ export function EnhancedLocationSelector({
                   No countries found
                 </div>
               ) : (
-                (searchQuery ? filteredCountries : countries).slice(0, 50).map(country => (
+                (searchQuery ? filteredCountries : countries).map(country => (
                   <button
                     key={country.cca2}
                     onClick={() => handleCountrySelect(country.name.common)}
@@ -204,16 +161,12 @@ export function EnhancedLocationSelector({
             </div>
           )}
         </div>
-      </div>
 
-
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-center gap-3 pt-4">
+        {/* Action Buttons */}
         <button
           onClick={onCancel}
           disabled={disabled}
-          className="px-6 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
           <X className="w-4 h-4" />
           Cancel
@@ -221,7 +174,7 @@ export function EnhancedLocationSelector({
         <button
           onClick={onSave}
           disabled={!isValid || disabled}
-          className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+          className="px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors whitespace-nowrap"
         >
           <Check className="w-4 h-4" />
           Save Location
