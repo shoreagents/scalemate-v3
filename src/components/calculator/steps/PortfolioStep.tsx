@@ -87,10 +87,10 @@ export function PortfolioStep({
   const portfolioOptions = Object.entries(portfolioIndicators)
     .filter(([size]) => size !== 'manual')
     .map(([size, data]) => ({
-      value: size as PortfolioSize,
-      label: `${data.min}${data.max === 99999 ? '+' : `-${data.max}`} Properties`,
-      ...data
-    }));
+    value: size as PortfolioSize,
+    label: `${data.min}${data.max === 99999 ? '+' : `-${data.max}`} Properties`,
+    ...data
+  }));
 
   // Update form data with portfolio indicators when they change
   useEffect(() => {
@@ -140,136 +140,108 @@ export function PortfolioStep({
 
   return (
     <div className="mx-auto" style={{ maxWidth: '1400px' }}>
-      {/* Header */}
+            {/* Header */}
       <div className="text-center mb-8">
-        <div className="mb-4">
+        <div className="mb-6">
           <h2 className="text-headline-1 text-neutral-900 text-center">
             Tell us about your property portfolio
           </h2>
         </div>
         
-        {/* Location Display - moved from main calculator */}
-        <div className="mt-4 mb-6 max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4"
-          >
-            {/* Dynamic Data Indicator */}
-            {isUsingDynamicData && (
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <span className="text-xs text-blue-600 font-medium">
-                  Location-optimized data
-                </span>
-                <button
-                  onClick={refreshIndicators}
-                  disabled={isLoadingIndicators}
-                  className="ml-2 p-1 text-blue-600 hover:text-blue-700 disabled:opacity-50"
-                  title="Refresh location data"
-                >
-                  <RefreshCw className={`w-3 h-3 ${isLoadingIndicators ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
-            )}
-            
-            {/* Loading Indicator for Portfolio Data */}
-            {isLoadingIndicators && (
-              <div className="flex items-center justify-center gap-2 mb-2">
+        {/* Location Section with Background */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-6 max-w-4xl mx-auto">
+          <div className="text-center mb-4">
+            <h3 className="text-xl font-bold text-neutral-900 mb-2">
+              Where is your property management business primarily located?
+            </h3>
+            <p className="text-neutral-600">
+              We'll use this to show you accurate cost comparisons and savings calculations in your local currency.
+            </p>
+          </div>
+          
+          {/* Horizontal Location Row */}
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            {isLoadingLocation ? (
+              <div className="flex items-center gap-3">
                 <div className="animate-spin">
-                  <RefreshCw className="w-4 h-4 text-blue-500" />
+                  <Wifi className="w-5 h-5 text-blue-500" />
                 </div>
-                <span className="text-xs text-blue-600 font-medium">
-                  Loading location-specific data...
+                <span className="text-neutral-700 font-medium">
+                  Detecting your location...
                 </span>
               </div>
-            )}
-            
-            {/* Error Indicator */}
-            {indicatorsError && (
-              <div className="flex items-center justify-center gap-2 mb-2 text-orange-600">
-                <X className="w-4 h-4" />
-                <span className="text-xs font-medium">
-                  Using fallback data - {indicatorsError}
-                </span>
+            ) : locationError && !isLoadingLocation && !manualLocation ? (
+              <>
+                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
+                  <Globe className="w-5 h-5 text-neutral-500" />
+                  <span className="text-neutral-700 font-medium">
+                    {locationError}
+                  </span>
+                </div>
+                <button
+                  onClick={onLocationEditStart}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Set Location Manually
+                </button>
+              </>
+            ) : (getEffectiveLocation?.()) ? (
+              <>
+                {/* Location Display */}
+                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-blue-200 shadow-sm">
+                  <span className="text-lg">🌏</span>
+                  <span className="font-medium text-neutral-900">
+                    {getEffectiveLocation?.()?.country_name}
+                  </span>
+                </div>
+                
+                {/* Change Button */}
+                <button
+                  onClick={onLocationEditStart}
+                  className="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-lg hover:bg-blue-100 bg-white shadow-sm"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Change Location
+                </button>
+                
+                {manualLocation && (
+                  <button
+                    onClick={onLocationReset}
+                    className="text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors"
+                  >
+                    Reset to auto-detected
+                  </button>
+                )}
+              </>
+            ) : null}
+          </div>
+          
+          {/* Location Edit Modal */}
+          {isEditingLocation && (
+            <div className="mt-6">
+              <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
+                <EnhancedLocationSelector
+                  {...(tempLocation && tempLocation.country && {
+                    initialLocation: {
+                      country: tempLocation.country,
+                      region: tempLocation.region,
+                      city: tempLocation.city
+                    }
+                  })}
+                  onLocationChange={(location: { country: string; region: string; city: string }) => {
+                    onTempLocationChange?.({
+                      country: location.country,
+                      region: location.region,
+                      city: location.city
+                    });
+                  }}
+                  onCancel={onLocationEditCancel || (() => {})}
+                  onSave={onLocationEditSave || (() => {})}
+                  showPreview={false}
+                />
               </div>
-            )}
-            {!isEditingLocation ? (
-              <div className="flex items-center justify-center gap-3">
-                {isLoadingLocation ? (
-                  <>
-                    <div className="animate-spin">
-                      <Wifi className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <span className="text-sm text-blue-700 font-medium">
-                      Detecting your location...
-                    </span>
-                  </>
-                ) : locationError && !isLoadingLocation && !manualLocation ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-3">
-                      <Globe className="w-5 h-5 text-blue-500" />
-                      <span className="text-sm text-blue-700 font-medium">
-                        {locationError}
-                      </span>
-                    </div>
-                    <button
-                      onClick={onLocationEditStart}
-                      className="text-xs text-blue-600 hover:text-blue-700 underline transition-colors"
-                    >
-                      Set location manually
-                    </button>
-                  </div>
-                ) : (getEffectiveLocation?.()) ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="flex items-center justify-between w-full max-w-md px-2">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-blue-500" />
-                        <span className="text-sm font-medium text-blue-900">
-                          {getEffectiveLocation?.()?.country_name}
-                        </span>
-                      </div>
-                      <button
-                        onClick={onLocationEditStart}
-                        className="text-xs text-blue-600 hover:text-blue-700 underline transition-colors ml-4"
-                      >
-                        Edit location
-                      </button>
-                    </div>
-                    {manualLocation && (
-                      <button
-                        onClick={onLocationReset}
-                        className="text-xs text-blue-600 hover:text-blue-700 underline transition-colors"
-                      >
-                        Reset to auto-detected
-                      </button>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <EnhancedLocationSelector
-                {...(tempLocation && tempLocation.country && {
-                  initialLocation: {
-                    country: tempLocation.country,
-                    region: tempLocation.region,
-                    city: tempLocation.city
-                  }
-                })}
-                onLocationChange={(location: { country: string; region: string; city: string }) => {
-                  onTempLocationChange?.({
-                    country: location.country,
-                    region: location.region,
-                    city: location.city
-                  });
-                }}
-                onCancel={onLocationEditCancel || (() => {})}
-                onSave={onLocationEditSave || (() => {})}
-                showPreview={false}
-              />
-            )}
-          </motion.div>
+            </div>
+          )}
         </div>
         
         <p className="text-body-large text-neutral-600">
@@ -288,95 +260,95 @@ export function PortfolioStep({
           >
             {/* Preset Portfolio Options */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch mb-8">
-              {portfolioOptions.map((option) => {
-                const isSelected = value === option.value;
-                
-                return (
-                  <motion.div
-                    key={option.value}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="relative"
-                  >
-                    <button
+        {portfolioOptions.map((option) => {
+          const isSelected = value === option.value;
+          
+          return (
+            <motion.div
+              key={option.value}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative"
+            >
+              <button
                       onClick={() => handlePresetSelection(option.value)}
-                      className={`
-                        w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200
-                        ${isSelected 
-                          ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
-                          : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
-                        }
-                      `}
-                    >
-                      {/* Selected Indicator */}
-                      {isSelected && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
-                        >
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </motion.div>
-                      )}
-
-                      {/* Portfolio Size */}
-                      <div className="mb-3">
-                        <div className={`
-                          text-xl font-bold mb-1
-                          ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
-                        `}>
-                          {option.label}
-                        </div>
-                        <div className={`
-                          text-sm font-medium uppercase tracking-wider
-                          ${isSelected ? 'text-brand-primary-600' : 'text-neutral-500'}
-                        `}>
-                          {option.tier} Portfolio
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-sm text-neutral-600 mb-4">
-                        {option.description}
-                      </p>
-
-                      {/* Stats Grid */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center p-3 rounded-lg bg-white/80">
-                          <div className="flex items-center justify-center mb-1">
-                            <Users className="w-4 h-4 text-brand-secondary-500 mr-1" />
-                            <span className="text-sm font-medium text-neutral-900">
-                              {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-neutral-500">Team Size</div>
-                        </div>
-                        
-                        <div className="text-center p-3 rounded-lg bg-white/80">
-                          <div className="flex items-center justify-center mb-1">
-                            <Target className="w-4 h-4 text-brand-accent-500 mr-1" />
-                            <span className="text-sm font-medium text-neutral-900 capitalize">
-                              {option.implementationComplexity}
-                            </span>
-                          </div>
-                          <div className="text-xs text-neutral-500">Complexity</div>
-                        </div>
-                      </div>
-
-                      {/* Revenue Range */}
-                      <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
-                        <span>Revenue Range:</span>
-                        <span className="font-medium">
-                          ${(option.averageRevenue.min / 1000000).toFixed(1)}M - ${(option.averageRevenue.max / 1000000).toFixed(1)}M
-                        </span>
-                      </div>
-                    </button>
+                className={`
+                  w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200
+                  ${isSelected 
+                    ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
+                    : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
+                  }
+                `}
+              >
+                {/* Selected Indicator */}
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
+                  >
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
                   </motion.div>
-                );
-              })}
-            </div>
+                )}
+
+                {/* Portfolio Size */}
+                <div className="mb-3">
+                  <div className={`
+                    text-xl font-bold mb-1
+                    ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
+                  `}>
+                    {option.label}
+                  </div>
+                  <div className={`
+                    text-sm font-medium uppercase tracking-wider
+                    ${isSelected ? 'text-brand-primary-600' : 'text-neutral-500'}
+                  `}>
+                    {option.tier} Portfolio
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-sm text-neutral-600 mb-4">
+                  {option.description}
+                </p>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="text-center p-3 rounded-lg bg-white/80">
+                    <div className="flex items-center justify-center mb-1">
+                      <Users className="w-4 h-4 text-brand-secondary-500 mr-1" />
+                      <span className="text-sm font-medium text-neutral-900">
+                        {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-neutral-500">Team Size</div>
+                  </div>
+                  
+                  <div className="text-center p-3 rounded-lg bg-white/80">
+                    <div className="flex items-center justify-center mb-1">
+                      <Target className="w-4 h-4 text-brand-accent-500 mr-1" />
+                      <span className="text-sm font-medium text-neutral-900 capitalize">
+                        {option.implementationComplexity}
+                      </span>
+                    </div>
+                    <div className="text-xs text-neutral-500">Complexity</div>
+                  </div>
+                </div>
+
+                {/* Revenue Range */}
+                <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
+                  <span>Revenue Range:</span>
+                  <span className="font-medium">
+                    ${(option.averageRevenue.min / 1000000).toFixed(1)}M - ${(option.averageRevenue.max / 1000000).toFixed(1)}M
+                  </span>
+                </div>
+              </button>
+            </motion.div>
+          );
+        })}
+      </div>
 
                          {/* Need More Precision Card */}
              <div className="max-w-2xl mx-auto">
@@ -500,13 +472,13 @@ export function PortfolioStep({
                     <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
                       <Sparkles className="w-5 h-5 text-white" />
                     </div>
-                  </div>
+          </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="w-4 h-4 text-green-600" />
                       <h4 className="text-sm font-semibold text-green-800">
                         Business Tier Detected
-                      </h4>
+            </h4>
                     </div>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-sm text-green-700">
@@ -519,9 +491,9 @@ export function PortfolioStep({
                     <p className="text-xs text-green-600 leading-relaxed">
                       This classification helps us provide the most relevant recommendations, 
                       cost estimates, and implementation strategies tailored to your business size.
-                    </p>
-                  </div>
-                </div>
+            </p>
+          </div>
+        </div>
               </motion.div>
             )}
 
@@ -543,7 +515,7 @@ export function PortfolioStep({
                    <ArrowLeft className="w-5 h-5 text-neural-blue-500 group-hover:-translate-x-1 transition-transform duration-200" />
                  </div>
                </button>
-             </div>
+      </div>
           </motion.div>
         )}
       </AnimatePresence>
