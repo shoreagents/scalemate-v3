@@ -655,7 +655,7 @@ export const BRAND_MESSAGING = {
     'Get Your Free Analysis',
     'Scale Smarter Today'
   ]
-} as const;
+} as const; 
 
 // Revenue range mappings for manual input
 export const REVENUE_RANGES: Readonly<Record<RevenueRange, { label: string; min: number; max: number }>> = {
