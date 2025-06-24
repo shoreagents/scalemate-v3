@@ -1,32 +1,16 @@
 import { 
   RoleId, 
   RoleSalaryData, 
-  PortfolioSize, 
-  PortfolioIndicator, 
   Role,
   TaskComplexity,
-  UrgencyLevel,
   Task,
-  RevenueRange,
-  BusinessTier,
-  ManualPortfolioData,
-  Country,
   LocationData,
-  MultiCountryRoleSalaryData,
   EnhancedRole,
   RoleCategory
 } from '@/types';
-import { ROLES_SALARY_COMPARISON } from './quoteCalculatorData';
+import { ROLES_SALARY_COMPARISON } from './rolesData';
 
-// Country and location data for auto-detection and savings comparison
-export const COUNTRY_DATA: Readonly<Record<Country, { name: string; currency: string; symbol: string; }>> = {
-  AU: { name: 'Australia', currency: 'AUD', symbol: 'A$' },
-  US: { name: 'United States', currency: 'USD', symbol: '$' },
-  CA: { name: 'Canada', currency: 'CAD', symbol: 'C$' },
-  UK: { name: 'United Kingdom', currency: 'GBP', symbol: '£' },
-  NZ: { name: 'New Zealand', currency: 'NZD', symbol: 'NZ$' },
-  SG: { name: 'Singapore', currency: 'SGD', symbol: 'S$' }
-} as const;
+
 
 
 
@@ -80,12 +64,12 @@ export const ADDITIONAL_PROPERTY_ROLES: Readonly<Record<string, Partial<Enhanced
 export const detectUserLocation = async (): Promise<LocationData> => {
   try {
     // In a real app, you'd use an IP geolocation service
-    // For now, we'll return a default location
+    // For now, we'll return a default location consistent with the rest of the system (USD fallback)
     const defaultLocation: LocationData = {
-      country: 'AU',
-      countryName: 'Australia',
-      currency: 'AUD',
-      currencySymbol: 'A$',
+      country: 'US',
+      countryName: 'United States',
+      currency: 'USD',
+      currencySymbol: '$',
       detected: false
     };
     
@@ -93,10 +77,10 @@ export const detectUserLocation = async (): Promise<LocationData> => {
   } catch (error) {
     console.error('Failed to detect location:', error);
     return {
-      country: 'AU',
-      countryName: 'Australia',
-      currency: 'AUD',
-      currencySymbol: 'A$',
+      country: 'US',
+      countryName: 'United States',
+      currency: 'USD',
+      currencySymbol: '$',
       detected: false
     };
   }
@@ -331,122 +315,8 @@ export const TASK_COMPLEXITY_MULTIPLIERS: Readonly<Record<TaskComplexity | 'cust
   custom: 1.15
 } as const;
 
-// Urgency options
-export const URGENCY_OPTIONS: readonly UrgencyLevel[] = [
-  'ASAP - Need to start within 2 weeks',
-  'Next Month - Planning for 30-day start',
-  'Next Quarter - 60-90 day timeline',
-  'Just Exploring - Future consideration'
-] as const;
 
-// Phone country codes
-export const PHONE_COUNTRY_CODES = {
-  AU: '+61',
-  US: '+1',
-  UK: '+44',
-  CA: '+1',
-  NZ: '+64',
-  SG: '+65',
-  HK: '+852',
-  PH: '+63'
-} as const;
 
-// Common email domains
-export const COMMON_EMAIL_DOMAINS = [
-  'gmail.com',
-  'outlook.com',
-  'hotmail.com',
-  'yahoo.com',
-  'icloud.com',
-  'bigpond.com',
-  'optusnet.com.au',
-  'telstra.com',
-  'tpg.com.au'
-] as const;
 
-// Disposable email domains (sample)
-export const DISPOSABLE_EMAIL_DOMAINS = [
-  '10minutemail.com',
-  'tempmail.org',
-  'guerrillamail.com',
-  'mailinator.com',
-  'throwaway.email'
-] as const;
-
-// Default form values - ANONYMOUS
-export const DEFAULT_FORM_DATA = {
-  portfolioSize: '',
-  selectedRoles: {
-    assistantPropertyManager: false,
-    leasingCoordinator: false,
-    marketingSpecialist: false
-  },
-  customRoles: {},
-  selectedTasks: {},
-  customTasks: {
-    assistantPropertyManager: [],
-    leasingCoordinator: [],
-    marketingSpecialist: []
-  },
-  experienceLevel: '',
-  roleExperienceLevels: {},
-  roleExperienceDistribution: {},
-  teamSize: {
-    assistantPropertyManager: 1, // Minimum 1 full-time staff
-    leasingCoordinator: 1,       // Minimum 1 full-time staff
-    marketingSpecialist: 1       // Minimum 1 full-time staff
-  },
-  // NO email field - completely anonymous
-  currentStep: 1 as const,
-  completedSteps: []
-} as const;
-
-// API endpoints
-export const API_ENDPOINTS = {
-  ANTHROPIC: 'https://api.anthropic.com/v1/messages',
-  ANALYTICS: '/api/analytics',
-  VALIDATION: '/api/validation',
-  PREMIUM_SIGNUP: '/api/premium-signup',
-  PHONE_VALIDATION: '/api/validate-phone',
-  EMAIL_VALIDATION: '/api/validate-email'
-} as const;
-
-// Cache durations (in milliseconds)
-export const CACHE_DURATIONS = {
-  AI_TOOLTIP: 24 * 60 * 60 * 1000,      // 24 hours
-  VALIDATION: 5 * 60 * 1000,            // 5 minutes
-  ANALYTICS: 30 * 1000,                 // 30 seconds
-  SESSION: 7 * 24 * 60 * 60 * 1000      // 7 days
-} as const;
-
-// ScaleMate Brand Messaging
-export const BRAND_MESSAGING = {
-  tagline: 'Scale Smart. Save More. Succeed Faster.',
-  headlines: [
-    'Scale Your Business. Multiply Your Success.',
-    'Intelligent Offshore Scaling Made Simple.',
-    'Transform Your Operations. Amplify Your Growth.',
-    'The Smart Way to Scale Globally.',
-    'Unlock Your Business Potential with ScaleMate.'
-  ],
-  callsToAction: [
-    'Calculate Your Savings',
-    'Start Your Scaling Journey',
-    'Unlock Your Potential',
-    'Get Your Free Analysis',
-    'Scale Smarter Today'
-  ]
-} as const;
-
-// Revenue range mappings for manual input
-export const REVENUE_RANGES: Readonly<Record<RevenueRange, { label: string; min: number; max: number }>> = {
-  'under-500k': { label: 'Under $500K', min: 0, max: 500000 },
-  '500k-1.5m': { label: '$500K - $1.5M', min: 500000, max: 1500000 },
-  '1.5m-4m': { label: '$1.5M - $4M', min: 1500000, max: 4000000 },
-  '4m-15m': { label: '$4M - $15M', min: 4000000, max: 15000000 },
-  '15m-50m': { label: '$15M - $50M', min: 15000000, max: 50000000 },
-  '50m+': { label: '$50M+', min: 50000000, max: 1000000000 },
-  'prefer-not-to-disclose': { label: 'Prefer not to disclose', min: 0, max: 1000000000 }
-} as const;
 
  

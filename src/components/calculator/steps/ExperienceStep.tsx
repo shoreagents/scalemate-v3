@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExperienceLevel, CustomRole, LocationData, RoleExperienceDistribution } from '@/types';
-import { ROLES_SALARY_COMPARISON, ROLES } from '@/utils/quoteCalculatorData';
+import { ExperienceLevel, CustomRole, RoleExperienceDistribution } from '@/types';
+import { LocationData } from '@/types/location';
+import { ROLES_SALARY_COMPARISON, ROLES } from '@/utils/rolesData';
 import { ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
 import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb, GraduationCap, ChevronDown, ChevronUp, BarChart3, Plus, Minus } from 'lucide-react';

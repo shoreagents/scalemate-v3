@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PortfolioSize, PortfolioIndicator } from '@/types';
+import { getCurrencySymbol } from '@/utils/currency';
 
 // Type for the request body
 interface PortfolioIndicatorRequest {
@@ -14,59 +14,13 @@ interface PortfolioIndicatorRequest {
   requestType?: 'portfolio' | 'roles' | 'salary';
 }
 
-// Helper function to get currency symbol
-function getCurrencySymbol(currency?: string): string {
-  const symbols: Record<string, string> = {
-    'USD': '$',
-    'AUD': 'A$',
-    'CAD': 'C$',
-    'GBP': '£',
-    'EUR': '€',
-    'NZD': 'NZ$',
-    'SGD': 'S$',
-    'PHP': '₱',
-    'JPY': '¥',
-    'KRW': '₩',
-    'CNY': '¥',
-    'INR': '₹',
-    'BRL': 'R$',
-    'MXN': '$',
-    'CHF': 'Fr',
-    'NOK': 'kr',
-    'SEK': 'kr',
-    'DKK': 'kr',
-    'PLN': 'zł',
-    'CZK': 'Kč',
-    'HUF': 'Ft',
-    'RON': 'lei',
-    'BGN': 'лв',
-    'HRK': 'kn',
-    'ILS': '₪',
-    'TRY': '₺',
-    'RUB': '₽',
-    'UAH': '₴',
-    'ZAR': 'R',
-    'THB': '฿',
-    'MYR': 'RM',
-    'IDR': 'Rp',
-    'VND': '₫',
-    'HKD': 'HK$',
-    'TWD': 'NT$',
-    'ARS': '$',
-    'CLP': '$',
-    'COP': '$',
-    'PEN': 'S/'
-  };
-  return symbols[currency || 'USD'] || '$';
-}
-
 
 
 export async function POST(request: NextRequest) {
   let requestType = 'portfolio'; // Default value for error handling
   try {
     const body: PortfolioIndicatorRequest = await request.json();
-    const { location, portfolioSizes, requestType: bodyRequestType = 'portfolio' } = body;
+    const { location, requestType: bodyRequestType = 'portfolio' } = body;
     requestType = bodyRequestType;
 
     if (!location?.country) {

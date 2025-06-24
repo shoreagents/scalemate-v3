@@ -4,14 +4,11 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Globe, Check, X, ChevronDown, MapPinIcon } from 'lucide-react';
 import { fetchCountries, searchCountries, type Country } from '@/utils/locationApi';
-
-interface LocationData {
-  country: string;
-}
+import { ManualLocation } from '@/types/location';
 
 interface EnhancedLocationSelectorProps {
-  initialLocation?: LocationData;
-  onLocationChange: (location: LocationData) => void;
+  initialLocation?: ManualLocation;
+  onLocationChange: (location: ManualLocation) => void;
   onCancel: () => void;
   onSave: () => void;
   disabled?: boolean;
@@ -32,7 +29,7 @@ export function EnhancedLocationSelector({
   const [searchQuery, setSearchQuery] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   
-  const [selectedLocation, setSelectedLocation] = useState<LocationData>(
+  const [selectedLocation, setSelectedLocation] = useState<ManualLocation>(
     initialLocation || { country: '' }
   );
 
@@ -92,14 +89,14 @@ export function EnhancedLocationSelector({
             <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
             <input
               type="text"
-              value={searchQuery || selectedLocation.country}
+              value={showCountryDropdown ? searchQuery : (selectedLocation.country || searchQuery)}
               onChange={(e) => {
                 const value = e.target.value;
                 setSearchQuery(value);
                 setShowCountryDropdown(true);
                 
-                // If user types something different from selected country, clear the selection
-                if (value !== selectedLocation.country) {
+                // Only clear selection if user is actively typing and it's different
+                if (value && value !== selectedLocation.country) {
                   setSelectedLocation(prev => ({ ...prev, country: '' }));
                 }
               }}

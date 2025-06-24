@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask, Country } from '@/types';
+import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
+import { Country, ManualLocation, IPLocationData } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
-import { DEFAULT_FORM_DATA } from '@/utils/dataQuoteCalculator';
+
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
@@ -37,24 +38,7 @@ import {
 import Link from 'next/link';
 import { getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 
-interface LocationData {
-  ip: string;
-  city: string;
-  region: string;
-  country_name: string;
-  country_code: string;
-  timezone: string;
-  latitude: number;
-  longitude: number;
-  currency: string;
-  currency_name: string;
-  languages: string;
-  org: string;
-}
 
-interface ManualLocation {
-  country: string;
-}
 
 interface OffshoreCalculatorProps {
   className?: string;
@@ -72,19 +56,44 @@ export function OffshoreCalculator({
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  const [formData, setFormData] = useState<FormData>({
-    ...DEFAULT_FORM_DATA,
+  // Default form data
+  const getDefaultFormData = (): FormData => ({
+    portfolioSize: '',
+    selectedRoles: {
+      assistantPropertyManager: false,
+      leasingCoordinator: false,
+      marketingSpecialist: false
+    },
+    customRoles: {},
+    selectedTasks: {},
+    customTasks: {
+      assistantPropertyManager: [],
+      leasingCoordinator: [],
+      marketingSpecialist: []
+    },
+    experienceLevel: '',
+    roleExperienceLevels: {},
+    roleExperienceDistribution: {},
+    teamSize: {
+      assistantPropertyManager: 1,
+      leasingCoordinator: 1,
+      marketingSpecialist: 1
+    },
+    currentStep: 1 as const,
+    completedSteps: [],
     sessionId: generateSessionId(),
     startedAt: new Date(),
     lastUpdatedAt: new Date()
   });
+
+  const [formData, setFormData] = useState<FormData>(getDefaultFormData());
   
   const [calculationResult, setCalculationResult] = useState<CalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [processingStage, setProcessingStage] = useState<string>('');
   
   // Location tracking state
-  const [locationData, setLocationData] = useState<LocationData | null>(null);
+  const [locationData, setLocationData] = useState<IPLocationData | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
   
@@ -242,7 +251,7 @@ export function OffshoreCalculator({
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data: LocationData = await response.json();
+        const data: IPLocationData = await response.json();
         setLocationData(data);
         
         console.log('📍 Location detected:', data);
@@ -374,7 +383,14 @@ export function OffshoreCalculator({
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
       
-      const result = calculateSavings(formData, formData.portfolioIndicators);
+      const result = calculateSavings(
+        formData, 
+        formData.portfolioIndicators,
+        formData.userLocation || manualLocation ? { 
+          country: formData.userLocation?.country || 'AU',
+          currency: formData.userLocation?.currency || 'AUD'
+        } : undefined
+      );
       setCalculationResult(result);
       setProcessingStage('');
       
@@ -395,7 +411,7 @@ export function OffshoreCalculator({
 
   const restartCalculator = () => {
     setFormData({
-      ...DEFAULT_FORM_DATA,
+      ...getDefaultFormData(),
       sessionId: generateSessionId(),
       startedAt: new Date(),
       lastUpdatedAt: new Date()
@@ -461,6 +477,7 @@ export function OffshoreCalculator({
             customRoles={formData.customRoles || {}}
             teamSize={formData.teamSize}
             {...(formData.userLocation && { userLocation: formData.userLocation })}
+            {...(manualLocation && { manualLocation })}
             onChange={(selectedRoles, teamSize, customRoles, userLocation) => updateFormData({ 
               selectedRoles, 
               teamSize, 

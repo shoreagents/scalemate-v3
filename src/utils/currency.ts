@@ -1,0 +1,576 @@
+/**
+ * Currency utilities for ScaleMate
+ * Can be used in both client and server environments
+ */
+
+// Helper function to get currency symbol from currency code
+export function getCurrencySymbol(currencyCode: string): string {
+  const symbols: Record<string, string> = {
+    // Major Global Currencies
+    'USD': '$',       // United States Dollar
+    'EUR': '€',       // Euro
+    'GBP': '£',       // British Pound
+    'JPY': '¥',       // Japanese Yen
+    'CNY': '¥',       // Chinese Yuan
+    'CHF': 'CHF',     // Swiss Franc
+    
+    // Asia-Pacific
+    'AUD': 'A$',      // Australian Dollar
+    'CAD': 'C$',      // Canadian Dollar
+    'NZD': 'NZ$',     // New Zealand Dollar
+    'SGD': 'S$',      // Singapore Dollar
+    'HKD': 'HK$',     // Hong Kong Dollar
+    'KRW': '₩',       // South Korean Won
+    'PHP': '₱',       // Philippine Peso
+    'THB': '฿',       // Thai Baht
+    'MYR': 'RM',      // Malaysian Ringgit
+    'IDR': 'Rp',      // Indonesian Rupiah
+    'VND': '₫',       // Vietnamese Dong
+    'TWD': 'NT$',     // Taiwan Dollar
+    'INR': '₹',       // Indian Rupee
+    'PKR': '₨',       // Pakistani Rupee
+    'BDT': '৳',       // Bangladeshi Taka
+    'LKR': 'Rs',      // Sri Lankan Rupee
+    'NPR': 'Rs',      // Nepalese Rupee
+    'BTN': 'Nu',      // Bhutanese Ngultrum
+    'MVR': 'Rf',      // Maldivian Rufiyaa
+    'MMK': 'K',       // Myanmar Kyat
+    'LAK': '₭',       // Lao Kip
+    'KHR': '៛',       // Cambodian Riel
+    'BND': 'B$',      // Brunei Dollar
+    'MOP': 'MOP$',    // Macanese Pataca
+    'FJD': 'FJ$',     // Fijian Dollar
+    'PGK': 'K',       // Papua New Guinea Kina
+    'SBD': 'SI$',     // Solomon Islands Dollar
+    'VUV': 'VT',      // Vanuatu Vatu
+    'TOP': 'T$',      // Tongan Paʻanga
+    'WST': 'WS$',     // Samoan Tala
+    'NCF': 'F',       // CFP Franc
+    'XPF': 'F',       // CFP Franc
+    
+    // Europe
+    'NOK': 'kr',      // Norwegian Krone
+    'SEK': 'kr',      // Swedish Krona
+    'DKK': 'kr',      // Danish Krone
+    'ISK': 'kr',      // Icelandic Krona
+    'PLN': 'zł',      // Polish Zloty
+    'CZK': 'Kč',      // Czech Koruna
+    'HUF': 'Ft',      // Hungarian Forint
+    'RON': 'lei',     // Romanian Leu
+    'BGN': 'лв',      // Bulgarian Lev
+    'HRK': 'kn',      // Croatian Kuna
+    'RSD': 'дин',     // Serbian Dinar
+    'BAM': 'KM',      // Bosnia and Herzegovina Convertible Mark
+    'MKD': 'ден',     // Macedonian Denar
+    'ALL': 'L',       // Albanian Lek
+    'MDL': 'L',       // Moldovan Leu
+    'UAH': '₴',       // Ukrainian Hryvnia
+    'BYN': 'Br',      // Belarusian Ruble
+    'RUB': '₽',       // Russian Ruble
+    'GEL': '₾',       // Georgian Lari
+    'AMD': '֏',       // Armenian Dram
+    'AZN': '₼',       // Azerbaijani Manat
+    'TRY': '₺',       // Turkish Lira
+    'CYP': '£',       // Cyprus Pound (legacy)
+    
+    // Middle East & Africa
+    'ILS': '₪',       // Israeli Shekel
+    'JOD': 'JD',      // Jordanian Dinar
+    'LBP': 'ل.ل',     // Lebanese Pound
+    'SYP': '£S',      // Syrian Pound
+    'IRR': '﷼',       // Iranian Rial
+    'IQD': 'ع.د',     // Iraqi Dinar
+    'SAR': '﷼',       // Saudi Riyal
+    'AED': 'د.إ',     // UAE Dirham
+    'QAR': '﷼',       // Qatari Riyal
+    'KWD': 'د.ك',     // Kuwaiti Dinar
+    'BHD': '.د.ب',    // Bahraini Dinar
+    'OMR': '﷼',       // Omani Rial
+    'YER': '﷼',       // Yemeni Rial
+    'EGP': '£E',      // Egyptian Pound
+    'SDG': 'ج.س',     // Sudanese Pound
+    'LYD': 'ل.د',     // Libyan Dinar
+    'TND': 'د.ت',     // Tunisian Dinar
+    'DZD': 'د.ج',     // Algerian Dinar
+    'MAD': 'د.م.',    // Moroccan Dirham
+    'ZAR': 'R',       // South African Rand
+    'BWP': 'P',       // Botswanan Pula
+    'NAD': 'N$',      // Namibian Dollar
+    'SZL': 'E',       // Swazi Lilangeni
+    'LSL': 'M',       // Lesotho Loti
+    'ZMW': 'ZK',      // Zambian Kwacha
+    'ZWL': 'Z$',      // Zimbabwean Dollar
+    'MWK': 'MK',      // Malawian Kwacha
+    'MZN': 'MT',      // Mozambican Metical
+    'MGA': 'Ar',      // Malagasy Ariary
+    'MUR': '₨',       // Mauritian Rupee
+    'SCR': '₨',       // Seychellois Rupee
+    'KES': 'KSh',     // Kenyan Shilling
+    'UGX': 'USh',     // Ugandan Shilling
+    'TZS': 'TSh',     // Tanzanian Shilling
+    'RWF': 'FRw',     // Rwandan Franc
+    'BIF': 'FBu',     // Burundian Franc
+    'ETB': 'Br',      // Ethiopian Birr
+    'ERN': 'Nfk',     // Eritrean Nakfa
+    'DJF': 'Fdj',     // Djiboutian Franc
+    'SOS': 'S',       // Somali Shilling
+    'NGN': '₦',       // Nigerian Naira
+    'GHS': '₵',       // Ghanaian Cedi
+    'XOF': 'CFA',     // West African CFA Franc
+    'XAF': 'FCFA',    // Central African CFA Franc
+    'CVE': '$',       // Cape Verdean Escudo
+    'GMD': 'D',       // Gambian Dalasi
+    'GNF': 'FG',      // Guinean Franc
+    'LRD': 'L$',      // Liberian Dollar
+    'SLL': 'Le',      // Sierra Leonean Leone
+    'CDF': 'FC',      // Congolese Franc
+    'AOA': 'Kz',      // Angolan Kwanza
+    'STN': 'Db',      // São Tomé and Príncipe Dobra
+    
+    // Americas
+    'BRL': 'R$',      // Brazilian Real
+    'MXN': '$',       // Mexican Peso
+    'ARS': '$',       // Argentine Peso
+    'CLP': '$',       // Chilean Peso
+    'COP': '$',       // Colombian Peso
+    'PEN': 'S/',      // Peruvian Sol
+    'UYU': '$U',      // Uruguayan Peso
+    'PYG': '₲',       // Paraguayan Guarani
+    'BOB': 'Bs',      // Bolivian Boliviano
+    'VES': 'Bs.S',    // Venezuelan Bolívar Soberano
+    'GYD': 'G$',      // Guyanese Dollar
+    'SRD': '$',       // Surinamese Dollar
+    'GTQ': 'Q',       // Guatemalan Quetzal
+    'BZD': 'BZ$',     // Belize Dollar
+    'HNL': 'L',       // Honduran Lempira
+    'NIO': 'C$',      // Nicaraguan Córdoba
+    'CRC': '₡',       // Costa Rican Colón
+    'PAB': 'B/.',     // Panamanian Balboa
+    'DOP': 'RD$',     // Dominican Peso
+    'HTG': 'G',       // Haitian Gourde
+    'JMD': 'J$',      // Jamaican Dollar
+    'BBD': 'Bds$',    // Barbadian Dollar
+    'TTD': 'TT$',     // Trinidad and Tobago Dollar
+    'XCD': 'EC$',     // East Caribbean Dollar
+    'AWG': 'ƒ',       // Aruban Florin
+    'ANG': 'ƒ',       // Netherlands Antillean Guilder
+    'CUP': '$',       // Cuban Peso
+    'BSD': 'B$',      // Bahamian Dollar
+    'BMD': 'BD$',     // Bermudian Dollar
+    'KYD': 'CI$',     // Cayman Islands Dollar
+  };
+  
+  return symbols[currencyCode] || '$';
+}
+
+// Helper function to detect currency based on country name
+export function getCurrencyByCountry(countryName: string): string {
+  const countryCurrencyMap: Record<string, string> = {
+    // North America
+    'United States': 'USD',
+    'United States of America': 'USD',
+    'USA': 'USD',
+    'US': 'USD',
+    'Canada': 'CAD',
+    'Mexico': 'MXN',
+    'Greenland': 'DKK',
+    
+    // Central America & Caribbean
+    'Guatemala': 'GTQ',
+    'Belize': 'BZD',
+    'El Salvador': 'USD',
+    'Honduras': 'HNL',
+    'Nicaragua': 'NIO',
+    'Costa Rica': 'CRC',
+    'Panama': 'PAB',
+    'Cuba': 'CUP',
+    'Jamaica': 'JMD',
+    'Haiti': 'HTG',
+    'Dominican Republic': 'DOP',
+    'Puerto Rico': 'USD',
+    'Trinidad and Tobago': 'TTD',
+    'Barbados': 'BBD',
+    'Bahamas': 'BSD',
+    'Antigua and Barbuda': 'XCD',
+    'Saint Kitts and Nevis': 'XCD',
+    'Dominica': 'XCD',
+    'Saint Lucia': 'XCD',
+    'Saint Vincent and the Grenadines': 'XCD',
+    'Grenada': 'XCD',
+    'Aruba': 'AWG',
+    'Curaçao': 'ANG',
+    'Sint Maarten': 'ANG',
+    'Bermuda': 'BMD',
+    'Cayman Islands': 'KYD',
+    
+    // South America
+    'Brazil': 'BRL',
+    'Argentina': 'ARS',
+    'Chile': 'CLP',
+    'Colombia': 'COP',
+    'Peru': 'PEN',
+    'Venezuela': 'VES',
+    'Ecuador': 'USD',
+    'Bolivia': 'BOB',
+    'Paraguay': 'PYG',
+    'Uruguay': 'UYU',
+    'Guyana': 'GYD',
+    'Suriname': 'SRD',
+    'French Guiana': 'EUR',
+    
+    // Europe
+    'United Kingdom': 'GBP',
+    'UK': 'GBP',
+    'Great Britain': 'GBP',
+    'England': 'GBP',
+    'Scotland': 'GBP',
+    'Wales': 'GBP',
+    'Northern Ireland': 'GBP',
+    'Ireland': 'EUR',
+    'Germany': 'EUR',
+    'France': 'EUR',
+    'Spain': 'EUR',
+    'Italy': 'EUR',
+    'Netherlands': 'EUR',
+    'Belgium': 'EUR',
+    'Austria': 'EUR',
+    'Portugal': 'EUR',
+    'Finland': 'EUR',
+    'Luxembourg': 'EUR',
+    'Slovenia': 'EUR',
+    'Slovakia': 'EUR',
+    'Estonia': 'EUR',
+    'Latvia': 'EUR',
+    'Lithuania': 'EUR',
+    'Malta': 'EUR',
+    'Cyprus': 'EUR',
+    'Greece': 'EUR',
+    'Switzerland': 'CHF',
+    'Norway': 'NOK',
+    'Sweden': 'SEK',
+    'Denmark': 'DKK',
+    'Iceland': 'ISK',
+    'Poland': 'PLN',
+    'Czech Republic': 'CZK',
+    'Hungary': 'HUF',
+    'Romania': 'RON',
+    'Bulgaria': 'BGN',
+    'Croatia': 'HRK',
+    'Serbia': 'RSD',
+    'Bosnia and Herzegovina': 'BAM',
+    'Montenegro': 'EUR',
+    'North Macedonia': 'MKD',
+    'Albania': 'ALL',
+    'Kosovo': 'EUR',
+    'Moldova': 'MDL',
+    'Ukraine': 'UAH',
+    'Belarus': 'BYN',
+    'Russia': 'RUB',
+    'Georgia': 'GEL',
+    'Armenia': 'AMD',
+    'Azerbaijan': 'AZN',
+    'Turkey': 'TRY',
+    
+    // Asia
+    'China': 'CNY',
+    'Japan': 'JPY',
+    'South Korea': 'KRW',
+    'North Korea': 'KPW',
+    'Mongolia': 'MNT',
+    'Taiwan': 'TWD',
+    'Hong Kong': 'HKD',
+    'Macau': 'MOP',
+    'India': 'INR',
+    'Pakistan': 'PKR',
+    'Bangladesh': 'BDT',
+    'Sri Lanka': 'LKR',
+    'Nepal': 'NPR',
+    'Bhutan': 'BTN',
+    'Maldives': 'MVR',
+    'Afghanistan': 'AFN',
+    'Iran': 'IRR',
+    'Iraq': 'IQD',
+    'Syria': 'SYP',
+    'Lebanon': 'LBP',
+    'Jordan': 'JOD',
+    'Israel': 'ILS',
+    'Palestine': 'ILS',
+    'Saudi Arabia': 'SAR',
+    'UAE': 'AED',
+    'United Arab Emirates': 'AED',
+    'Qatar': 'QAR',
+    'Kuwait': 'KWD',
+    'Bahrain': 'BHD',
+    'Oman': 'OMR',
+    'Yemen': 'YER',
+    'Kazakhstan': 'KZT',
+    'Uzbekistan': 'UZS',
+    'Turkmenistan': 'TMT',
+    'Kyrgyzstan': 'KGS',
+    'Tajikistan': 'TJS',
+    'Thailand': 'THB',
+    'Vietnam': 'VND',
+    'Laos': 'LAK',
+    'Cambodia': 'KHR',
+    'Myanmar': 'MMK',
+    'Malaysia': 'MYR',
+    'Singapore': 'SGD',
+    'Brunei': 'BND',
+    'Indonesia': 'IDR',
+    'Philippines': 'PHP',
+    'Timor-Leste': 'USD',
+    
+    // Oceania
+    'Australia': 'AUD',
+    'New Zealand': 'NZD',
+    'Papua New Guinea': 'PGK',
+    'Fiji': 'FJD',
+    'Solomon Islands': 'SBD',
+    'Vanuatu': 'VUV',
+    'New Caledonia': 'XPF',
+    'French Polynesia': 'XPF',
+    'Samoa': 'WST',
+    'Tonga': 'TOP',
+    'Kiribati': 'AUD',
+    'Tuvalu': 'AUD',
+    'Nauru': 'AUD',
+    'Palau': 'USD',
+    'Marshall Islands': 'USD',
+    'Micronesia': 'USD',
+    
+    // Africa
+    'Egypt': 'EGP',
+    'Libya': 'LYD',
+    'Tunisia': 'TND',
+    'Algeria': 'DZD',
+    'Morocco': 'MAD',
+    'Sudan': 'SDG',
+    'South Sudan': 'SSP',
+    'Ethiopia': 'ETB',
+    'Eritrea': 'ERN',
+    'Djibouti': 'DJF',
+    'Somalia': 'SOS',
+    'Kenya': 'KES',
+    'Uganda': 'UGX',
+    'Tanzania': 'TZS',
+    'Rwanda': 'RWF',
+    'Burundi': 'BIF',
+    'South Africa': 'ZAR',
+    'Namibia': 'NAD',
+    'Botswana': 'BWP',
+    'Zimbabwe': 'ZWL',
+    'Zambia': 'ZMW',
+    'Malawi': 'MWK',
+    'Mozambique': 'MZN',
+    'Madagascar': 'MGA',
+    'Mauritius': 'MUR',
+    'Seychelles': 'SCR',
+    'Comoros': 'KMF',
+    'Lesotho': 'LSL',
+    'Eswatini': 'SZL',
+    'Swaziland': 'SZL',
+    'Angola': 'AOA',
+    'Democratic Republic of the Congo': 'CDF',
+    'Republic of the Congo': 'XAF',
+    'Central African Republic': 'XAF',
+    'Chad': 'XAF',
+    'Cameroon': 'XAF',
+    'Equatorial Guinea': 'XAF',
+    'Gabon': 'XAF',
+    'São Tomé and Príncipe': 'STN',
+    'Nigeria': 'NGN',
+    'Ghana': 'GHS',
+    'Ivory Coast': 'XOF',
+    'Burkina Faso': 'XOF',
+    'Mali': 'XOF',
+    'Niger': 'XOF',
+    'Senegal': 'XOF',
+    'Guinea-Bissau': 'XOF',
+    'Guinea': 'GNF',
+    'Sierra Leone': 'SLL',
+    'Liberia': 'LRD',
+    'Togo': 'XOF',
+    'Benin': 'XOF',
+    'Cape Verde': 'CVE',
+    'Gambia': 'GMD',
+    'Mauritania': 'MRU'
+  };
+  
+  return countryCurrencyMap[countryName] || 'USD';
+}
+
+/**
+ * Get currency multiplier for revenue adjustments
+ * Used for converting base USD revenue values to local currency equivalents
+ * Updated with 2025 exchange rates
+ */
+export function getCurrencyMultiplier(currency: string): number {
+  const multipliers: Record<string, number> = {
+    // Major Global Currencies (2025 rates)
+    'USD': 1.0,      // United States (base)
+    'EUR': 0.92,     // European Union
+    'GBP': 0.79,     // United Kingdom
+    'JPY': 155.0,    // Japan
+    'CNY': 7.25,     // China
+    'CHF': 0.87,     // Switzerland
+    
+    // Asia-Pacific (2025 rates)
+    'AUD': 1.58,     // Australia
+    'CAD': 1.42,     // Canada
+    'NZD': 1.73,     // New Zealand
+    'SGD': 1.37,     // Singapore
+    'HKD': 7.83,     // Hong Kong
+    'KRW': 1380.0,   // South Korea
+    'PHP': 58.5,     // Philippines
+    'THB': 36.8,     // Thailand
+    'MYR': 4.65,     // Malaysia
+    'IDR': 16200.0,  // Indonesia
+    'VND': 25400.0,  // Vietnam
+    'TWD': 32.5,     // Taiwan
+    'INR': 84.5,     // India
+    'PKR': 280.0,    // Pakistan
+    'BDT': 120.0,    // Bangladesh
+    'LKR': 295.0,    // Sri Lanka
+    'NPR': 135.0,    // Nepal
+    'BTN': 84.5,     // Bhutan (pegged to INR)
+    'MVR': 15.4,     // Maldives
+    'MMK': 3500.0,   // Myanmar
+    'LAK': 22000.0,  // Laos
+    'KHR': 4150.0,   // Cambodia
+    'BND': 1.37,     // Brunei
+    'MOP': 8.05,     // Macau
+    'FJD': 2.25,     // Fiji
+    'PGK': 3.95,     // Papua New Guinea
+    'SBD': 8.55,     // Solomon Islands
+    'VUV': 125.0,    // Vanuatu
+    'TOP': 2.35,     // Tonga
+    'WST': 2.75,     // Samoa
+    'XPF': 113.0,    // CFP Franc
+    'NCF': 113.0,    // New Caledonia Franc
+    
+    // Europe (2025 rates)
+    'NOK': 11.2,     // Norway
+    'SEK': 11.5,     // Sweden
+    'DKK': 6.85,     // Denmark
+    'ISK': 140.0,    // Iceland
+    'PLN': 4.15,     // Poland
+    'CZK': 24.5,     // Czech Republic
+    'HUF': 385.0,    // Hungary
+    'RON': 4.75,     // Romania
+    'BGN': 1.80,     // Bulgaria
+    'HRK': 6.95,     // Croatia
+    'RSD': 108.0,    // Serbia
+    'BAM': 1.80,     // Bosnia and Herzegovina
+    'MKD': 56.5,     // North Macedonia
+    'ALL': 95.0,     // Albania
+    'MDL': 18.2,     // Moldova
+    'UAH': 41.5,     // Ukraine
+    'BYN': 3.25,     // Belarus
+    'RUB': 95.0,     // Russia
+    'GEL': 2.85,     // Georgia
+    'AMD': 405.0,    // Armenia
+    'AZN': 1.70,     // Azerbaijan
+    'TRY': 34.5,     // Turkey
+    
+    // Middle East & Africa (2025 rates)
+    'ILS': 3.85,     // Israel
+    'JOD': 0.709,    // Jordan
+    'LBP': 89500.0,  // Lebanon
+    'SYP': 13000.0,  // Syria
+    'IRR': 42000.0,  // Iran
+    'IQD': 1470.0,   // Iraq
+    'SAR': 3.75,     // Saudi Arabia
+    'AED': 3.67,     // UAE
+    'QAR': 3.64,     // Qatar
+    'KWD': 0.31,     // Kuwait
+    'BHD': 0.377,    // Bahrain
+    'OMR': 0.385,    // Oman
+    'YER': 1540.0,   // Yemen
+    'EGP': 49.5,     // Egypt
+    'SDG': 600.0,    // Sudan
+    'LYD': 4.85,     // Libya
+    'TND': 3.15,     // Tunisia
+    'DZD': 137.0,    // Algeria
+    'MAD': 10.2,     // Morocco
+    'ZAR': 19.8,     // South Africa
+    'BWP': 14.2,     // Botswana
+    'NAD': 19.8,     // Namibia
+    'SZL': 19.8,     // Eswatini
+    'LSL': 19.8,     // Lesotho
+    'ZMW': 27.5,     // Zambia
+    'ZWL': 6000.0,   // Zimbabwe
+    'MWK': 1750.0,   // Malawi
+    'MZN': 64.0,     // Mozambique
+    'MGA': 4650.0,   // Madagascar
+    'MUR': 46.5,     // Mauritius
+    'SCR': 13.8,     // Seychelles
+    'KES': 130.0,    // Kenya
+    'UGX': 3850.0,   // Uganda
+    'TZS': 2580.0,   // Tanzania
+    'RWF': 1380.0,   // Rwanda
+    'BIF': 2950.0,   // Burundi
+    'ETB': 125.0,    // Ethiopia
+    'ERN': 15.0,     // Eritrea
+    'DJF': 178.0,    // Djibouti
+    'SOS': 570.0,    // Somalia
+    'NGN': 1520.0,   // Nigeria
+    'GHS': 15.8,     // Ghana
+    'XOF': 605.0,    // West African CFA Franc
+    'XAF': 605.0,    // Central African CFA Franc
+    'CVE': 101.5,    // Cape Verde
+    'GMD': 68.0,     // Gambia
+    'GNF': 8650.0,   // Guinea
+    'LRD': 195.0,    // Liberia
+    'SLL': 24500.0,  // Sierra Leone
+    'CDF': 2750.0,   // Democratic Republic of Congo
+    'AOA': 855.0,    // Angola
+    'STN': 22.5,     // São Tomé and Príncipe
+    'MRU': 39.5,     // Mauritania
+    'KMF': 452.0,    // Comoros
+    'SSP': 1300.0,   // South Sudan
+    
+    // Americas (2025 rates)
+    'BRL': 6.15,     // Brazil
+    'MXN': 20.5,     // Mexico
+    'ARS': 1050.0,   // Argentina
+    'CLP': 975.0,    // Chile
+    'COP': 4250.0,   // Colombia
+    'PEN': 3.75,     // Peru
+    'UYU': 42.5,     // Uruguay
+    'PYG': 7850.0,   // Paraguay
+    'BOB': 6.92,     // Bolivia
+    'VES': 45.0,     // Venezuela
+    'GYD': 220.0,    // Guyana
+    'SRD': 38.5,     // Suriname
+    'GTQ': 7.75,     // Guatemala
+    'BZD': 2.02,     // Belize
+    'HNL': 25.2,     // Honduras
+    'NIO': 37.0,     // Nicaragua
+    'CRC': 525.0,    // Costa Rica
+    'PAB': 1.0,      // Panama (pegged to USD)
+    'DOP': 59.5,     // Dominican Republic
+    'HTG': 155.0,    // Haiti
+    'JMD': 158.0,    // Jamaica
+    'BBD': 2.0,      // Barbados (pegged to USD)
+    'TTD': 6.78,     // Trinidad and Tobago
+    'XCD': 2.70,     // East Caribbean Dollar
+    'AWG': 1.79,     // Aruba
+    'ANG': 1.79,     // Netherlands Antilles
+    'CUP': 24.0,     // Cuba
+    'BSD': 1.0,      // Bahamas (pegged to USD)
+    'BMD': 1.0,      // Bermuda (pegged to USD)
+    'KYD': 0.82,     // Cayman Islands
+    
+    // Additional currencies
+    'AFN': 70.0,     // Afghanistan
+    'KZT': 475.0,    // Kazakhstan
+    'UZS': 12800.0,  // Uzbekistan
+    'TMT': 3.50,     // Turkmenistan
+    'KGS': 89.5,     // Kyrgyzstan
+    'TJS': 11.2,     // Tajikistan
+    'KPW': 900.0,    // North Korea
+    'MNT': 3450.0    // Mongolia
+  };
+  
+  return multipliers[currency] || 1.0;
+} 

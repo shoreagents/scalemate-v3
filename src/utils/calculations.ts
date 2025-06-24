@@ -15,15 +15,54 @@ import {
   TASK_COMPLEXITY_MULTIPLIERS
 } from './dataQuoteCalculator';
 // Business tier detection removed - handled via direct tier selection
-import { ROLES } from './quoteCalculatorData';
+import { ROLES, ROLES_SALARY_COMPARISON } from './rolesData';
+import { getCurrencyMultiplier } from './currency';
+import { Country } from '@/types/location';
+
+/**
+ * Helper function to get salary data with currency conversion
+ */
+const getSalaryData = (roleId: RoleId, userCountry?: string) => {
+  // Try to use new multi-country data first
+  const multiCountryData = ROLES_SALARY_COMPARISON[roleId];
+  if (multiCountryData && userCountry) {
+    const countryData = multiCountryData[userCountry as Country];
+    const philippineData = multiCountryData.PH;
+    
+    if (countryData && philippineData) {
+      // Convert Philippines PHP to USD for calculations
+      const phpMultiplier = getCurrencyMultiplier('PHP');
+      
+      return {
+        local: {
+          entry: { base: countryData.entry.base, total: countryData.entry.total },
+          moderate: { base: countryData.moderate.base, total: countryData.moderate.total },
+          experienced: { base: countryData.experienced.base, total: countryData.experienced.total }
+        },
+        philippine: {
+          entry: { base: Math.round(philippineData.entry.base / phpMultiplier), total: Math.round(philippineData.entry.total / phpMultiplier) },
+          moderate: { base: Math.round(philippineData.moderate.base / phpMultiplier), total: Math.round(philippineData.moderate.total / phpMultiplier) },
+          experienced: { base: Math.round(philippineData.experienced.base / phpMultiplier), total: Math.round(philippineData.experienced.total / phpMultiplier) }
+        }
+      };
+    }
+  }
+  
+  // Fallback to legacy SALARY_DATA
+  return SALARY_DATA[roleId] ? {
+    local: SALARY_DATA[roleId].australian,
+    philippine: SALARY_DATA[roleId].philippine
+  } : null;
+};
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling
- * Updated to handle multi-level experience distribution per role
+ * Updated to handle multi-level experience distribution per role and location-based salaries
  */
 export const calculateSavings = (
   formData: FormData, 
-  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>
+  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>,
+  userLocation?: { country: string; currency?: string }
 ): CalculationResult => {
   const selectedRoles = Object.entries(formData.selectedRoles)
     .filter(([_, selected]) => selected)
@@ -36,12 +75,12 @@ export const calculateSavings = (
   let totalTeamSize = 0;
 
   const breakdown: Record<RoleId, RoleSavings> = {} as Record<RoleId, RoleSavings>;
-
+  
   // Calculate savings for each selected role
   selectedRoles.forEach(roleId => {
     const teamSize = formData.teamSize[roleId] || 1;
-    const roleData = ROLES[roleId];
-    const roleSalaryData = SALARY_DATA[roleId];
+    const roleData = ROLES[roleId as keyof typeof ROLES];
+    const roleSalaryData = getSalaryData(roleId, userLocation?.country);
     
     if (!roleData || !roleSalaryData) {
       console.warn(`Missing data for role: ${roleId}`);
@@ -64,10 +103,10 @@ export const calculateSavings = (
       experienceLevels.forEach(level => {
         const memberCount = experienceDistribution[level];
         if (memberCount > 0) {
-          const australianSalary = roleSalaryData.australian[level];
+          const localSalary = roleSalaryData.local[level];
           const philippineSalary = roleSalaryData.philippine[level];
           
-          australianCost += australianSalary.total * memberCount;
+          australianCost += localSalary.total * memberCount;
           philippineCost += philippineSalary.total * memberCount;
           
           // Calculate weighted experience level for risk assessment
@@ -87,10 +126,10 @@ export const calculateSavings = (
       const experienceLevel = formData.experienceLevel as ExperienceLevel || 'moderate';
       weightedExperienceLevel = experienceLevel;
       
-      const australianSalary = roleSalaryData.australian[experienceLevel];
+      const localSalary = roleSalaryData.local[experienceLevel];
       const philippineSalary = roleSalaryData.philippine[experienceLevel];
       
-      australianCost = australianSalary.total * teamSize;
+      australianCost = localSalary.total * teamSize;
       philippineCost = philippineSalary.total * teamSize;
     }
 

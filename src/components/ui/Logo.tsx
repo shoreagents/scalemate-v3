@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+
 import { SCALEMATE_BRAND } from '@/lib/brand';
 
 interface LogoProps {
@@ -56,7 +56,7 @@ export const Logo: React.FC<LogoProps> = ({
   const ScaleMateLogo = () => (
     <svg
       viewBox="0 0 200 48"
-      className={cn(sizeMap[size], 'w-auto')}
+      className={`${sizeMap[size]} w-auto`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -127,7 +127,7 @@ export const Logo: React.FC<LogoProps> = ({
   const LogoMark = () => (
     <svg
       viewBox="0 0 48 48"
-      className={cn(sizeMap[size], 'w-auto')}
+      className={`${sizeMap[size]} w-auto`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -171,7 +171,7 @@ export const Logo: React.FC<LogoProps> = ({
 
   if (!interactive && !animated) {
     return (
-      <div className={cn('inline-flex items-center', className)}>
+      <div className={`inline-flex items-center ${className || ''}`}>
         <LogoComponent />
       </div>
     );
@@ -184,10 +184,7 @@ export const Logo: React.FC<LogoProps> = ({
       animate={animated ? "animate" : false}
       whileHover={interactive ? "hover" : {}}
       whileTap={interactive ? "tap" : {}}
-      className={cn(
-        'inline-flex items-center cursor-pointer select-none',
-        className
-      )}
+      className={`inline-flex items-center cursor-pointer select-none ${className || ''}`}
     >
       <LogoComponent />
     </motion.div>

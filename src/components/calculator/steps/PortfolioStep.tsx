@@ -3,46 +3,28 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
-// Manual detection removed
+import { ManualLocation, IPLocationData } from '@/types/location';
+
 import { useQuoteCalculatorData, getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
-import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X, RefreshCw } from 'lucide-react';
+import { Building, TrendingUp, Users, Edit3, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, Globe } from 'lucide-react';
 import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
-
-interface LocationData {
-  ip: string;
-  city: string;
-  region: string;
-  country_name: string;
-  country_code: string;
-  timezone: string;
-  latitude: number;
-  longitude: number;
-  currency: string;
-  currency_name: string;
-  languages: string;
-  org: string;
-}
-
-interface ManualLocation {
-  country: string;
-}
 
 interface PortfolioStepProps {
   value: PortfolioSize | '';
   manualData?: ManualPortfolioData | undefined;
-  locationData?: LocationData | null;
+  locationData?: IPLocationData | null;
   isLoadingLocation?: boolean;
   locationError?: string | null;
   isEditingLocation?: boolean;
   manualLocation?: ManualLocation | null;
   tempLocation?: ManualLocation;
-  countryRegions?: { [key: string]: string[] };
+
   onLocationEditStart?: () => void;
   onLocationEditSave?: () => void;
   onLocationEditCancel?: () => void;
   onLocationReset?: () => void;
   onTempLocationChange?: (location: ManualLocation) => void;
-  getEffectiveLocation?: () => LocationData | { city: string; region: string; country_name: string; } | null | undefined;
+  getEffectiveLocation?: () => IPLocationData | { country_name: string; country: string; currency: string; currencySymbol: string; } | null | undefined;
   onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => void;
 }
 
@@ -55,7 +37,7 @@ export function PortfolioStep({
   isEditingLocation = false,
   manualLocation,
   tempLocation,
-  countryRegions = {},
+
   onLocationEditStart,
   onLocationEditSave,
   onLocationEditCancel,
@@ -75,10 +57,7 @@ export function PortfolioStep({
   // Use dynamic portfolio indicators based on location
   const { 
     portfolioIndicators, 
-    isLoading: isLoadingIndicators, 
-    error: indicatorsError,
-    refreshIndicators,
-    isUsingDynamicData 
+    isLoading: isLoadingIndicators
   } = useQuoteCalculatorData(locationData, manualLocation);
 
   const portfolioOptions = Object.entries(portfolioIndicators)
@@ -127,14 +106,22 @@ export function PortfolioStep({
     }
   };
 
-  const getComplexityDisplayText = (complexity: string) => {
-    // Keep original terms but ensure consistent display
-    return complexity;
-  };
 
-  const getEffectiveCurrencySymbol = (locationData?: LocationData | null, manualLocation?: ManualLocation | null) => {
+
+
+
+  const getEffectiveCurrencySymbol = (locationData?: IPLocationData | null, manualLocation?: ManualLocation | null) => {
+    // If portfolio indicators are still loading, return placeholder or loading state
+    if (isLoadingIndicators) {
+      return '$'; // Return default until API completes
+    }
+    
+    // Disabled automatic currency detection from portfolio data as it's unreliable
+    // Always use location-based detection for accuracy
+    
     let currency: string;
     
+    // Fallback to location-based detection
     // Manual location takes priority over auto-detected location
     if (manualLocation?.country) {
       currency = getCurrencyByCountry(manualLocation.country);
@@ -223,9 +210,7 @@ export function PortfolioStep({
           <div className="flex items-center justify-center gap-4 flex-wrap">
             {isLoadingLocation ? (
               <div className="flex items-center gap-3">
-                <div className="animate-spin">
-                  <Wifi className="w-5 h-5 text-blue-500" />
-                </div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
                 <span className="text-neutral-700 font-medium">
                   Detecting your location...
                 </span>
@@ -281,11 +266,7 @@ export function PortfolioStep({
             <div className="mt-6">
               <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
                 <EnhancedLocationSelector
-                  {...(tempLocation && tempLocation.country && {
-                    initialLocation: {
-                      country: tempLocation.country
-                    }
-                  })}
+                  initialLocation={tempLocation || { country: '' }}
                   onLocationChange={(location: { country: string }) => {
                     onTempLocationChange?.({
                       country: location.country
@@ -388,7 +369,7 @@ export function PortfolioStep({
                     <div className="flex items-center justify-center mb-1">
                       <Zap className={`w-4 h-4 mr-1 flex-shrink-0 ${getPortfolioIconColor(option.tier)}`} />
                       <span className="text-sm font-medium text-neutral-900 capitalize">
-                        {getComplexityDisplayText(option.implementationComplexity)}
+                        {option.implementationComplexity}
                       </span>
                     </div>
                     <div className="text-xs text-neutral-500">Complexity</div>

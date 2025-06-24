@@ -13,11 +13,8 @@ import {
   Monitor,
   Eye,
   RefreshCw,
-  Download,
   Calendar,
-  Star,
-  Target,
-  AlertCircle
+  Target
 } from 'lucide-react';
 import { SessionData, LeadSubmission } from '@/utils/analytics';
 
@@ -125,11 +122,7 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 1) return '<1m';
-    if (minutes < 60) return `${Math.round(minutes)}m`;
-    return `${Math.round(minutes / 60)}h ${Math.round(minutes % 60)}m`;
-  };
+
 
   const getLeadScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100';

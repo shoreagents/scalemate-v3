@@ -1,7 +1,415 @@
 // Portfolio Data Service - Dynamic location-based portfolio indicators
-import { PortfolioSize, PortfolioIndicator, MultiCountryRoleSalaryData, RoleCategory } from '@/types';
+import { PortfolioSize, PortfolioIndicator } from '@/types';
+import { Country, LocationContext } from '@/types/location';
+import { getCurrencyMultiplier, getCurrencyByCountry } from './currency';
 
-// Static fallback data for portfolio indicators
+// Predefined revenue data for supported Country types
+const COUNTRY_REVENUE_DATA: Readonly<Record<Country, Record<PortfolioSize, PortfolioIndicator>>> = {
+  AU: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 750000, max: 2250000 }, // AUD values
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 2250000, max: 6000000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 6000000, max: 22500000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 22500000, max: 150000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 150000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  US: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 500000, max: 1500000 }, // USD values (base)
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 1500000, max: 4000000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 4000000, max: 15000000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 15000000, max: 100000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 100000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  CA: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 675000, max: 2025000 }, // CAD values
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 2025000, max: 5400000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 5400000, max: 20250000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 20250000, max: 135000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 135000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  UK: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 400000, max: 1200000 }, // GBP values
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 1200000, max: 3200000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 3200000, max: 12000000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 12000000, max: 80000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 80000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  NZ: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 800000, max: 2400000 }, // NZD values
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 2400000, max: 6400000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 6400000, max: 24000000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 24000000, max: 160000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 160000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  SG: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 675000, max: 2025000 }, // SGD values
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 2025000, max: 5400000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 5400000, max: 20250000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 20250000, max: 135000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 135000000 },
+      implementationComplexity: 'simple'
+    }
+  }
+} as const;
+
+// Static fallback data for portfolio indicators (USD base)
 const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
   '500-999': {
     min: 500,
@@ -147,22 +555,16 @@ function normalizeCacheKey(location: LocationContext): string {
   return location.countryName || location.country;
 }
 
-interface LocationContext {
-  country: string;
-  countryName?: string | undefined;
-  region?: string | undefined;
-  city?: string | undefined;
-  currency?: string | undefined;
-}
+
 
 /**
  * Generate location-specific portfolio indicators using Anthropic API
  */
 async function generateDynamicPortfolioIndicators(location: LocationContext): Promise<Record<PortfolioSize, PortfolioIndicator> | null> {
   try {
-    console.log('🚀 Calling /api/quote-calculator with location:', location);
+    console.log('🚀 Calling /api/anthropic/quote-calculator with location:', location);
     
-    const response = await fetch('/api/quote-calculator', {
+    const response = await fetch('/api/anthropic/quote-calculator', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -198,7 +600,37 @@ async function generateDynamicPortfolioIndicators(location: LocationContext): Pr
 }
 
 /**
+ * Helper function to determine if a country code is a supported Country type
+ */
+function isSupportedCountry(countryCode: string): countryCode is Country {
+  return ['AU', 'US', 'CA', 'UK', 'NZ', 'SG'].includes(countryCode);
+}
+
+/**
+ * Helper function to get country code from location context
+ */
+function getCountryCodeFromLocation(location: LocationContext): string | null {
+  // Try to get 2-letter country code from location context
+  if (location.country && location.country.length === 2) {
+    return location.country.toUpperCase();
+  }
+  
+  // Fallback: try to convert country name to code
+  const countryNameToCode: Record<string, string> = {
+    'United States': 'US',
+    'Australia': 'AU', 
+    'Canada': 'CA',
+    'United Kingdom': 'UK',
+    'New Zealand': 'NZ',
+    'Singapore': 'SG'
+  };
+  
+  return countryNameToCode[location.country] || null;
+}
+
+/**
  * Get portfolio indicators with location-based customization
+ * Uses predefined data for supported Country types, currency multipliers for others
  * Falls back to static data if dynamic generation fails
  */
 export async function getPortfolioIndicators(location?: LocationContext): Promise<Record<PortfolioSize, PortfolioIndicator>> {
@@ -218,7 +650,7 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
   }
 
   try {
-    // Try to get dynamic data
+    // Always try to get dynamic data first (for all locations)
     console.log('🌍 Generating location-specific portfolio indicators for:', location.countryName || location.country);
     const dynamicData = await generateDynamicPortfolioIndicators(location);
     
@@ -241,9 +673,19 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
     console.error('Error generating dynamic portfolio indicators:', error);
   }
 
-  // Fallback to static data with currency adjustments
-  console.log('📋 Using static portfolio indicators as fallback');
-  return getLocationAdjustedStaticData(location.currency || 'USD');
+  // Get country code from location for fallback logic
+  const countryCode = getCountryCodeFromLocation(location);
+  
+  // Fallback: Use predefined data for supported Country types when API fails
+  if (countryCode && isSupportedCountry(countryCode)) {
+    console.log('📋 API failed - using predefined portfolio data for supported country:', countryCode);
+    return COUNTRY_REVENUE_DATA[countryCode];
+  }
+
+  // Final fallback: Use currency multiplier to adjust static data for unsupported countries
+  console.log('💱 Using currency multiplier fallback for:', location.country);
+  const currency = location.currency || getCurrencyByCountry(location.country);
+  return getLocationAdjustedStaticData(currency);
 }
 
 /**
@@ -274,88 +716,7 @@ function getLocationAdjustedStaticData(currency: string): Record<PortfolioSize, 
   return adjustedData;
 }
 
-/**
- * Get currency multiplier for revenue adjustments
- */
-function getCurrencyMultiplier(currency: string): number {
-  const multipliers: Record<string, number> = {
-    'USD': 1.0,      // United States (base)
-    'AUD': 1.5,      // Australia
-    'CAD': 1.35,     // Canada
-    'GBP': 0.8,      // United Kingdom
-    'EUR': 0.9,      // European Union
-    'NZD': 1.6,      // New Zealand
-    'SGD': 1.35,     // Singapore
-    'PHP': 56.0,     // Philippines
-    'JPY': 150.0,    // Japan
-    'KRW': 1300.0,   // South Korea
-    'CNY': 7.2,      // China
-    'INR': 83.0,     // India
-    'BRL': 5.0,      // Brazil
-    'MXN': 17.0,     // Mexico
-    'CHF': 0.9,      // Switzerland
-    'NOK': 10.5,     // Norway
-    'SEK': 10.8,     // Sweden
-    'DKK': 6.9,      // Denmark
-    'PLN': 4.0,      // Poland
-    'CZK': 23.0,     // Czech Republic
-    'HUF': 360.0,    // Hungary
-    'RON': 4.6,      // Romania
-    'BGN': 1.8,      // Bulgaria
-    'HRK': 6.8,      // Croatia
-    'ILS': 3.7,      // Israel
-    'TRY': 27.0,     // Turkey
-    'RUB': 90.0,     // Russia
-    'UAH': 36.0,     // Ukraine
-    'ZAR': 18.5,     // South Africa
-    'THB': 35.0,     // Thailand
-    'MYR': 4.7,      // Malaysia
-    'IDR': 15500.0,  // Indonesia
-    'VND': 24000.0,  // Vietnam
-    'HKD': 7.8,      // Hong Kong
-    'TWD': 31.0,     // Taiwan
-    'AED': 3.7,      // UAE
-    'SAR': 3.75,     // Saudi Arabia
-    'QAR': 3.64,     // Qatar
-    'KWD': 0.31,     // Kuwait
-    'BHD': 0.38,     // Bahrain
-    'OMR': 0.38,     // Oman
-    'EGP': 31.0,     // Egypt
-    'JOD': 0.71,     // Jordan
-    'LBP': 15000.0,  // Lebanon
-    'CLP': 800.0,    // Chile
-    'COP': 4000.0,   // Colombia
-    'PEN': 3.7,      // Peru
-    'ARS': 350.0,    // Argentina
-    'UYU': 39.0,     // Uruguay
-    'BOB': 6.9,      // Bolivia
-    'PYG': 7200.0,   // Paraguay
-    'GTQ': 7.8,      // Guatemala
-    'CRC': 530.0,    // Costa Rica
-    'PAB': 1.0,      // Panama
-    'DOP': 55.0,     // Dominican Republic
-    'JMD': 155.0,    // Jamaica
-    'TTD': 6.8,      // Trinidad & Tobago
-    'BBD': 2.0,      // Barbados
-    'BSD': 1.0,      // Bahamas
-    'BZD': 2.0,      // Belize
-    'XCD': 2.7,      // Eastern Caribbean
-    'AWG': 1.8,      // Aruba
-    'ANG': 1.8,      // Netherlands Antilles
-    'SRD': 36.0,     // Suriname
-    'GYD': 210.0,    // Guyana
-    'FJD': 2.2,      // Fiji
-    'TOP': 2.3,      // Tonga
-    'WST': 2.7,      // Samoa
-    'VUV': 120.0,    // Vanuatu
-    'SBD': 8.3,      // Solomon Islands
-    'PGK': 3.7,      // Papua New Guinea
-    'NCF': 110.0,    // New Caledonia
-    'XPF': 110.0     // French Polynesia
-  };
-  
-  return multipliers[currency] || 1.0;
-}
+
 
 // Note: getLocationAdjustedDescription removed - was unused in static fallback
 
@@ -402,468 +763,3 @@ export function hasCachedData(country: string): boolean {
 export function getStaticPortfolioIndicators(): Record<PortfolioSize, PortfolioIndicator> {
   return PORTFOLIO_INFO;
 }
-
-// Cache for roles data - consistent with portfolio indicators cache
-interface RolesCacheEntry {
-  data: typeof ROLES;
-  timestamp: number;
-  location: string;
-}
-
-interface RolesSalaryCacheEntry {
-  data: typeof ROLES_SALARY_COMPARISON;
-  timestamp: number;
-  location: string;
-}
-
-// Load roles cache from localStorage on initialization
-function loadRolesCacheFromStorage(): Map<string, RolesCacheEntry> {
-  try {
-    const stored = localStorage.getItem('scalemate-roles-cache');
-    if (!stored) return new Map();
-    
-    const parsed = JSON.parse(stored);
-    return new Map(parsed.map(([key, value]: [string, RolesCacheEntry]) => [key, value]));
-  } catch (error) {
-    console.warn('Failed to load roles cache from localStorage:', error);
-    return new Map();
-  }
-}
-
-function loadRolesSalaryCacheFromStorage(): Map<string, RolesSalaryCacheEntry> {
-  try {
-    const stored = localStorage.getItem('scalemate-roles-salary-cache');
-    if (!stored) return new Map();
-    
-    const parsed = JSON.parse(stored);
-    return new Map(parsed.map(([key, value]: [string, RolesSalaryCacheEntry]) => [key, value]));
-  } catch (error) {
-    console.warn('Failed to load roles salary cache from localStorage:', error);
-    return new Map();
-  }
-}
-
-function saveRolesCacheToStorage(cache: Map<string, RolesCacheEntry>): void {
-  try {
-    const serialized = JSON.stringify(Array.from(cache.entries()));
-    localStorage.setItem('scalemate-roles-cache', serialized);
-  } catch (error) {
-    console.warn('Failed to save roles cache to localStorage:', error);
-  }
-}
-
-function saveRolesSalaryCacheToStorage(cache: Map<string, RolesSalaryCacheEntry>): void {
-  try {
-    const serialized = JSON.stringify(Array.from(cache.entries()));
-    localStorage.setItem('scalemate-roles-salary-cache', serialized);
-  } catch (error) {
-    console.warn('Failed to save roles salary cache to localStorage:', error);
-  }
-}
-
-const rolesCache = typeof window !== 'undefined' ? loadRolesCacheFromStorage() : new Map<string, RolesCacheEntry>();
-const rolesSalaryCache = typeof window !== 'undefined' ? loadRolesSalaryCacheFromStorage() : new Map<string, RolesSalaryCacheEntry>();
-
-/**
- * Generate dynamic roles data using Anthropic API
- */
-async function generateDynamicRoles(location: LocationContext): Promise<typeof ROLES | null> {
-  try {
-    console.log('🚀 Calling /api/quote-calculator for roles with location:', location);
-    
-    const response = await fetch('/api/quote-calculator', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        location,
-        portfolioSizes: [],
-        requestType: 'roles'
-      }),
-    });
-
-    console.log('📡 API response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API response error:', response.status, errorText);
-      throw new Error(`API response not ok: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ API response data received:', Object.keys(data));
-    
-    if (data.roles) {
-      console.log('🎯 Roles found in response');
-      return data.roles;
-    } else {
-      console.error('❌ No roles in response:', data);
-      return null;
-    }
-  } catch (error) {
-    console.error('💥 Failed to generate dynamic roles:', error);
-    return null;
-  }
-}
-
-/**
- * Generate dynamic roles salary comparison using Anthropic API
- */
-async function generateDynamicRolesSalaryComparison(location: LocationContext): Promise<typeof ROLES_SALARY_COMPARISON | null> {
-  try {
-    console.log('🚀 Calling /api/quote-calculator for salary data with location:', location);
-    
-    const response = await fetch('/api/quote-calculator', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        location,
-        portfolioSizes: [],
-        requestType: 'salary'
-      }),
-    });
-
-    console.log('📡 API response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API response error:', response.status, errorText);
-      throw new Error(`API response not ok: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('✅ API response data received:', Object.keys(data));
-    
-    if (data.rolesSalaryComparison) {
-      console.log('🎯 Roles salary comparison found in response');
-      return data.rolesSalaryComparison;
-    } else {
-      console.error('❌ No rolesSalaryComparison in response:', data);
-      return null;
-    }
-  } catch (error) {
-    console.error('💥 Failed to generate dynamic roles salary comparison:', error);
-    return null;
-  }
-}
-
-/**
- * Get roles with location-based customization
- * Falls back to static data if dynamic generation fails
- */
-export async function getRoles(location?: LocationContext): Promise<typeof ROLES> {
-  // If no location provided, return static data
-  if (!location?.country) {
-    return ROLES;
-  }
-
-  // Create normalized cache key for consistency
-  const cacheKey = normalizeCacheKey(location);
-  
-  // Check cache first
-  const cached = rolesCache.get(cacheKey);
-  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-    console.log('📊 Using cached roles for:', cacheKey, '(cache size:', rolesCache.size, ')');
-    return cached.data;
-  }
-
-  try {
-    // Try to get dynamic data
-    console.log('🌍 Generating location-specific roles for:', location.countryName || location.country);
-    const dynamicData = await generateDynamicRoles(location);
-    
-    if (dynamicData) {
-      // Cache the result
-      const cacheEntry: RolesCacheEntry = {
-        data: dynamicData,
-        timestamp: Date.now(),
-        location: cacheKey
-      };
-      rolesCache.set(cacheKey, cacheEntry);
-      saveRolesCacheToStorage(rolesCache);
-      
-      console.log('✅ Successfully generated and cached roles for:', cacheKey, '(cache size:', rolesCache.size, ')');
-      return dynamicData;
-    }
-  } catch (error) {
-    console.error('Error generating dynamic roles:', error);
-  }
-
-  // Fallback to static data
-  console.log('📋 Using static roles as fallback');
-  return ROLES;
-}
-
-/**
- * Get roles salary comparison with location-based customization
- * Falls back to static data if dynamic generation fails
- */
-export async function getRolesSalaryComparison(location?: LocationContext): Promise<typeof ROLES_SALARY_COMPARISON> {
-  // If no location provided, return static data
-  if (!location?.country) {
-    return ROLES_SALARY_COMPARISON;
-  }
-
-  // Create normalized cache key for consistency
-  const cacheKey = normalizeCacheKey(location);
-  
-  // Check cache first
-  const cached = rolesSalaryCache.get(cacheKey);
-  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-    console.log('📊 Using cached roles salary comparison for:', cacheKey, '(cache size:', rolesSalaryCache.size, ')');
-    return cached.data;
-  }
-
-  try {
-    // Try to get dynamic data
-    console.log('🌍 Generating location-specific roles salary comparison for:', location.countryName || location.country);
-    const dynamicData = await generateDynamicRolesSalaryComparison(location);
-    
-    if (dynamicData) {
-      // Cache the result
-      const cacheEntry: RolesSalaryCacheEntry = {
-        data: dynamicData,
-        timestamp: Date.now(),
-        location: cacheKey
-      };
-      rolesSalaryCache.set(cacheKey, cacheEntry);
-      saveRolesSalaryCacheToStorage(rolesSalaryCache);
-      
-      console.log('✅ Successfully generated and cached roles salary comparison for:', cacheKey, '(cache size:', rolesSalaryCache.size, ')');
-      return dynamicData;
-    }
-  } catch (error) {
-    console.error('Error generating dynamic roles salary comparison:', error);
-  }
-
-  // Fallback to static data
-  console.log('📋 Using static roles salary comparison as fallback');
-  return ROLES_SALARY_COMPARISON;
-}
-
-/**
- * Clear roles cache (useful for testing or manual refresh)
- */
-export function clearRolesCache(): void {
-  rolesCache.clear();
-  rolesSalaryCache.clear();
-  
-  // Also clear localStorage
-  try {
-    localStorage.removeItem('scalemate-roles-cache');
-    localStorage.removeItem('scalemate-roles-salary-cache');
-    console.log('🗑️ Roles cache cleared from memory and localStorage');
-  } catch (error) {
-    console.warn('⚠️ Failed to clear localStorage roles cache:', error);
-    console.log('🗑️ Roles cache cleared from memory only');
-  }
-}
-
-/**
- * Get roles cache statistics
- */
-export function getRolesCacheStats() {
-  return {
-    roles: {
-      size: rolesCache.size,
-      entries: Array.from(rolesCache.keys()),
-      duration: CACHE_DURATION
-    },
-    rolesSalary: {
-      size: rolesSalaryCache.size,
-      entries: Array.from(rolesSalaryCache.keys()),
-      duration: CACHE_DURATION
-    }
-  };
-}
-
-/**
- * Check if roles data is cached for a specific location
- */
-export function hasRolesCachedData(country: string): boolean {
-  const cacheKey = normalizeCacheKey({ country });
-  const rolesEntry = rolesCache.get(cacheKey);
-  const salaryEntry = rolesSalaryCache.get(cacheKey);
-  
-  const rolesValid = rolesEntry && (Date.now() - rolesEntry.timestamp) < CACHE_DURATION;
-  const salaryValid = salaryEntry && (Date.now() - salaryEntry.timestamp) < CACHE_DURATION;
-  
-  return Boolean(rolesValid || salaryValid);
-}
-
-/**
- * Get static roles (for fallback or testing)
- */
-export function getStaticRoles() {
-  return ROLES;
-}
-
-/**
- * Get static roles salary comparison (for fallback or testing)
- */
-export function getStaticRolesSalaryComparison() {
-  return ROLES_SALARY_COMPARISON;
-}
-
-
-
-// Enhanced multi-country salary data with detailed breakdowns
-export const ROLES_SALARY_COMPARISON: Readonly<Record<string, MultiCountryRoleSalaryData>> = {
-  assistantPropertyManager: {
-    AU: {
-      entry: { base: 45000, total: 58500, benefits: 9000, taxes: 13500 },
-      moderate: { base: 58000, total: 75400, benefits: 11600, taxes: 17400 },
-      experienced: { base: 75000, total: 97500, benefits: 15000, taxes: 22500 }
-    },
-    US: {
-      entry: { base: 42000, total: 54600, benefits: 8400, taxes: 12600 },
-      moderate: { base: 55000, total: 71500, benefits: 11000, taxes: 16500 },
-      experienced: { base: 70000, total: 91000, benefits: 14000, taxes: 21000 }
-    },
-    CA: {
-      entry: { base: 40000, total: 52000, benefits: 8000, taxes: 12000 },
-      moderate: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 },
-      experienced: { base: 67000, total: 87100, benefits: 13400, taxes: 20100 }
-    },
-    UK: {
-      entry: { base: 28000, total: 36400, benefits: 5600, taxes: 8400 },
-      moderate: { base: 36000, total: 46800, benefits: 7200, taxes: 10800 },
-      experienced: { base: 46000, total: 59800, benefits: 9200, taxes: 13800 }
-    },
-    NZ: {
-      entry: { base: 43000, total: 55900, benefits: 8600, taxes: 12900 },
-      moderate: { base: 56000, total: 72800, benefits: 11200, taxes: 16800 },
-      experienced: { base: 72000, total: 93600, benefits: 14400, taxes: 21600 }
-    },
-    SG: {
-      entry: { base: 36000, total: 46800, benefits: 7200, taxes: 10800 },
-      moderate: { base: 47000, total: 61100, benefits: 9400, taxes: 14100 },
-      experienced: { base: 60000, total: 78000, benefits: 12000, taxes: 18000 }
-    },
-    PH: {
-      entry: { base: 8000, total: 10400, benefits: 1600, taxes: 2400 },
-      moderate: { base: 12000, total: 15600, benefits: 2400, taxes: 3600 },
-      experienced: { base: 18000, total: 23400, benefits: 3600, taxes: 5400 }
-    }
-  },
-  leasingCoordinator: {
-    AU: {
-      entry: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 },
-      moderate: { base: 68000, total: 88400, benefits: 13600, taxes: 20400 },
-      experienced: { base: 85000, total: 110500, benefits: 17000, taxes: 25500 }
-    },
-    US: {
-      entry: { base: 48000, total: 62400, benefits: 9600, taxes: 14400 },
-      moderate: { base: 63000, total: 81900, benefits: 12600, taxes: 18900 },
-      experienced: { base: 78000, total: 101400, benefits: 15600, taxes: 23400 }
-    },
-    CA: {
-      entry: { base: 46000, total: 59800, benefits: 9200, taxes: 13800 },
-      moderate: { base: 60000, total: 78000, benefits: 12000, taxes: 18000 },
-      experienced: { base: 75000, total: 97500, benefits: 15000, taxes: 22500 }
-    },
-    UK: {
-      entry: { base: 32000, total: 41600, benefits: 6400, taxes: 9600 },
-      moderate: { base: 42000, total: 54600, benefits: 8400, taxes: 12600 },
-      experienced: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 }
-    },
-    NZ: {
-      entry: { base: 50000, total: 65000, benefits: 10000, taxes: 15000 },
-      moderate: { base: 65000, total: 84500, benefits: 13000, taxes: 19500 },
-      experienced: { base: 81000, total: 105300, benefits: 16200, taxes: 24300 }
-    },
-    SG: {
-      entry: { base: 42000, total: 54600, benefits: 8400, taxes: 12600 },
-      moderate: { base: 55000, total: 71500, benefits: 11000, taxes: 16500 },
-      experienced: { base: 68000, total: 88400, benefits: 13600, taxes: 20400 }
-    },
-    PH: {
-      entry: { base: 10000, total: 13000, benefits: 2000, taxes: 3000 },
-      moderate: { base: 15000, total: 19500, benefits: 3000, taxes: 4500 },
-      experienced: { base: 22000, total: 28600, benefits: 4400, taxes: 6600 }
-    }
-  },
-  marketingSpecialist: {
-    AU: {
-      entry: { base: 55000, total: 71500, benefits: 11000, taxes: 16500 },
-      moderate: { base: 72000, total: 93600, benefits: 14400, taxes: 21600 },
-      experienced: { base: 95000, total: 123500, benefits: 19000, taxes: 28500 }
-    },
-    US: {
-      entry: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 },
-      moderate: { base: 68000, total: 88400, benefits: 13600, taxes: 20400 },
-      experienced: { base: 88000, total: 114400, benefits: 17600, taxes: 26400 }
-    },
-    CA: {
-      entry: { base: 50000, total: 65000, benefits: 10000, taxes: 15000 },
-      moderate: { base: 65000, total: 84500, benefits: 13000, taxes: 19500 },
-      experienced: { base: 84000, total: 109200, benefits: 16800, taxes: 25200 }
-    },
-    UK: {
-      entry: { base: 35000, total: 45500, benefits: 7000, taxes: 10500 },
-      moderate: { base: 45000, total: 58500, benefits: 9000, taxes: 13500 },
-      experienced: { base: 58000, total: 75400, benefits: 11600, taxes: 17400 }
-    },
-    NZ: {
-      entry: { base: 53000, total: 68900, benefits: 10600, taxes: 15900 },
-      moderate: { base: 69000, total: 89700, benefits: 13800, taxes: 20700 },
-      experienced: { base: 90000, total: 117000, benefits: 18000, taxes: 27000 }
-    },
-    SG: {
-      entry: { base: 45000, total: 58500, benefits: 9000, taxes: 13500 },
-      moderate: { base: 58000, total: 75400, benefits: 11600, taxes: 17400 },
-      experienced: { base: 76000, total: 98800, benefits: 15200, taxes: 22800 }
-    },
-    PH: {
-      entry: { base: 12000, total: 15600, benefits: 2400, taxes: 3600 },
-      moderate: { base: 18000, total: 23400, benefits: 3600, taxes: 5400 },
-      experienced: { base: 28000, total: 36400, benefits: 5600, taxes: 8400 }
-    }
-  }
-} as const;
-
-// Simplified enhanced property management roles for Step 2 implementation
-export const ROLES = {
-  assistantPropertyManager: {
-    id: 'assistantPropertyManager',
-    title: 'Assistant Property Manager',
-    icon: '🏢',
-    description: 'Handles day-to-day property operations, tenant relations, and administrative tasks.',
-    category: 'property-management' as RoleCategory,
-    type: 'predefined' as const,
-    color: 'brand-primary',
-    salaryData: ROLES_SALARY_COMPARISON.assistantPropertyManager,
-    requiredSkills: ['Property Management', 'Tenant Relations', 'Administrative Skills', 'Communication'],
-    optionalSkills: ['Maintenance Coordination', 'Compliance Knowledge', 'Basic Accounting'],
-    searchKeywords: ['property', 'manager', 'tenant', 'administration', 'operations', 'maintenance', 'compliance']
-  },
-  leasingCoordinator: {
-    id: 'leasingCoordinator',
-    title: 'Leasing Coordinator',
-    icon: '🗝️',
-    description: 'Manages leasing activities, prospect communication, and application processing.',
-    category: 'leasing' as RoleCategory,
-    type: 'predefined' as const,
-    color: 'brand-secondary',
-    salaryData: ROLES_SALARY_COMPARISON.leasingCoordinator,
-    requiredSkills: ['Sales Skills', 'Customer Service', 'Application Processing', 'Market Knowledge'],
-    optionalSkills: ['Marketing Skills', 'CRM Software', 'Negotiation Skills'],
-    searchKeywords: ['leasing', 'coordinator', 'sales', 'applications', 'prospects', 'tours', 'inquiries']
-  },
-  marketingSpecialist: {
-    id: 'marketingSpecialist',
-    title: 'Marketing Specialist',
-    icon: '📈',
-    description: 'Creates marketing campaigns, manages digital presence, and analyzes market trends.',
-    category: 'marketing' as RoleCategory,
-    type: 'predefined' as const,
-    color: 'brand-accent',
-    salaryData: ROLES_SALARY_COMPARISON.marketingSpecialist,
-    requiredSkills: ['Digital Marketing', 'Content Creation', 'Analytics', 'Social Media'],
-    optionalSkills: ['Graphic Design', 'SEO/SEM', 'Video Production', 'Data Analysis'],
-    searchKeywords: ['marketing', 'specialist', 'digital', 'social media', 'content', 'campaigns', 'analytics']
-  }
-} as const; 

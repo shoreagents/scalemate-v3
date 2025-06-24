@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Brain, Zap, Target, Sparkles, BarChart3, Users, TrendingUp, CheckCircle, Play, ArrowRight } from 'lucide-react';
+import { Zap, Target, BarChart3, Users, TrendingUp, CheckCircle, Play, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
