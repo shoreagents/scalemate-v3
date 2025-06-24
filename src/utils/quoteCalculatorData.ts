@@ -78,7 +78,11 @@ interface CacheEntry {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+const CACHE_DURATION = 1000 * 60 * 1; // 1 minute for testing dynamic portfolios
+
+// Clear any existing cache on startup for testing
+console.log('🗑️ Clearing portfolio cache on startup for dynamic testing');
+cache.clear();
 
 interface LocationContext {
   country: string;
@@ -93,6 +97,8 @@ interface LocationContext {
  */
 async function generateDynamicPortfolioIndicators(location: LocationContext): Promise<Record<PortfolioSize, PortfolioIndicator> | null> {
   try {
+    console.log('🚀 Calling /api/quote-calculator with location:', location);
+    
     const response = await fetch('/api/quote-calculator', {
       method: 'POST',
       headers: {
@@ -100,18 +106,30 @@ async function generateDynamicPortfolioIndicators(location: LocationContext): Pr
       },
       body: JSON.stringify({
         location,
-        portfolioSizes: ['500-999', '1000-1999', '2000-4999', '5000+', 'manual']
+        portfolioSizes: [] // Claude will generate dynamic ranges
       }),
     });
 
+    console.log('📡 API response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`API response not ok: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ API response error:', response.status, errorText);
+      throw new Error(`API response not ok: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    return data.portfolioIndicators;
+    console.log('✅ API response data received:', Object.keys(data));
+    
+    if (data.portfolioIndicators) {
+      console.log('🎯 Portfolio indicators found in response');
+      return data.portfolioIndicators;
+    } else {
+      console.error('❌ No portfolioIndicators in response:', data);
+      return null;
+    }
   } catch (error) {
-    console.error('Failed to generate dynamic portfolio indicators:', error);
+    console.error('💥 Failed to generate dynamic portfolio indicators:', error);
     return null;
   }
 }
@@ -126,8 +144,8 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
     return PORTFOLIO_INFO;
   }
 
-  // Create cache key
-  const cacheKey = `${location.country}-${location.region || ''}-${location.city || ''}`;
+  // Create cache key using country only for consistency between auto-detected and manual selection
+  const cacheKey = location.country;
   
   // Check cache first
   const cached = cache.get(cacheKey);
@@ -172,14 +190,17 @@ function getLocationAdjustedStaticData(location: LocationContext): Record<Portfo
   
   Object.keys(adjustedData).forEach(key => {
     const portfolioKey = key as PortfolioSize;
-    adjustedData[portfolioKey] = {
-      ...adjustedData[portfolioKey],
-      averageRevenue: {
-        min: Math.round(adjustedData[portfolioKey].averageRevenue.min * currencyMultiplier),
-        max: Math.round(adjustedData[portfolioKey].averageRevenue.max * currencyMultiplier)
-      },
-      description: getLocationAdjustedDescription(adjustedData[portfolioKey].description, location)
-    };
+    const originalData = adjustedData[portfolioKey];
+    if (originalData) {
+      adjustedData[portfolioKey] = {
+        ...originalData,
+        averageRevenue: {
+          min: Math.round(originalData.averageRevenue.min * currencyMultiplier),
+          max: Math.round(originalData.averageRevenue.max * currencyMultiplier)
+        },
+        description: getLocationAdjustedDescription(originalData.description, location)
+      };
+    }
   });
 
   return adjustedData;
@@ -207,12 +228,7 @@ function getCurrencyMultiplier(currency: string): number {
  * Adjust description based on location
  */
 function getLocationAdjustedDescription(description: string, location: LocationContext): string {
-  const countryName = location.countryName || location.country;
-  
-  if (countryName && countryName !== 'Australia') {
-    return `${description} - Tailored for ${countryName} market`;
-  }
-  
+  // Return original description without location-specific text
   return description;
 }
 

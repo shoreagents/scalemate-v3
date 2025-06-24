@@ -48,10 +48,23 @@ export async function POST(request: NextRequest) {
     const body: PortfolioIndicatorRequest = await request.json();
     const { location, portfolioSizes } = body;
 
-    if (!location?.country || !portfolioSizes?.length) {
+    if (!location?.country) {
       return NextResponse.json(
-        { error: 'Location and portfolio sizes are required' },
+        { error: 'Location is required' },
         { status: 400 }
+      );
+    }
+
+    // Check if API key is available
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('❌ ANTHROPIC_API_KEY environment variable is not set');
+      return NextResponse.json(
+        { 
+          error: 'Failed to generate portfolio indicators',
+          details: 'API configuration missing'
+        },
+        { status: 500 }
       );
     }
 
@@ -69,34 +82,39 @@ Context:
 - Market: ${marketContext}
 - Target: Property management companies considering offshore teams
 
-For each portfolio size range, provide realistic data considering ${countryName}'s:
+Based on ${countryName}'s property management market conditions, create 4 realistic portfolio size ranges that make sense for local companies, considering:
+- Typical property management company sizes in ${countryName}
+- Local market structure and competition
+- Average properties per manager ratios
+- Market maturity and business scale patterns
+
+For each portfolio size range you create, provide realistic data considering ${countryName}'s:
 - Property market conditions
 - Average property values
 - Labor costs
 - Regulatory environment
 - Technology adoption
 
-Portfolio sizes to generate:
-${portfolioSizes.map(size => `- ${size} properties`).join('\n')}
-
 Requirements:
-1. Revenue ranges should reflect ${countryName} property market reality
-2. Descriptions should mention location-specific benefits
-3. Team sizes should consider local vs offshore cost ratios
-4. Implementation complexity should reflect local market maturity
+1. Create 4 portfolio size ranges that reflect typical ${countryName} property management business sizes
+2. Property count ranges should be realistic for the local market (e.g., smaller ranges for emerging markets, larger for mature markets)
+3. Revenue ranges should reflect ${countryName} property market reality
+4. Descriptions should be generic and describe current portfolio characteristics (what this portfolio size typically represents now), not future implementation plans
+5. Team sizes should be generic and scale proportionally with portfolio size
+6. Implementation complexity should reflect local market maturity
 
 Respond with ONLY a valid JSON object in this exact format:
 {
   "portfolioIndicators": {
-    "500-999": {
-      "min": 500,
-      "max": 999,
+    "[range1]": {
+      "min": [realistic_min_for_local_market],
+      "max": [realistic_max_for_local_market],
       "tier": "growing",
-      "description": "[Location-specific description mentioning ${countryName} market benefits]",
+      "description": "[Generic description of current portfolio characteristics - what companies this size typically manage now]",
       "recommendedTeamSize": {
-        "assistantPropertyManager": 1,
-        "leasingCoordinator": 1,
-        "marketingSpecialist": 1
+        "assistantPropertyManager": [number],
+        "leasingCoordinator": [number],
+        "marketingSpecialist": [number]
       },
       "averageRevenue": {
         "min": [realistic minimum in ${currency}],
@@ -104,24 +122,26 @@ Respond with ONLY a valid JSON object in this exact format:
       },
       "implementationComplexity": "simple"
     },
-    [... continue for all portfolio sizes]
+    "[range2]": { ... },
+    "[range3]": { ... },
+    "[range4]": { ... }
   }
 }
 
-Tiers: "growing", "large", "major", "enterprise"
-Complexity: "simple", "moderate", "complex", "enterprise"
-Ensure all numbers are realistic for ${countryName} property management market.`;
+Tiers: "growing", "large", "major", "enterprise" (assign appropriately)
+Complexity: "simple", "moderate", "complex", "enterprise" (assign based on local market maturity)
+Portfolio range keys should be descriptive like "100-299", "300-999", "1000-2499", "2500+" - adjust numbers to fit ${countryName} market reality.`;
 
     // Call Anthropic API
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
         temperature: 0.3,
         messages: [
@@ -160,7 +180,7 @@ Ensure all numbers are realistic for ${countryName} property management market.`
       throw new Error('Invalid response structure from Anthropic');
     }
 
-    // Add manual portfolio option
+    // Add manual portfolio option (always included for custom input)
     portfolioData.portfolioIndicators.manual = {
       min: 0,
       max: 99999,

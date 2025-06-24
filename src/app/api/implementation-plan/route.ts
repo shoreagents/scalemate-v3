@@ -70,7 +70,7 @@ interface ImplementationPlan {
 }
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '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',
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
 export async function POST(request: NextRequest) {
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const message = await anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 4000,
         messages: [{
           role: 'user',

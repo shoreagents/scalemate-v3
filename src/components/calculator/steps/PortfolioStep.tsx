@@ -138,6 +138,58 @@ export function PortfolioStep({
     }
   };
 
+  const getPortfolioIconColor = (tier: string) => {
+    switch (tier) {
+      case 'growing': return 'text-emerald-500';
+      case 'large': return 'text-blue-500';
+      case 'major': return 'text-purple-500';
+      case 'enterprise': return 'text-orange-500';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const getComplexityDisplayText = (complexity: string) => {
+    // Keep original terms but ensure consistent display
+    return complexity;
+  };
+
+  const getCurrencySymbol = (locationData?: LocationData | null, manualLocation?: ManualLocation | null) => {
+    // First try to get currency from auto-detected location data
+    let currency = locationData?.currency;
+    
+    // If manual location is set, map country to currency
+    if (manualLocation?.country && !currency) {
+      const countryToCurrency: Record<string, string> = {
+        'United States': 'USD',
+        'Australia': 'AUD',
+        'Canada': 'CAD',
+        'United Kingdom': 'GBP',
+        'Germany': 'EUR',
+        'France': 'EUR',
+        'Spain': 'EUR',
+        'Italy': 'EUR',
+        'Netherlands': 'EUR',
+        'New Zealand': 'NZD',
+        'Singapore': 'SGD',
+        'Philippines': 'PHP'
+      };
+      currency = countryToCurrency[manualLocation.country] || 'USD';
+    }
+    
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'AUD': 'A$',
+      'CAD': 'C$',
+      'GBP': '£',
+      'EUR': '€',
+      'NZD': 'NZ$',
+      'SGD': 'S$',
+      'PHP': '₱'
+    };
+    
+    return symbols[currency || 'USD'] || '$';
+  };
+
   return (
     <div className="mx-auto" style={{ maxWidth: '1400px' }}>
             {/* Header */}
@@ -209,7 +261,7 @@ export function PortfolioStep({
                     onClick={onLocationReset}
                     className="text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors"
                   >
-                    Reset to auto-detected
+                    Use Current Location
                   </button>
                 )}
               </>
@@ -259,7 +311,7 @@ export function PortfolioStep({
             transition={{ duration: 0.3 }}
           >
             {/* Preset Portfolio Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {portfolioOptions.map((option) => {
           const isSelected = value === option.value;
           
@@ -273,7 +325,7 @@ export function PortfolioStep({
               <button
                       onClick={() => handlePresetSelection(option.value)}
                 className={`
-                  w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200
+                  w-full h-80 p-6 rounded-xl border-2 text-left transition-all duration-200 flex flex-col
                   ${isSelected 
                     ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
                     : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
@@ -310,15 +362,17 @@ export function PortfolioStep({
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-neutral-600 mb-4">
-                  {option.description}
-                </p>
+                <div className="flex-1 mb-4">
+                  <p className="text-sm text-neutral-600">
+                    {option.description}
+                  </p>
+                </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-4 mt-auto">
                   <div className="text-center p-3 rounded-lg bg-white/80">
                     <div className="flex items-center justify-center mb-1">
-                      <Users className="w-4 h-4 text-brand-secondary-500 mr-1" />
+                      <Users className={`w-4 h-4 mr-1 ${getPortfolioIconColor(option.tier)}`} />
                       <span className="text-sm font-medium text-neutral-900">
                         {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
                       </span>
@@ -328,9 +382,9 @@ export function PortfolioStep({
                   
                   <div className="text-center p-3 rounded-lg bg-white/80">
                     <div className="flex items-center justify-center mb-1">
-                      <Target className="w-4 h-4 text-brand-accent-500 mr-1" />
+                      <Zap className={`w-4 h-4 mr-1 flex-shrink-0 ${getPortfolioIconColor(option.tier)}`} />
                       <span className="text-sm font-medium text-neutral-900 capitalize">
-                        {option.implementationComplexity}
+                        {getComplexityDisplayText(option.implementationComplexity)}
                       </span>
                     </div>
                     <div className="text-xs text-neutral-500">Complexity</div>
@@ -341,7 +395,7 @@ export function PortfolioStep({
                 <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
                   <span>Revenue Range:</span>
                   <span className="font-medium">
-                    ${(option.averageRevenue.min / 1000000).toFixed(1)}M - ${(option.averageRevenue.max / 1000000).toFixed(1)}M
+                    {getCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {getCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.max / 1000000).toFixed(1)}M
                   </span>
                 </div>
               </button>
