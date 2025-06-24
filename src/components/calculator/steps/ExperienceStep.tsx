@@ -3,7 +3,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExperienceLevel, CustomRole, LocationData, RoleExperienceDistribution } from '@/types';
-import { ENHANCED_SALARY_DATA, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
+import { ROLES_SALARY_COMPARISON, ROLES } from '@/utils/quoteCalculatorData';
+import { ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
 import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb, GraduationCap, ChevronDown, ChevronUp, BarChart3, Plus, Minus } from 'lucide-react';
 
@@ -39,7 +40,7 @@ export function ExperienceStep({
   
   // Get all available roles (predefined + additional + custom)
   const allRoles = React.useMemo(() => {
-    const predefinedRoles = Object.values(ENHANCED_PROPERTY_ROLES);
+    const predefinedRoles = Object.values(ROLES);
     const additionalRoles = Object.entries(ADDITIONAL_PROPERTY_ROLES).map(([id, roleData]) => ({
       id,
       title: roleData.title || '',

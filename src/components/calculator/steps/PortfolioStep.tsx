@@ -2,8 +2,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { PortfolioSize, ManualPortfolioData, RevenueRange, PortfolioIndicator } from '@/types';
-import { REVENUE_RANGES, detectBusinessTier } from '@/utils/dataQuoteCalculator';
+import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
+import { detectBusinessTier } from '@/utils/quoteCalculatorData';
 import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, Sparkles, CheckCircle, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X, RefreshCw } from 'lucide-react';
 import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
@@ -70,8 +70,7 @@ export function PortfolioStep({
   const [manualInput, setManualInput] = useState<ManualPortfolioData>(
     manualData || {
       propertyCount: 0,
-      currentTeamSize: 0,
-      revenueRange: 'prefer-not-to-disclose'
+      currentTeamSize: 0
     }
   );
 
@@ -110,9 +109,9 @@ export function PortfolioStep({
   const handleManualInputChange = (field: keyof ManualPortfolioData, value: any) => {
     const updated = { ...manualInput, [field]: value };
     
-    // Auto-detect tier if we have enough data
+    // Auto-detect tier if we have enough data - use dynamic version with portfolio indicators
     if (updated.propertyCount > 0 && updated.currentTeamSize > 0) {
-      updated.autoDetectedTier = detectBusinessTier(updated);
+      updated.autoDetectedTier = detectBusinessTier(updated, portfolioIndicators);
     }
     
     setManualInput(updated);
@@ -188,6 +187,53 @@ export function PortfolioStep({
     };
     
     return symbols[currency || 'USD'] || '$';
+  };
+
+  // Generate dynamic revenue options from portfolio indicators
+  const getRevenueOptions = () => {
+    const currencySymbol = getCurrencySymbol(locationData, manualLocation);
+    
+    // Start with prefer not to disclose option
+    const options: Array<{ value: number | null; label: string }> = [
+      { value: null, label: 'Prefer not to disclose' }
+    ];
+
+    // Generate options based on portfolioIndicators averageRevenue
+    const sortedIndicators = Object.entries(portfolioIndicators)
+      .filter(([size]) => size !== 'manual')
+      .sort((a, b) => a[1].min - b[1].min);
+
+    let highestMax = 0;
+
+    sortedIndicators.forEach(([size, indicator]) => {
+      const minM = (indicator.averageRevenue.min / 1000000);
+      const maxM = (indicator.averageRevenue.max / 1000000);
+      
+      // Track the highest maximum revenue for the + option
+      if (indicator.averageRevenue.max > highestMax) {
+        highestMax = indicator.averageRevenue.max;
+      }
+      
+      // Create label based on actual averageRevenue from portfolio indicators - always show range
+      const label = `${currencySymbol}${minM.toFixed(1)}M - ${currencySymbol}${maxM.toFixed(1)}M`;
+      
+      // Use the average of min and max as the stored value
+      const avgRevenue = (indicator.averageRevenue.min + indicator.averageRevenue.max) / 2;
+      
+      options.push({ value: avgRevenue, label });
+    });
+
+    // Add "+ option" for amounts higher than the highest maximum
+    if (highestMax > 0) {
+      const highestMaxM = (highestMax / 1000000);
+      const plusLabel = `${currencySymbol}${highestMaxM.toFixed(1)}M+`;
+      // Use 1.5x the highest max as the stored value for the + option
+      const plusValue = highestMax * 1.5;
+      
+      options.push({ value: plusValue, label: plusLabel });
+    }
+
+    return options;
   };
 
   return (
@@ -311,7 +357,7 @@ export function PortfolioStep({
             transition={{ duration: 0.3 }}
           >
             {/* Preset Portfolio Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
         {portfolioOptions.map((option) => {
           const isSelected = value === option.value;
           
@@ -325,7 +371,7 @@ export function PortfolioStep({
               <button
                       onClick={() => handlePresetSelection(option.value)}
                 className={`
-                  w-full h-80 p-6 rounded-xl border-2 text-left transition-all duration-200 flex flex-col
+                  w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200 flex flex-col
                   ${isSelected 
                     ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
                     : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
@@ -345,8 +391,8 @@ export function PortfolioStep({
                   </motion.div>
                 )}
 
-                {/* Portfolio Size */}
-                <div className="mb-3">
+                {/* Portfolio Size - Fixed Height */}
+                <div className="mb-4">
                   <div className={`
                     text-xl font-bold mb-1
                     ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
@@ -361,15 +407,15 @@ export function PortfolioStep({
                   </div>
                 </div>
 
-                {/* Description */}
-                <div className="flex-1 mb-4">
-                  <p className="text-sm text-neutral-600">
+                {/* Description - Auto-adjusting Container */}
+                <div className="flex-1 mb-4 flex items-start">
+                  <p className="text-sm text-neutral-600 leading-relaxed">
                     {option.description}
                   </p>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-4 mt-auto">
+                {/* Stats Grid - Fixed Position */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="text-center p-3 rounded-lg bg-white/80">
                     <div className="flex items-center justify-center mb-1">
                       <Users className={`w-4 h-4 mr-1 ${getPortfolioIconColor(option.tier)}`} />
@@ -391,7 +437,7 @@ export function PortfolioStep({
                   </div>
                 </div>
 
-                {/* Revenue Range */}
+                {/* Revenue Range - Fixed Position at Bottom */}
                 <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
                   <span>Revenue Range:</span>
                   <span className="font-medium">
@@ -486,7 +532,7 @@ export function PortfolioStep({
                 </p>
               </div>
 
-              {/* Revenue Range Card */}
+              {/* Annual Revenue Card */}
               <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 transition-all duration-200 hover:border-brand-primary-300 hover:bg-brand-primary-25">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-5 h-5 text-brand-primary-600" />
@@ -497,12 +543,15 @@ export function PortfolioStep({
                 </label>
                 <div className="relative">
                   <select
-                    value={manualInput.revenueRange}
-                    onChange={(e) => handleManualInputChange('revenueRange', e.target.value as RevenueRange)}
+                    value={manualInput.annualRevenue || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleManualInputChange('annualRevenue', value ? parseFloat(value) : undefined);
+                    }}
                     className="w-full pl-4 pr-12 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-brand-primary-500 transition-colors appearance-none bg-white"
                   >
-                    {Object.entries(REVENUE_RANGES).map(([value, { label }]) => (
-                      <option key={value} value={value}>
+                    {getRevenueOptions().map(({ value, label }, index) => (
+                      <option key={index} value={value || ''}>
                         {label}
                       </option>
                     ))}
@@ -511,6 +560,9 @@ export function PortfolioStep({
                     <ChevronDown className="w-5 h-5 text-neutral-400" />
                   </div>
                 </div>
+                <p className="text-xs text-neutral-500 mt-2">
+                  Based on your location's market data
+                </p>
               </div>
             </div>
 

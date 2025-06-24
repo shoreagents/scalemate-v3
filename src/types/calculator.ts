@@ -348,6 +348,6 @@ export type RevenueRange =
 export interface ManualPortfolioData {
   propertyCount: number;
   currentTeamSize: number;
-  revenueRange: RevenueRange;
+  annualRevenue?: number; // Direct revenue amount instead of range enum
   autoDetectedTier?: BusinessTier;
 } 

@@ -92,8 +92,8 @@ export function EnhancedLocationSelector({
       <div className="flex items-center gap-3">
         {/* Country Search/Dropdown */}
         <div className="relative flex-1">
-          <div className="relative">
-            <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative group">
+            <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
             <input
               type="text"
               value={searchQuery || selectedLocation.country}
@@ -114,7 +114,7 @@ export function EnhancedLocationSelector({
               }}
               placeholder="Search countries..."
               disabled={disabled}
-              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:!outline-none focus:!ring-0 focus:!shadow-none focus:!box-shadow-none focus:border-blue-500 active:!outline-none active:!ring-0 active:!shadow-none disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
             />
             <button
               onClick={() => setShowCountryDropdown(!showCountryDropdown)}

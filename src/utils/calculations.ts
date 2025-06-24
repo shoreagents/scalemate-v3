@@ -12,10 +12,10 @@ import {
 } from '@/types';
 import { 
   SALARY_DATA, 
-  TASK_COMPLEXITY_MULTIPLIERS, 
-  ROLES,
-  detectBusinessTier
+  TASK_COMPLEXITY_MULTIPLIERS
 } from './dataQuoteCalculator';
+import { detectBusinessTier } from './quoteCalculatorData';
+import { ROLES } from './quoteCalculatorData';
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling
@@ -184,7 +184,7 @@ export const calculateSavings = (
   const portfolioTier = getPortfolioTier(formData, portfolioIndicators);
 
   // Calculate lead score
-  const leadScore = calculateLeadScore(formData, totalSavings, totalTeamSize);
+  const leadScore = calculateLeadScore(formData, totalSavings, totalTeamSize, portfolioIndicators);
 
   // Calculate ROI
   const estimatedROI = calculateROI(totalSavings, totalPhilippineCost);
@@ -397,7 +397,7 @@ const getPortfolioTier = (
   portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>
 ): BusinessTier => {
   if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
-    return formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData);
+    return formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData, portfolioIndicators);
   }
   
   if (portfolioIndicators) {
@@ -414,7 +414,8 @@ const getPortfolioTier = (
 const calculateLeadScore = (
   formData: FormData, 
   totalSavings: number, 
-  totalTeamSize: number
+  totalTeamSize: number,
+  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>
 ): number => {
   let score = 0;
 
@@ -431,7 +432,7 @@ const calculateLeadScore = (
   
   // If manual input, adjust score based on detected tier
   if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
-    const tier = formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData);
+    const tier = formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData, portfolioIndicators);
     const tierScoring = {
       'growing': 15,
       'large': 25,

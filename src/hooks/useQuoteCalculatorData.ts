@@ -2,6 +2,80 @@ import { useState, useEffect, useCallback } from 'react';
 import { PortfolioSize, PortfolioIndicator } from '@/types';
 import { getPortfolioIndicators, getStaticPortfolioIndicators } from '@/utils/quoteCalculatorData';
 
+// Helper function to detect currency based on country name
+function getCurrencyByCountry(countryName: string): string {
+  const countryCurrencyMap: Record<string, string> = {
+    'United States': 'USD',
+    'United States of America': 'USD',
+    'USA': 'USD',
+    'US': 'USD',
+    'Australia': 'AUD',
+    'Canada': 'CAD',
+    'United Kingdom': 'GBP',
+    'UK': 'GBP',
+    'Great Britain': 'GBP',
+    'England': 'GBP',
+    'Scotland': 'GBP',
+    'Wales': 'GBP',
+    'Northern Ireland': 'GBP',
+    'Germany': 'EUR',
+    'France': 'EUR',
+    'Spain': 'EUR',
+    'Italy': 'EUR',
+    'Netherlands': 'EUR',
+    'Belgium': 'EUR',
+    'Austria': 'EUR',
+    'Portugal': 'EUR',
+    'Ireland': 'EUR',
+    'Finland': 'EUR',
+    'Luxembourg': 'EUR',
+    'Slovenia': 'EUR',
+    'Slovakia': 'EUR',
+    'Estonia': 'EUR',
+    'Latvia': 'EUR',
+    'Lithuania': 'EUR',
+    'Malta': 'EUR',
+    'Cyprus': 'EUR',
+    'Greece': 'EUR',
+    'New Zealand': 'NZD',
+    'Singapore': 'SGD',
+    'Philippines': 'PHP',
+    'Japan': 'JPY',
+    'South Korea': 'KRW',
+    'China': 'CNY',
+    'India': 'INR',
+    'Brazil': 'BRL',
+    'Mexico': 'MXN',
+    'Switzerland': 'CHF',
+    'Norway': 'NOK',
+    'Sweden': 'SEK',
+    'Denmark': 'DKK',
+    'Poland': 'PLN',
+    'Czech Republic': 'CZK',
+    'Hungary': 'HUF',
+    'Romania': 'RON',
+    'Bulgaria': 'BGN',
+    'Croatia': 'HRK',
+    'Israel': 'ILS',
+    'Turkey': 'TRY',
+    'Russia': 'RUB',
+    'Ukraine': 'UAH',
+    'South Africa': 'ZAR',
+    'Thailand': 'THB',
+    'Malaysia': 'MYR',
+    'Indonesia': 'IDR',
+    'Vietnam': 'VND',
+    'Hong Kong': 'HKD',
+    'Taiwan': 'TWD',
+    'Argentina': 'ARS',
+    'Chile': 'CLP',
+    'Colombia': 'COP',
+    'Peru': 'PEN'
+  };
+  
+  return countryCurrencyMap[countryName] || 'USD';
+}
+
 interface LocationData {
   ip?: string;
   city?: string;
@@ -45,7 +119,7 @@ export function useQuoteCalculatorData(
         countryName: manualLocation.country,
         region: manualLocation.region || undefined,
         city: manualLocation.city || undefined,
-        currency: locationData?.currency || undefined
+        currency: getCurrencyByCountry(manualLocation.country)
       };
     }
 

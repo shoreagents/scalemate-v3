@@ -16,6 +16,7 @@ import {
   EnhancedRole,
   RoleCategory
 } from '@/types';
+import { ROLES_SALARY_COMPARISON } from './quoteCalculatorData';
 
 // Country and location data for auto-detection and savings comparison
 export const COUNTRY_DATA: Readonly<Record<Country, { name: string; currency: string; symbol: string; }>> = {
@@ -27,163 +28,9 @@ export const COUNTRY_DATA: Readonly<Record<Country, { name: string; currency: st
   SG: { name: 'Singapore', currency: 'SGD', symbol: 'S$' }
 } as const;
 
-// Enhanced multi-country salary data with detailed breakdowns
-export const ENHANCED_SALARY_DATA: Readonly<Record<string, MultiCountryRoleSalaryData>> = {
-  assistantPropertyManager: {
-    AU: {
-      entry: { base: 45000, total: 58500, benefits: 9000, taxes: 13500 },
-      moderate: { base: 58000, total: 75400, benefits: 11600, taxes: 17400 },
-      experienced: { base: 75000, total: 97500, benefits: 15000, taxes: 22500 }
-    },
-    US: {
-      entry: { base: 42000, total: 54600, benefits: 8400, taxes: 12600 },
-      moderate: { base: 55000, total: 71500, benefits: 11000, taxes: 16500 },
-      experienced: { base: 70000, total: 91000, benefits: 14000, taxes: 21000 }
-    },
-    CA: {
-      entry: { base: 40000, total: 52000, benefits: 8000, taxes: 12000 },
-      moderate: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 },
-      experienced: { base: 67000, total: 87100, benefits: 13400, taxes: 20100 }
-    },
-    UK: {
-      entry: { base: 28000, total: 36400, benefits: 5600, taxes: 8400 },
-      moderate: { base: 36000, total: 46800, benefits: 7200, taxes: 10800 },
-      experienced: { base: 46000, total: 59800, benefits: 9200, taxes: 13800 }
-    },
-    NZ: {
-      entry: { base: 43000, total: 55900, benefits: 8600, taxes: 12900 },
-      moderate: { base: 56000, total: 72800, benefits: 11200, taxes: 16800 },
-      experienced: { base: 72000, total: 93600, benefits: 14400, taxes: 21600 }
-    },
-    SG: {
-      entry: { base: 36000, total: 46800, benefits: 7200, taxes: 10800 },
-      moderate: { base: 47000, total: 61100, benefits: 9400, taxes: 14100 },
-      experienced: { base: 60000, total: 78000, benefits: 12000, taxes: 18000 }
-    },
-    PH: {
-      entry: { base: 8000, total: 10400, benefits: 1600, taxes: 2400 },
-      moderate: { base: 12000, total: 15600, benefits: 2400, taxes: 3600 },
-      experienced: { base: 18000, total: 23400, benefits: 3600, taxes: 5400 }
-    }
-  },
-  leasingCoordinator: {
-    AU: {
-      entry: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 },
-      moderate: { base: 68000, total: 88400, benefits: 13600, taxes: 20400 },
-      experienced: { base: 85000, total: 110500, benefits: 17000, taxes: 25500 }
-    },
-    US: {
-      entry: { base: 48000, total: 62400, benefits: 9600, taxes: 14400 },
-      moderate: { base: 63000, total: 81900, benefits: 12600, taxes: 18900 },
-      experienced: { base: 78000, total: 101400, benefits: 15600, taxes: 23400 }
-    },
-    CA: {
-      entry: { base: 46000, total: 59800, benefits: 9200, taxes: 13800 },
-      moderate: { base: 60000, total: 78000, benefits: 12000, taxes: 18000 },
-      experienced: { base: 75000, total: 97500, benefits: 15000, taxes: 22500 }
-    },
-    UK: {
-      entry: { base: 32000, total: 41600, benefits: 6400, taxes: 9600 },
-      moderate: { base: 42000, total: 54600, benefits: 8400, taxes: 12600 },
-      experienced: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 }
-    },
-    NZ: {
-      entry: { base: 50000, total: 65000, benefits: 10000, taxes: 15000 },
-      moderate: { base: 65000, total: 84500, benefits: 13000, taxes: 19500 },
-      experienced: { base: 81000, total: 105300, benefits: 16200, taxes: 24300 }
-    },
-    SG: {
-      entry: { base: 42000, total: 54600, benefits: 8400, taxes: 12600 },
-      moderate: { base: 55000, total: 71500, benefits: 11000, taxes: 16500 },
-      experienced: { base: 68000, total: 88400, benefits: 13600, taxes: 20400 }
-    },
-    PH: {
-      entry: { base: 10000, total: 13000, benefits: 2000, taxes: 3000 },
-      moderate: { base: 15000, total: 19500, benefits: 3000, taxes: 4500 },
-      experienced: { base: 22000, total: 28600, benefits: 4400, taxes: 6600 }
-    }
-  },
-  marketingSpecialist: {
-    AU: {
-      entry: { base: 55000, total: 71500, benefits: 11000, taxes: 16500 },
-      moderate: { base: 72000, total: 93600, benefits: 14400, taxes: 21600 },
-      experienced: { base: 95000, total: 123500, benefits: 19000, taxes: 28500 }
-    },
-    US: {
-      entry: { base: 52000, total: 67600, benefits: 10400, taxes: 15600 },
-      moderate: { base: 68000, total: 88400, benefits: 13600, taxes: 20400 },
-      experienced: { base: 88000, total: 114400, benefits: 17600, taxes: 26400 }
-    },
-    CA: {
-      entry: { base: 50000, total: 65000, benefits: 10000, taxes: 15000 },
-      moderate: { base: 65000, total: 84500, benefits: 13000, taxes: 19500 },
-      experienced: { base: 84000, total: 109200, benefits: 16800, taxes: 25200 }
-    },
-    UK: {
-      entry: { base: 35000, total: 45500, benefits: 7000, taxes: 10500 },
-      moderate: { base: 45000, total: 58500, benefits: 9000, taxes: 13500 },
-      experienced: { base: 58000, total: 75400, benefits: 11600, taxes: 17400 }
-    },
-    NZ: {
-      entry: { base: 53000, total: 68900, benefits: 10600, taxes: 15900 },
-      moderate: { base: 69000, total: 89700, benefits: 13800, taxes: 20700 },
-      experienced: { base: 90000, total: 117000, benefits: 18000, taxes: 27000 }
-    },
-    SG: {
-      entry: { base: 45000, total: 58500, benefits: 9000, taxes: 13500 },
-      moderate: { base: 58000, total: 75400, benefits: 11600, taxes: 17400 },
-      experienced: { base: 76000, total: 98800, benefits: 15200, taxes: 22800 }
-    },
-    PH: {
-      entry: { base: 12000, total: 15600, benefits: 2400, taxes: 3600 },
-      moderate: { base: 18000, total: 23400, benefits: 3600, taxes: 5400 },
-      experienced: { base: 28000, total: 36400, benefits: 5600, taxes: 8400 }
-    }
-  }
-} as const;
 
-// Simplified enhanced property management roles for Step 2 implementation
-export const ENHANCED_PROPERTY_ROLES = {
-  assistantPropertyManager: {
-    id: 'assistantPropertyManager',
-    title: 'Assistant Property Manager',
-    icon: '🏢',
-    description: 'Handles day-to-day property operations, tenant relations, and administrative tasks.',
-    category: 'property-management' as RoleCategory,
-    type: 'predefined' as const,
-    color: 'brand-primary',
-    salaryData: ENHANCED_SALARY_DATA.assistantPropertyManager,
-    requiredSkills: ['Property Management', 'Tenant Relations', 'Administrative Skills', 'Communication'],
-    optionalSkills: ['Maintenance Coordination', 'Compliance Knowledge', 'Basic Accounting'],
-    searchKeywords: ['property', 'manager', 'tenant', 'administration', 'operations', 'maintenance', 'compliance']
-  },
-  leasingCoordinator: {
-    id: 'leasingCoordinator',
-    title: 'Leasing Coordinator',
-    icon: '🗝️',
-    description: 'Manages leasing activities, prospect communication, and application processing.',
-    category: 'leasing' as RoleCategory,
-    type: 'predefined' as const,
-    color: 'brand-secondary',
-    salaryData: ENHANCED_SALARY_DATA.leasingCoordinator,
-    requiredSkills: ['Sales Skills', 'Customer Service', 'Application Processing', 'Market Knowledge'],
-    optionalSkills: ['Marketing Skills', 'CRM Software', 'Negotiation Skills'],
-    searchKeywords: ['leasing', 'coordinator', 'sales', 'applications', 'prospects', 'tours', 'inquiries']
-  },
-  marketingSpecialist: {
-    id: 'marketingSpecialist',
-    title: 'Marketing Specialist',
-    icon: '📈',
-    description: 'Creates marketing campaigns, manages digital presence, and analyzes market trends.',
-    category: 'marketing' as RoleCategory,
-    type: 'predefined' as const,
-    color: 'brand-accent',
-    salaryData: ENHANCED_SALARY_DATA.marketingSpecialist,
-    requiredSkills: ['Digital Marketing', 'Content Creation', 'Analytics', 'Social Media'],
-    optionalSkills: ['Graphic Design', 'SEO/SEM', 'Video Production', 'Data Analysis'],
-    searchKeywords: ['marketing', 'specialist', 'digital', 'social media', 'content', 'campaigns', 'analytics']
-  }
-} as const;
+
+
 
 // Additional searchable property management roles (predefined but not in original 3)
 export const ADDITIONAL_PROPERTY_ROLES: Readonly<Record<string, Partial<EnhancedRole>>> = {
@@ -431,7 +278,7 @@ export const ROLE_TASKS: Readonly<Record<RoleId, readonly Task[]>> = {
 } as const;
 
 // Role definitions
-export const ROLES: Readonly<Record<RoleId, Role>> = {
+export const BASIC_ROLES: Readonly<Record<RoleId, Role>> = {
   assistantPropertyManager: {
     id: 'assistantPropertyManager',
     title: 'Assistant Property Manager',
@@ -602,29 +449,4 @@ export const REVENUE_RANGES: Readonly<Record<RevenueRange, { label: string; min:
   'prefer-not-to-disclose': { label: 'Prefer not to disclose', min: 0, max: 1000000000 }
 } as const;
 
-// Auto-tier detection function
-export function detectBusinessTier(data: ManualPortfolioData): BusinessTier {
-  const { propertyCount, currentTeamSize, revenueRange } = data;
-  
-  // Primary tier detection based on property count
-  if (propertyCount >= 5000) return 'enterprise';
-  if (propertyCount >= 2000) return 'major';
-  if (propertyCount >= 1000) return 'large';
-  if (propertyCount >= 500) return 'growing';
-  
-  // Secondary detection based on team size for edge cases
-  if (currentTeamSize >= 20) return 'enterprise';
-  if (currentTeamSize >= 10) return 'major';
-  if (currentTeamSize >= 5) return 'large';
-  
-  // Tertiary detection based on revenue (if disclosed)
-  if (revenueRange !== 'prefer-not-to-disclose') {
-    const revenueData = REVENUE_RANGES[revenueRange];
-    if (revenueData.min >= 15000000) return 'enterprise';
-    if (revenueData.min >= 4000000) return 'major';
-    if (revenueData.min >= 1500000) return 'large';
-  }
-  
-  // Default to growing for smaller portfolios
-  return 'growing';
-} 
+ 

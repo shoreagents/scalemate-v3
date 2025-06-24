@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
-import { ROLES, ROLE_TASKS, ENHANCED_PROPERTY_ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
+import { ROLES } from '@/utils/quoteCalculatorData';
+import { BASIC_ROLES, ROLE_TASKS, ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
 import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
 
@@ -22,9 +23,9 @@ export function TaskSelectionStep({
 }: TaskSelectionStepProps) {
   // Helper function to get role data from all sources
   const getRoleData = (roleId: RoleId) => {
-    // First check ENHANCED_PROPERTY_ROLES
-    if (roleId in ENHANCED_PROPERTY_ROLES) {
-      const enhancedRole = ENHANCED_PROPERTY_ROLES[roleId as keyof typeof ENHANCED_PROPERTY_ROLES];
+    // First check ROLES
+    if (roleId in ROLES) {
+      const enhancedRole = ROLES[roleId as keyof typeof ROLES];
       return {
         ...enhancedRole,
         tasks: ROLE_TASKS[roleId] || []
