@@ -7,8 +7,6 @@ import { fetchCountries, searchCountries, type Country } from '@/utils/locationA
 
 interface LocationData {
   country: string;
-  region: string;
-  city: string;
 }
 
 interface EnhancedLocationSelectorProps {
@@ -35,7 +33,7 @@ export function EnhancedLocationSelector({
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   
   const [selectedLocation, setSelectedLocation] = useState<LocationData>(
-    initialLocation || { country: '', region: '', city: '' }
+    initialLocation || { country: '' }
   );
 
   // Fetch countries on mount
@@ -76,9 +74,7 @@ export function EnhancedLocationSelector({
   const handleCountrySelect = (countryName: string) => {
     setSelectedLocation(prev => ({
       ...prev,
-      country: countryName,
-      region: '', // Reset region when country changes
-      city: ''    // Reset city when country changes
+      country: countryName
     }));
     setSearchQuery(''); // Clear search when country is selected
     setShowCountryDropdown(false);
@@ -104,7 +100,7 @@ export function EnhancedLocationSelector({
                 
                 // If user types something different from selected country, clear the selection
                 if (value !== selectedLocation.country) {
-                  setSelectedLocation(prev => ({ ...prev, country: '', region: '', city: '' }));
+                  setSelectedLocation(prev => ({ ...prev, country: '' }));
                 }
               }}
               onFocus={() => setShowCountryDropdown(true)}

@@ -349,5 +349,4 @@ export interface ManualPortfolioData {
   propertyCount: number;
   currentTeamSize: number;
   annualRevenue?: number; // Direct revenue amount instead of range enum
-  autoDetectedTier?: BusinessTier;
 } 

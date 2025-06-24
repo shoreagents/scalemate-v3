@@ -142,58 +142,9 @@ const cache = loadCacheFromStorage();
 
 // Helper function to normalize country name to consistent cache key
 function normalizeCacheKey(location: LocationContext): string {
-  const countryName = location.countryName || location.country;
-  
-  // Map common country codes to full names for consistent caching
-  const codeToName: Record<string, string> = {
-    'US': 'United States',
-    'AU': 'Australia', 
-    'CA': 'Canada',
-    'GB': 'United Kingdom',
-    'UK': 'United Kingdom',
-    'DE': 'Germany',
-    'FR': 'France',
-    'ES': 'Spain',
-    'IT': 'Italy',
-    'NL': 'Netherlands',
-    'NZ': 'New Zealand',
-    'SG': 'Singapore',
-    'PH': 'Philippines',
-    'JP': 'Japan',
-    'KR': 'South Korea',
-    'CN': 'China',
-    'IN': 'India',
-    'BR': 'Brazil',
-    'MX': 'Mexico',
-    'CH': 'Switzerland',
-    'NO': 'Norway',
-    'SE': 'Sweden',
-    'DK': 'Denmark',
-    'PL': 'Poland',
-    'CZ': 'Czech Republic',
-    'HU': 'Hungary',
-    'RO': 'Romania',
-    'BG': 'Bulgaria',
-    'HR': 'Croatia',
-    'IL': 'Israel',
-    'TR': 'Turkey',
-    'RU': 'Russia',
-    'UA': 'Ukraine',
-    'ZA': 'South Africa',
-    'TH': 'Thailand',
-    'MY': 'Malaysia',
-    'ID': 'Indonesia',
-    'VN': 'Vietnam',
-    'HK': 'Hong Kong',
-    'TW': 'Taiwan',
-    'AR': 'Argentina',
-    'CL': 'Chile',
-    'CO': 'Colombia',
-    'PE': 'Peru'
-  };
-  
-  // If location.country is a country code, convert to full name
-  return codeToName[location.country] || countryName;
+  // Use countryName if available (from auto-detection), otherwise use country (from manual selection)
+  // Both should already be full country names at this point
+  return location.countryName || location.country;
 }
 
 interface LocationContext {
@@ -290,19 +241,20 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
     console.error('Error generating dynamic portfolio indicators:', error);
   }
 
-  // Fallback to static data with location-aware adjustments
+  // Fallback to static data with currency adjustments
   console.log('📋 Using static portfolio indicators as fallback');
-  return getLocationAdjustedStaticData(location);
+  return getLocationAdjustedStaticData(location.currency || 'USD');
 }
 
 /**
- * Apply basic location-based adjustments to static data
+ * Apply currency-based adjustments to static data
+ * Only uses currency - other location data not needed for static fallback
  */
-function getLocationAdjustedStaticData(location: LocationContext): Record<PortfolioSize, PortfolioIndicator> {
+function getLocationAdjustedStaticData(currency: string): Record<PortfolioSize, PortfolioIndicator> {
   const adjustedData = { ...PORTFOLIO_INFO };
   
   // Apply currency-based revenue adjustments
-  const currencyMultiplier = getCurrencyMultiplier(location.currency || 'USD');
+  const currencyMultiplier = getCurrencyMultiplier(currency || 'USD');
   
   Object.keys(adjustedData).forEach(key => {
     const portfolioKey = key as PortfolioSize;
@@ -313,8 +265,8 @@ function getLocationAdjustedStaticData(location: LocationContext): Record<Portfo
         averageRevenue: {
           min: Math.round(originalData.averageRevenue.min * currencyMultiplier),
           max: Math.round(originalData.averageRevenue.max * currencyMultiplier)
-        },
-        description: getLocationAdjustedDescription(originalData.description, location)
+        }
+        // Note: description unchanged for static fallback
       };
     }
   });
@@ -327,26 +279,85 @@ function getLocationAdjustedStaticData(location: LocationContext): Record<Portfo
  */
 function getCurrencyMultiplier(currency: string): number {
   const multipliers: Record<string, number> = {
-    'USD': 1.0,
-    'AUD': 1.5,
-    'CAD': 1.35,
-    'GBP': 0.8,
-    'EUR': 0.9,
-    'NZD': 1.6,
-    'SGD': 1.35,
-    'PHP': 56.0
+    'USD': 1.0,      // United States (base)
+    'AUD': 1.5,      // Australia
+    'CAD': 1.35,     // Canada
+    'GBP': 0.8,      // United Kingdom
+    'EUR': 0.9,      // European Union
+    'NZD': 1.6,      // New Zealand
+    'SGD': 1.35,     // Singapore
+    'PHP': 56.0,     // Philippines
+    'JPY': 150.0,    // Japan
+    'KRW': 1300.0,   // South Korea
+    'CNY': 7.2,      // China
+    'INR': 83.0,     // India
+    'BRL': 5.0,      // Brazil
+    'MXN': 17.0,     // Mexico
+    'CHF': 0.9,      // Switzerland
+    'NOK': 10.5,     // Norway
+    'SEK': 10.8,     // Sweden
+    'DKK': 6.9,      // Denmark
+    'PLN': 4.0,      // Poland
+    'CZK': 23.0,     // Czech Republic
+    'HUF': 360.0,    // Hungary
+    'RON': 4.6,      // Romania
+    'BGN': 1.8,      // Bulgaria
+    'HRK': 6.8,      // Croatia
+    'ILS': 3.7,      // Israel
+    'TRY': 27.0,     // Turkey
+    'RUB': 90.0,     // Russia
+    'UAH': 36.0,     // Ukraine
+    'ZAR': 18.5,     // South Africa
+    'THB': 35.0,     // Thailand
+    'MYR': 4.7,      // Malaysia
+    'IDR': 15500.0,  // Indonesia
+    'VND': 24000.0,  // Vietnam
+    'HKD': 7.8,      // Hong Kong
+    'TWD': 31.0,     // Taiwan
+    'AED': 3.7,      // UAE
+    'SAR': 3.75,     // Saudi Arabia
+    'QAR': 3.64,     // Qatar
+    'KWD': 0.31,     // Kuwait
+    'BHD': 0.38,     // Bahrain
+    'OMR': 0.38,     // Oman
+    'EGP': 31.0,     // Egypt
+    'JOD': 0.71,     // Jordan
+    'LBP': 15000.0,  // Lebanon
+    'CLP': 800.0,    // Chile
+    'COP': 4000.0,   // Colombia
+    'PEN': 3.7,      // Peru
+    'ARS': 350.0,    // Argentina
+    'UYU': 39.0,     // Uruguay
+    'BOB': 6.9,      // Bolivia
+    'PYG': 7200.0,   // Paraguay
+    'GTQ': 7.8,      // Guatemala
+    'CRC': 530.0,    // Costa Rica
+    'PAB': 1.0,      // Panama
+    'DOP': 55.0,     // Dominican Republic
+    'JMD': 155.0,    // Jamaica
+    'TTD': 6.8,      // Trinidad & Tobago
+    'BBD': 2.0,      // Barbados
+    'BSD': 1.0,      // Bahamas
+    'BZD': 2.0,      // Belize
+    'XCD': 2.7,      // Eastern Caribbean
+    'AWG': 1.8,      // Aruba
+    'ANG': 1.8,      // Netherlands Antilles
+    'SRD': 36.0,     // Suriname
+    'GYD': 210.0,    // Guyana
+    'FJD': 2.2,      // Fiji
+    'TOP': 2.3,      // Tonga
+    'WST': 2.7,      // Samoa
+    'VUV': 120.0,    // Vanuatu
+    'SBD': 8.3,      // Solomon Islands
+    'PGK': 3.7,      // Papua New Guinea
+    'NCF': 110.0,    // New Caledonia
+    'XPF': 110.0     // French Polynesia
   };
   
   return multipliers[currency] || 1.0;
 }
 
-/**
- * Adjust description based on location
- */
-function getLocationAdjustedDescription(description: string, location: LocationContext): string {
-  // Return original description without location-specific text
-  return description;
-}
+// Note: getLocationAdjustedDescription removed - was unused in static fallback
 
 /**
  * Clear cache (useful for testing or manual refresh)
@@ -697,66 +708,7 @@ export function getStaticRolesSalaryComparison() {
   return ROLES_SALARY_COMPARISON;
 }
 
-// Business tier detection - both static and dynamic versions
-export function detectBusinessTier(data: { propertyCount: number; currentTeamSize: number; annualRevenue?: number }, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>): 'growing' | 'large' | 'major' | 'enterprise' {
-  const { propertyCount, currentTeamSize, annualRevenue } = data;
-  
-  if (portfolioIndicators) {
-    // Dynamic tier detection based on portfolio indicators
-    const sortedIndicators = Object.entries(portfolioIndicators)
-      .filter(([size]) => size !== 'manual')
-      .sort((a, b) => a[1].min - b[1].min);
-    
-    // Property count thresholds from portfolio indicators
-    for (const [size, indicator] of sortedIndicators.reverse()) {
-      if (propertyCount >= indicator.min) {
-        return indicator.tier;
-      }
-    }
-    
-    // Team size detection using portfolio indicators recommended team sizes
-    for (const [size, indicator] of sortedIndicators.reverse()) {
-      const totalRecommendedTeam = Object.values(indicator.recommendedTeamSize || {}).reduce((sum: number, count) => sum + (count as number || 0), 0);
-      if (currentTeamSize >= totalRecommendedTeam) {
-        return indicator.tier;
-      }
-    }
-    
-    // Revenue detection using portfolio indicators average revenue
-    if (annualRevenue && annualRevenue > 0) {
-      for (const [size, indicator] of sortedIndicators.reverse()) {
-        if (annualRevenue >= indicator.averageRevenue.min) {
-          return indicator.tier;
-        }
-      }
-    }
-    
-    // Default to the smallest tier
-    return sortedIndicators[0]?.[1]?.tier || 'growing';
-  } else {
-    // Static tier detection (fallback)
-    // Primary tier detection based on property count
-    if (propertyCount >= 5000) return 'enterprise';
-    if (propertyCount >= 2000) return 'major';
-    if (propertyCount >= 1000) return 'large';
-    if (propertyCount >= 500) return 'growing';
-    
-    // Secondary detection based on team size for edge cases
-    if (currentTeamSize >= 20) return 'enterprise';
-    if (currentTeamSize >= 10) return 'major';
-    if (currentTeamSize >= 5) return 'large';
-    
-    // Tertiary detection based on actual revenue (if provided)
-    if (annualRevenue && annualRevenue > 0) {
-      if (annualRevenue >= 15000000) return 'enterprise';
-      if (annualRevenue >= 4000000) return 'major';
-      if (annualRevenue >= 1500000) return 'large';
-    }
-    
-    // Default to growing for smaller portfolios
-    return 'growing';
-  }
-}
+
 
 // Enhanced multi-country salary data with detailed breakdowns
 export const ROLES_SALARY_COMPARISON: Readonly<Record<string, MultiCountryRoleSalaryData>> = {

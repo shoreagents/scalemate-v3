@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
+import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask, Country } from '@/types';
 import { calculateSavings } from '@/utils/calculations';
 import { DEFAULT_FORM_DATA } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
@@ -35,6 +35,7 @@ import {
   X
 } from 'lucide-react';
 import Link from 'next/link';
+import { getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 
 interface LocationData {
   ip: string;
@@ -53,8 +54,6 @@ interface LocationData {
 
 interface ManualLocation {
   country: string;
-  region: string;
-  city: string;
 }
 
 interface OffshoreCalculatorProps {
@@ -93,9 +92,7 @@ export function OffshoreCalculator({
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [manualLocation, setManualLocation] = useState<ManualLocation | null>(null);
   const [tempLocation, setTempLocation] = useState<ManualLocation>({
-    country: '',
-    region: '',
-    city: ''
+    country: ''
   });
 
   // Use global exit intent context
@@ -137,34 +134,69 @@ export function OffshoreCalculator({
   const getEffectiveLocation = () => {
     if (manualLocation) {
       return {
-        city: manualLocation.city,
-        region: manualLocation.region,
-        country_name: manualLocation.country
+        country_name: manualLocation.country,
+        country: manualLocation.country,
+        currency: getCurrencyFromCountry(manualLocation.country),
+        currencySymbol: getCurrencySymbolFromCountry(manualLocation.country)
       };
     }
     return locationData;
   };
 
+  // Helper function to get currency from country
+  const getCurrencyFromCountry = (country: string): string => {
+    return getCurrencyByCountry(country);
+  };
+
+  // Helper function to get currency symbol from country
+  const getCurrencySymbolFromCountry = (country: string): string => {
+    const currency = getCurrencyFromCountry(country);
+    return getCurrencySymbol(currency);
+  };
+
   // Handle location edit save
   const saveLocationEdit = () => {
     if (tempLocation.country) {
-      setManualLocation({ 
-        country: tempLocation.country,
-        region: '', // Set empty since we're using country-only now
-        city: ''    // Set empty since we're using country-only now
-      });
+      const newManualLocation = { 
+        country: tempLocation.country
+      };
+      setManualLocation(newManualLocation);
       setIsEditingLocation(false);
+      
+      // Update formData.userLocation to reflect manual selection
+      const effectiveLocation = getEffectiveLocationForManual(newManualLocation);
+      updateFormData({ userLocation: effectiveLocation });
+      
       console.log('📍 Location manually overridden:', { country: tempLocation.country });
     }
+  };
+
+  // Helper to get effective location data for manual selection
+  const getEffectiveLocationForManual = (manual: ManualLocation) => {
+    // Map country name to Country code (only supported countries)
+    const countryNameToCode: Record<string, Country> = {
+      'United States': 'US',
+      'Australia': 'AU',
+      'Canada': 'CA',
+      'United Kingdom': 'UK',
+      'New Zealand': 'NZ',
+      'Singapore': 'SG'
+    };
+    
+    return {
+      country: countryNameToCode[manual.country] || 'AU', // Default to AU
+      countryName: manual.country,
+      currency: getCurrencyFromCountry(manual.country),
+      currencySymbol: getCurrencySymbolFromCountry(manual.country),
+      detected: false
+    };
   };
 
   // Handle location edit cancel
   const cancelLocationEdit = () => {
     const currentLocation = getEffectiveLocation();
     setTempLocation({
-      country: manualLocation?.country || currentLocation?.country_name || '',
-      region: manualLocation?.region || currentLocation?.region || '',
-      city: manualLocation?.city || currentLocation?.city || ''
+      country: manualLocation?.country || currentLocation?.country_name || ''
     });
     setIsEditingLocation(false);
   };
@@ -173,9 +205,7 @@ export function OffshoreCalculator({
   const startLocationEdit = () => {
     const currentLocation = getEffectiveLocation();
     setTempLocation({
-      country: manualLocation?.country || currentLocation?.country_name || '',
-      region: manualLocation?.region || currentLocation?.region || '',
-      city: manualLocation?.city || currentLocation?.city || ''
+      country: manualLocation?.country || currentLocation?.country_name || ''
     });
     setIsEditingLocation(true);
   };
@@ -184,6 +214,19 @@ export function OffshoreCalculator({
   const resetToAutoLocation = () => {
     setManualLocation(null);
     setIsEditingLocation(false);
+    
+    // Update formData.userLocation to use auto-detected location
+    if (locationData) {
+      const autoLocationData = {
+        country: (locationData.country_code as Country) || 'AU',
+        countryName: locationData.country_name,
+        currency: locationData.currency,
+        currencySymbol: getCurrencySymbolFromCountry(locationData.country_name),
+        detected: true
+      };
+      updateFormData({ userLocation: autoLocationData });
+    }
+    
     console.log('📍 Location reset to auto-detected');
   };
 

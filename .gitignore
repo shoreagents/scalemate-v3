@@ -207,4 +207,148 @@ tramp
 
 # Local configuration
 config/local.json
-.env.*.local 
+.env.*.local
+
+# ==== MODERN DEVELOPMENT TOOLS (2024) ====
+
+# Bun
+.bun/
+bun.lockb
+
+# pnpm
+.pnpm-store/
+.pnpm-debug.log*
+
+# Yarn Berry
+.yarn/
+.yarnrc.yml
+.pnp.*
+
+# Webpack
+.webpack/
+
+# Vite
+vite.config.ts.timestamp-*
+vite.config.js.timestamp-*
+
+# SWC
+.swc/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Cypress
+cypress/downloads/
+cypress/screenshots/
+cypress/videos/
+
+# AI/ML Related
+# Anthropic Claude cache
+.anthropic_cache/
+.claude_cache/
+
+# OpenAI cache
+.openai_cache/
+
+# AI model files
+*.model
+*.pkl
+*.joblib
+*.h5
+*.pb
+
+# Vector databases
+.chroma/
+.weaviate/
+.pinecone/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# ==== SECURITY & SENSITIVE DATA ====
+
+# API Keys and secrets
+.env.secret
+.env.keys
+secrets.json
+credentials.json
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# ==== MACOS SPECIFIC ====
+
+# Finder metadata
+.fseventsd/
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ==== WINDOWS SPECIFIC ====
+
+# Windows shortcuts
+*.lnk
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# ==== MISC MODERN TOOLS ====
+
+# Tauri
+src-tauri/target/
+
+# Rust
+/target/
+Cargo.lock
+
+# Go
+vendor/
+*.exe
+
+# Python (if used for tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.venv/
+env/
+venv/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Documentation generators
+.docusaurus/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Package managers lockfiles (keep package-lock.json)
+!package-lock.json
+!yarn.lock
+
+# Local development databases
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Development server files
+.htaccess
+.htpasswd
+
+# Backup and sync files
+*.orig
+conflict-*
+*_backup
+*_old
+*.backup.* 

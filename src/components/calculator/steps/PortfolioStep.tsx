@@ -3,9 +3,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
-import { detectBusinessTier } from '@/utils/quoteCalculatorData';
-import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
-import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, Sparkles, CheckCircle, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X, RefreshCw } from 'lucide-react';
+// Manual detection removed
+import { useQuoteCalculatorData, getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
+import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X, RefreshCw } from 'lucide-react';
 import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
 
 interface LocationData {
@@ -25,8 +25,6 @@ interface LocationData {
 
 interface ManualLocation {
   country: string;
-  region: string;
-  city: string;
 }
 
 interface PortfolioStepProps {
@@ -108,12 +106,6 @@ export function PortfolioStep({
 
   const handleManualInputChange = (field: keyof ManualPortfolioData, value: any) => {
     const updated = { ...manualInput, [field]: value };
-    
-    // Auto-detect tier if we have enough data - use dynamic version with portfolio indicators
-    if (updated.propertyCount > 0 && updated.currentTeamSize > 0) {
-      updated.autoDetectedTier = detectBusinessTier(updated, portfolioIndicators);
-    }
-    
     setManualInput(updated);
     onChange('manual', updated);
   };
@@ -123,19 +115,7 @@ export function PortfolioStep({
     onChange('');
   };
 
-  const getTierDisplayName = (tier: string) => {
-    return tier.charAt(0).toUpperCase() + tier.slice(1);
-  };
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case 'growing': return 'text-green-600 bg-green-50 border-green-200';
-      case 'large': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'major': return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'enterprise': return 'text-orange-600 bg-orange-50 border-orange-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
 
   const getPortfolioIconColor = (tier: string) => {
     switch (tier) {
@@ -152,46 +132,28 @@ export function PortfolioStep({
     return complexity;
   };
 
-  const getCurrencySymbol = (locationData?: LocationData | null, manualLocation?: ManualLocation | null) => {
-    // First try to get currency from auto-detected location data
-    let currency = locationData?.currency;
+  const getEffectiveCurrencySymbol = (locationData?: LocationData | null, manualLocation?: ManualLocation | null) => {
+    let currency: string;
     
-    // If manual location is set, map country to currency
-    if (manualLocation?.country && !currency) {
-      const countryToCurrency: Record<string, string> = {
-        'United States': 'USD',
-        'Australia': 'AUD',
-        'Canada': 'CAD',
-        'United Kingdom': 'GBP',
-        'Germany': 'EUR',
-        'France': 'EUR',
-        'Spain': 'EUR',
-        'Italy': 'EUR',
-        'Netherlands': 'EUR',
-        'New Zealand': 'NZD',
-        'Singapore': 'SGD',
-        'Philippines': 'PHP'
-      };
-      currency = countryToCurrency[manualLocation.country] || 'USD';
+    // Manual location takes priority over auto-detected location
+    if (manualLocation?.country) {
+      currency = getCurrencyByCountry(manualLocation.country);
+    } 
+    // Fallback to auto-detected location if no manual selection
+    else if (locationData?.currency) {
+      currency = locationData.currency;
+    }
+    // Default fallback
+    else {
+      currency = 'USD';
     }
     
-    const symbols: Record<string, string> = {
-      'USD': '$',
-      'AUD': 'A$',
-      'CAD': 'C$',
-      'GBP': '£',
-      'EUR': '€',
-      'NZD': 'NZ$',
-      'SGD': 'S$',
-      'PHP': '₱'
-    };
-    
-    return symbols[currency || 'USD'] || '$';
+    return getCurrencySymbol(currency);
   };
 
   // Generate dynamic revenue options from portfolio indicators
   const getRevenueOptions = () => {
-    const currencySymbol = getCurrencySymbol(locationData, manualLocation);
+    const currencySymbol = getEffectiveCurrencySymbol(locationData, manualLocation);
     
     // Start with prefer not to disclose option
     const options: Array<{ value: number | null; label: string }> = [
@@ -321,16 +283,12 @@ export function PortfolioStep({
                 <EnhancedLocationSelector
                   {...(tempLocation && tempLocation.country && {
                     initialLocation: {
-                      country: tempLocation.country,
-                      region: tempLocation.region,
-                      city: tempLocation.city
+                      country: tempLocation.country
                     }
                   })}
-                  onLocationChange={(location: { country: string; region: string; city: string }) => {
+                  onLocationChange={(location: { country: string }) => {
                     onTempLocationChange?.({
-                      country: location.country,
-                      region: location.region,
-                      city: location.city
+                      country: location.country
                     });
                   }}
                   onCancel={onLocationEditCancel || (() => {})}
@@ -441,7 +399,7 @@ export function PortfolioStep({
                 <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
                   <span>Revenue Range:</span>
                   <span className="font-medium">
-                    {getCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {getCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.max / 1000000).toFixed(1)}M
+                    {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.max / 1000000).toFixed(1)}M
                   </span>
                 </div>
               </button>
@@ -566,42 +524,7 @@ export function PortfolioStep({
               </div>
             </div>
 
-            {/* Auto-detected Tier */}
-            {manualInput.autoDetectedTier && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-                      <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-          </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <h4 className="text-sm font-semibold text-green-800">
-                        Business Tier Detected
-            </h4>
-                    </div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm text-green-700">
-                        Your portfolio qualifies as:
-                      </span>
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-semibold border-2 shadow-sm ${getTierColor(manualInput.autoDetectedTier)}`}>
-                        {getTierDisplayName(manualInput.autoDetectedTier)} Portfolio
-                      </span>
-                    </div>
-                    <p className="text-xs text-green-600 leading-relaxed">
-                      This classification helps us provide the most relevant recommendations, 
-                      cost estimates, and implementation strategies tailored to your business size.
-            </p>
-          </div>
-        </div>
-              </motion.div>
-            )}
+
 
                                      {/* Back to Quick Select Button */}
             <div className="mt-6 max-w-2xl mx-auto">

@@ -14,7 +14,7 @@ import {
   SALARY_DATA, 
   TASK_COMPLEXITY_MULTIPLIERS
 } from './dataQuoteCalculator';
-import { detectBusinessTier } from './quoteCalculatorData';
+// Business tier detection removed - handled via direct tier selection
 import { ROLES } from './quoteCalculatorData';
 
 /**
@@ -397,7 +397,7 @@ const getPortfolioTier = (
   portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>
 ): BusinessTier => {
   if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
-    return formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData, portfolioIndicators);
+    return 'growing'; // Manual portfolios default to growing tier
   }
   
   if (portfolioIndicators) {
@@ -430,16 +430,9 @@ const calculateLeadScore = (
   
   let portfolioScore = portfolioScoring[formData.portfolioSize as PortfolioSize] || 0;
   
-  // If manual input, adjust score based on detected tier
+  // If manual input, use default score for growing tier
   if (formData.portfolioSize === 'manual' && formData.manualPortfolioData) {
-    const tier = formData.manualPortfolioData.autoDetectedTier || detectBusinessTier(formData.manualPortfolioData, portfolioIndicators);
-    const tierScoring = {
-      'growing': 15,
-      'large': 25,
-      'major': 30,
-      'enterprise': 30
-    };
-    portfolioScore = tierScoring[tier];
+    portfolioScore = 15; // Default to growing tier score
   }
   
   score += portfolioScore;

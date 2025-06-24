@@ -2,8 +2,55 @@ import { useState, useEffect, useCallback } from 'react';
 import { PortfolioSize, PortfolioIndicator } from '@/types';
 import { getPortfolioIndicators, getStaticPortfolioIndicators } from '@/utils/quoteCalculatorData';
 
+// Helper function to get currency symbol from currency code
+export function getCurrencySymbol(currencyCode: string): string {
+  const symbols: Record<string, string> = {
+    'USD': '$',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'GBP': '£',
+    'EUR': '€',
+    'NZD': 'NZ$',
+    'SGD': 'S$',
+    'PHP': '₱',
+    'JPY': '¥',
+    'KRW': '₩',
+    'CNY': '¥',
+    'INR': '₹',
+    'BRL': 'R$',
+    'MXN': '$',
+    'CHF': 'CHF',
+    'NOK': 'kr',
+    'SEK': 'kr',
+    'DKK': 'kr',
+    'PLN': 'zł',
+    'CZK': 'Kč',
+    'HUF': 'Ft',
+    'RON': 'lei',
+    'BGN': 'лв',
+    'HRK': 'kn',
+    'ILS': '₪',
+    'TRY': '₺',
+    'RUB': '₽',
+    'UAH': '₴',
+    'ZAR': 'R',
+    'THB': '฿',
+    'MYR': 'RM',
+    'IDR': 'Rp',
+    'VND': '₫',
+    'HKD': 'HK$',
+    'TWD': 'NT$',
+    'ARS': '$',
+    'CLP': '$',
+    'COP': '$',
+    'PEN': 'S/',
+  };
+  
+  return symbols[currencyCode] || '$';
+}
+
 // Helper function to detect currency based on country name
-function getCurrencyByCountry(countryName: string): string {
+export function getCurrencyByCountry(countryName: string): string {
   const countryCurrencyMap: Record<string, string> = {
     'United States': 'USD',
     'United States of America': 'USD',
@@ -88,8 +135,6 @@ interface LocationData {
 
 interface ManualLocation {
   country: string;
-  region: string;
-  city: string;
 }
 
 interface UseQuoteCalculatorDataResult {
@@ -117,8 +162,6 @@ export function useQuoteCalculatorData(
       return {
         country: manualLocation.country,
         countryName: manualLocation.country,
-        region: manualLocation.region || undefined,
-        city: manualLocation.city || undefined,
         currency: getCurrencyByCountry(manualLocation.country)
       };
     }
