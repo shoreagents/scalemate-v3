@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
 import { ROLES } from '@/utils/rolesData';
-import { BASIC_ROLES, ROLE_TASKS, ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
+import { ROLE_TASKS, ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
 import { Button } from '@/components/ui/Button';
-import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, Info, X, Sparkles } from 'lucide-react';
+import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, X, Sparkles } from 'lucide-react';
 
 interface TaskSelectionStepProps {
   selectedRoles: Record<RoleId, boolean>;
@@ -23,12 +23,15 @@ export function TaskSelectionStep({
 }: TaskSelectionStepProps) {
   // Helper function to get role data from all sources
   const getRoleData = (roleId: RoleId) => {
+    // Get tasks from ROLE_TASKS
+    const tasks = ROLE_TASKS[roleId] || [];
+    
     // First check ROLES
     if (roleId in ROLES) {
       const enhancedRole = ROLES[roleId as keyof typeof ROLES];
       return {
         ...enhancedRole,
-        tasks: ROLE_TASKS[roleId] || []
+        tasks
       };
     }
     
@@ -40,14 +43,17 @@ export function TaskSelectionStep({
         title: additionalRole?.title || `${roleId} Role`,
         icon: additionalRole?.icon || '📋',
         description: additionalRole?.description || 'Custom property management role',
-        tasks: [], // Additional roles don't have predefined tasks
+        tasks, // Use tasks from ROLE_TASKS
         category: additionalRole?.category || 'custom'
       };
     }
     
     // Finally check ROLES (legacy)
-    if (ROLES[roleId]) {
-      return ROLES[roleId];
+    if (ROLES[roleId as keyof typeof ROLES]) {
+      return {
+        ...ROLES[roleId as keyof typeof ROLES],
+        tasks
+      };
     }
     
     // Fallback for unknown roles
@@ -56,7 +62,7 @@ export function TaskSelectionStep({
       title: `${roleId} Role`,
       icon: '📋',
       description: 'Custom role',
-      tasks: [],
+      tasks,
       category: 'custom'
     };
   };
@@ -78,7 +84,7 @@ export function TaskSelectionStep({
   });
 
   const activeRoles = Object.entries(selectedRoles)
-    .filter(([_, isSelected]) => isSelected)
+    .filter(([, isSelected]) => isSelected)
     .map(([roleId]) => roleId as RoleId);
 
   const toggleRole = (roleId: RoleId) => {
@@ -199,7 +205,7 @@ export function TaskSelectionStep({
           <h2 className="text-headline-1 text-neutral-900">Select Tasks to Offshore</h2>
         </div>
         <p className="text-body-large text-neutral-600">
-          Choose which tasks you'd like to offshore for each role. You can also add custom tasks.
+          Choose which tasks you&apos;d like to offshore for each role. You can also add custom tasks.
         </p>
         {getTotalSelectedTasks() > 0 && (
           <div className="mt-4 inline-flex items-center px-4 py-2 bg-neural-blue-50 text-neural-blue-700 rounded-lg">

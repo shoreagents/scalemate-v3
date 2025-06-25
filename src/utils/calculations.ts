@@ -9,7 +9,8 @@ import {
   Task,
   RoleExperienceDistribution,
   PortfolioIndicator,
-  LocationData
+  LocationData,
+  MultiCountryRoleSalaryData
 } from '@/types';
 import { 
   TASK_COMPLEXITY_MULTIPLIERS
@@ -20,9 +21,17 @@ import { Country } from '@/types/location';
 
 /**
  * Helper function to get salary data with currency conversion
+ * Now accepts dynamic salary data from AI API
  */
-const getSalaryData = (roleId: RoleId, userCountry?: string) => {
-  const multiCountryData = ROLES_SALARY_COMPARISON[roleId];
+const getSalaryData = (
+  roleId: RoleId, 
+  userCountry?: string, 
+  dynamicSalaryData?: Readonly<Record<string, MultiCountryRoleSalaryData>>
+) => {
+  // Use dynamic data if available, otherwise fall back to static data
+  const salaryDataSource = dynamicSalaryData || ROLES_SALARY_COMPARISON;
+  const multiCountryData = salaryDataSource[roleId];
+  
   if (!multiCountryData) {
     console.warn(`No salary data found for role: ${roleId}`);
     return null;
@@ -55,11 +64,13 @@ const getSalaryData = (roleId: RoleId, userCountry?: string) => {
 /**
  * Main calculation engine - calculates savings for offshore team scaling
  * Updated to handle multi-level experience distribution per role and location-based salaries
+ * Now accepts dynamic salary data from AI API
  */
 export const calculateSavings = async (
   formData: FormData,
   portfolioIndicators: PortfolioIndicator[],
-  userLocation?: LocationData
+  userLocation?: LocationData,
+  dynamicSalaryData?: Readonly<Record<string, MultiCountryRoleSalaryData>>
 ): Promise<CalculationResult> => {
   if (!formData.roles?.length) {
     return {
@@ -69,6 +80,12 @@ export const calculateSavings = async (
       portfolioIndicators: []
     };
   }
+
+  console.log('🧮 calculateSavings called with:', {
+    userCountry: userLocation?.country,
+    hasDynamicData: !!dynamicSalaryData,
+    dynamicDataKeys: dynamicSalaryData ? Object.keys(dynamicSalaryData) : []
+  });
 
   const selectedRoles = Object.entries(formData.selectedRoles)
     .filter(([_, selected]) => selected)
@@ -86,7 +103,7 @@ export const calculateSavings = async (
   for (const roleId of selectedRoles) {
     const teamSize = formData.teamSize[roleId] || 1;
     const roleData = ROLES[roleId as keyof typeof ROLES];
-    const roleSalaryData = getSalaryData(roleId, userLocation?.country);
+    const roleSalaryData = getSalaryData(roleId, userLocation?.country, dynamicSalaryData);
     
     if (!roleData || !roleSalaryData) {
       console.warn(`Missing data for role: ${roleId}`);
@@ -116,7 +133,7 @@ export const calculateSavings = async (
           
           // Convert Philippine salary from PHP to user's local currency using live API
           const phpToUsd = philippineSalary.total / await getBestExchangeRateMultiplier('PHP');
-          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'AUD');
+          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
           philippineCost += usdToLocal * memberCount;
           
           // Calculate weighted experience level for risk assessment
@@ -143,7 +160,7 @@ export const calculateSavings = async (
       
       // Convert Philippine salary from PHP to user's local currency using live API
       const phpToUsd = philippineSalary.total / await getBestExchangeRateMultiplier('PHP');
-      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'AUD');
+      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
       philippineCost = usdToLocal * teamSize;
     }
 

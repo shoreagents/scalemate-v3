@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 import { CustomRole } from '@/types';
-import { LocationData, ManualLocation } from '@/types/location';
+import { LocationData, ManualLocation, getEffectiveCountry } from '@/types/location';
 import { getCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { getCurrencyMultiplier } from '@/utils/currency';
 import { 
@@ -60,29 +60,7 @@ export function RoleSelectionStep({
   } = useQuoteCalculatorData(userLocation, manualLocation);
 
   // Currency handling function - same pattern as PortfolioStep
-  // Helper function to get effective country from manual or auto location
-  const getEffectiveCountry = (userLocation?: LocationData, manualLocation?: ManualLocation | null): string => {
-    // Manual location takes priority over auto-detected location
-    if (manualLocation?.country) {
-      return manualLocation.country; // Return country name directly
-    }
-    // Fallback to auto-detected location
-    else if (userLocation?.country) {
-      // Convert country code to country name if needed
-      const codeToNameMap: Record<string, string> = {
-        'AU': 'Australia',
-        'US': 'United States',
-        'CA': 'Canada',
-        'UK': 'United Kingdom',
-        'NZ': 'New Zealand',
-        'SG': 'Singapore',
-        'PH': 'Philippines'
-      };
-      return codeToNameMap[userLocation.country] || userLocation.country;
-    }
-      // Default fallback
-  return 'United States';
-  };
+  // Note: Using centralized getEffectiveCountry from location utils
 
   const getEffectiveCurrencySymbol = (userLocation?: LocationData, manualLocation?: ManualLocation | null) => {
     let currency: string;
@@ -153,8 +131,8 @@ export function RoleSelectionStep({
       const philippineExperiencedInUserCurrency = (philippineSalaryData.experienced.total / phpMultiplier) * targetMultiplier;
       
       // Calculate savings (local salary is already in user's currency)
-      const entrySavings = localSalaryData.entry.total - philippineEntryInUserCurrency;
-      const experiencedSavings = localSalaryData.experienced.total - philippineExperiencedInUserCurrency;
+      const entrySavings = Math.round(localSalaryData.entry.total - philippineEntryInUserCurrency);
+      const experiencedSavings = Math.round(localSalaryData.experienced.total - philippineExperiencedInUserCurrency);
       
       return {
         entry: entrySavings,
@@ -169,9 +147,9 @@ export function RoleSelectionStep({
       const experiencedPhilippineEstimate = role.estimatedSalary.philippine * 1.2;
       
       return {
-        entry: entryEstimate - entryPhilippineEstimate,
-        experienced: experiencedEstimate - experiencedPhilippineEstimate,
-        range: `${getEffectiveCurrencySymbol(userLocation, manualLocation)}${(entryEstimate - entryPhilippineEstimate).toLocaleString()} - ${getEffectiveCurrencySymbol(userLocation, manualLocation)}${(experiencedEstimate - experiencedPhilippineEstimate).toLocaleString()}`
+        entry: Math.round(entryEstimate - entryPhilippineEstimate),
+        experienced: Math.round(experiencedEstimate - experiencedPhilippineEstimate),
+        range: `${getEffectiveCurrencySymbol(userLocation, manualLocation)}${Math.round(entryEstimate - entryPhilippineEstimate).toLocaleString()} - ${getEffectiveCurrencySymbol(userLocation, manualLocation)}${Math.round(experiencedEstimate - experiencedPhilippineEstimate).toLocaleString()}`
       };
     }
     
@@ -316,7 +294,7 @@ export function RoleSelectionStep({
   };
 
   const getTotalSavings = () => {
-    return Object.entries(selectedRoles).reduce((total, [roleId, isSelected]) => {
+    return Math.round(Object.entries(selectedRoles).reduce((total, [roleId, isSelected]) => {
       if (!isSelected) return total;
       
       const role = allRoles.find(r => r.id === roleId);
@@ -328,7 +306,7 @@ export function RoleSelectionStep({
       // Use the average of entry and experienced savings for the total
       const averageSavings = (savings.entry + savings.experienced) / 2;
       return total + (averageSavings * size);
-    }, 0);
+    }, 0));
   };
 
   return (
@@ -601,7 +579,7 @@ export function RoleSelectionStep({
                                 const averageRate = (entryRate + experiencedRate) / 2;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(averageRate / 12)
-                                  : averageRate;
+                                  : Math.round(averageRate);
                                 
                                 return `${getEffectiveCurrencySymbol(userLocation, manualLocation)}${displayRate.toLocaleString()}`;
                               } else if ((role as any).estimatedSalary) {
@@ -610,7 +588,7 @@ export function RoleSelectionStep({
                                 const averageEstimate = (entryEstimate + experiencedEstimate) / 2;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(averageEstimate / 12)
-                                  : averageEstimate;
+                                  : Math.round(averageEstimate);
                                 
                                 return `${getEffectiveCurrencySymbol(userLocation, manualLocation)}${displayRate.toLocaleString()}`;
                               }
@@ -629,7 +607,7 @@ export function RoleSelectionStep({
                           <div className="text-sm font-bold text-green-900">
                             {(() => {
                               const roleSalaryData = role.id ? rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison] : null;
-                              const philippineSalaryData = roleSalaryData?.PH;
+                              const philippineSalaryData = roleSalaryData?.Philippines;
                               
                               if (philippineSalaryData) {
                                 const entryRate = philippineSalaryData.entry.total * currentTeamSize;
@@ -637,7 +615,7 @@ export function RoleSelectionStep({
                                 const averageRate = (entryRate + experiencedRate) / 2;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(averageRate / 12)
-                                  : averageRate;
+                                  : Math.round(averageRate);
                                 
                                 return `₱${displayRate.toLocaleString()}`;
                               } else if ((role as any).estimatedSalary) {
@@ -646,7 +624,7 @@ export function RoleSelectionStep({
                                 const averageEstimate = (entryEstimate + experiencedEstimate) / 2;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(averageEstimate / 12)
-                                  : averageEstimate;
+                                  : Math.round(averageEstimate);
                                 
                                 return `₱${displayRate.toLocaleString()}`;
                               }
@@ -657,7 +635,7 @@ export function RoleSelectionStep({
                           <div className="text-xs text-green-600">
                             {(() => {
                               const roleSalaryData = role.id ? rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison] : null;
-                              const philippineSalaryData = roleSalaryData?.PH;
+                              const philippineSalaryData = roleSalaryData?.Philippines;
                               
                               if (philippineSalaryData) {
                                 const entryRate = philippineSalaryData.entry.total * currentTeamSize;
@@ -665,7 +643,7 @@ export function RoleSelectionStep({
                                 const averageRate = (entryRate + experiencedRate) / 2;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(averageRate / 12)
-                                  : averageRate;
+                                  : Math.round(averageRate);
                                 
                                 // Get user's effective currency
                                 const effectiveCountry = getEffectiveCountry(userLocation, manualLocation);
@@ -698,7 +676,7 @@ export function RoleSelectionStep({
                       </div>
                       <div className="border-t border-green-300 pt-2 mt-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-green-800">Your Savings:</span>
+                          <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
                               {(() => {
@@ -708,7 +686,7 @@ export function RoleSelectionStep({
                                 const averageTotal = (entryTotal + experiencedTotal) / 2;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(averageTotal / 12)
-                                  : averageTotal;
+                                  : Math.round(averageTotal);
                                 
                                 return `${getEffectiveCurrencySymbol(userLocation, manualLocation)}${displayRate.toLocaleString()}`;
                               })()}
@@ -831,31 +809,117 @@ export function RoleSelectionStep({
               </h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-neural-blue-600">
-                  {Object.values(selectedRoles).filter(Boolean).length}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-center">
+              <div className="lg:col-span-3">
+                <div className="text-sm text-neural-blue-600 font-bold mb-2">Selected Roles</div>
+                {/* Selected Roles Badge */}
+                <div className="flex flex-wrap gap-1 justify-center mb-4">
+                  {Object.entries(selectedRoles)
+                    .filter(([_, isSelected]) => isSelected)
+                    .map(([roleId]) => {
+                      const role = allRoles.find(r => r.id === roleId);
+                      const size = teamSize[roleId] || 1;
+                      if (!role) return null;
+                      
+                      return (
+                        <div
+                          key={roleId}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-neural-blue-100 text-neural-blue-900 rounded-full text-xs font-medium"
+                        >
+                          <span className="text-[10px]">{role.icon}</span>
+                          <span className="whitespace-nowrap">
+                            {role.title}
+                          </span>
+                          <span className="bg-neural-blue-200 text-neural-blue-800 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                            {size}
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
-                <div className="text-sm text-neural-blue-600">Roles Selected</div>
               </div>
+              
+              {(() => {
+                const effectiveCountry = getEffectiveCountry(userLocation, manualLocation);
+                let totalLocalCost = 0;
+                let totalPhilippinesCost = 0;
+                let totalSavings = 0;
+                
+                Object.entries(selectedRoles)
+                  .filter(([_, isSelected]) => isSelected)
+                  .forEach(([roleId]) => {
+                    const role = allRoles.find(r => r.id === roleId);
+                    const size = teamSize[roleId] || 1;
+                    if (!role) return;
+                    
+                    const roleSalaryData = role.id ? rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison] : null;
+                    const localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
+                    const philippinesData = roleSalaryData?.Philippines;
+                    
+                    if (localData && philippinesData) {
+                      // Local cost
+                      const localEntryRate = localData.entry.total * size;
+                      const localExperiencedRate = localData.experienced.total * size;
+                      const averageLocalRate = (localEntryRate + localExperiencedRate) / 2;
+                      totalLocalCost += averageLocalRate;
+                      
+                      // Philippines cost
+                      const phEntryRate = philippinesData.entry.total * size;
+                      const phExperiencedRate = philippinesData.experienced.total * size;
+                      const averagePhRate = (phEntryRate + phExperiencedRate) / 2;
+                      totalPhilippinesCost += averagePhRate;
+                      
+                      // Savings
+                      const savings = getSavingsForRole(role);
+                      const entryTotal = savings.entry * size;
+                      const experiencedTotal = savings.experienced * size;
+                      const averageTotal = (entryTotal + experiencedTotal) / 2;
+                      totalSavings += averageTotal;
+                    }
+                  });
+                
+                const currencySymbol = getEffectiveCurrencySymbol(userLocation, manualLocation);
+                const displayPeriod = searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual';
+                const divisor = searchFilters.savingsView === 'monthly' ? 12 : 1;
+                const percentage = totalLocalCost > 0 ? Math.round((totalSavings / totalLocalCost) * 100) : 0;
+                
+                return (
+                  <>
+                    <div>
+                      <div className="text-sm text-neural-blue-600 font-bold mb-2">
+                        {effectiveCountry} {displayPeriod} Cost
+                      </div>
+                      <div className="text-xl font-bold text-red-600">
+                        {currencySymbol}{Math.round(totalLocalCost / divisor).toLocaleString()}
+                      </div>
+                    </div>
+                    
               <div>
-                <div className="text-2xl font-bold text-quantum-purple-600">
-                  {getTotalTeamSize()}
+                      <div className="text-sm text-neural-blue-600 font-bold mb-2">
+                        Philippines {displayPeriod} Cost
+                      </div>
+                      <div className="text-xl font-bold text-slate-700">
+                        ₱{Math.round(totalPhilippinesCost / divisor).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-slate-600 mt-1">
+                        ≈ {currencySymbol}{Math.round((totalPhilippinesCost * getCurrencyMultiplier('USD') / getCurrencyMultiplier('PHP') * getCurrencyMultiplier(getEffectiveCurrencySymbol(userLocation, manualLocation).replace(/[^A-Z]/g, '') || 'USD') / getCurrencyMultiplier('USD')) / divisor).toLocaleString()}
                 </div>
-                <div className="text-sm text-neural-blue-600">Total Team Members</div>
               </div>
+                    
               <div>
-                <div className="text-2xl font-bold text-cyber-green-600">
-                  {getEffectiveCurrencySymbol(userLocation, manualLocation)}
-                  {searchFilters.savingsView === 'monthly' 
-                    ? Math.round(getTotalSavings() / 12).toLocaleString()
-                    : getTotalSavings().toLocaleString()
-                  }
+                      <div className="text-sm text-neural-blue-600 font-bold mb-2">
+                        Total {displayPeriod} Savings
+                      </div>
+                      <div className="text-xl font-bold text-cyber-green-600">
+                        {currencySymbol}{Math.round(totalSavings / divisor).toLocaleString()}
                 </div>
-                <div className="text-sm text-neural-blue-600">
-                  {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Savings
+                      <div className="text-xs text-green-600 mt-1">
+                        {percentage}% savings
                 </div>
               </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </motion.div>

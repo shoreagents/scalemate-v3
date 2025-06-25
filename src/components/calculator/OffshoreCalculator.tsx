@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
-import { Country, ManualLocation, IPLocationData } from '@/types/location';
+import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
+import { Country, ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
+import { getCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -23,12 +24,10 @@ import {
   TrendingUp,
   Users,
   Sparkles,
-  Zap,
   Target,
   Home
 } from 'lucide-react';
 import Link from 'next/link';
-import { getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 
 
 
@@ -99,6 +98,13 @@ export function OffshoreCalculator({
   // Use global exit intent context
   const exitIntentContext = useExitIntentContext();
 
+  // Load dynamic salary data based on current location
+  const { 
+    rolesSalaryComparison, 
+    isLoadingRoles, 
+    rolesError 
+  } = useQuoteCalculatorData(formData.userLocation, manualLocation);
+
   // Get effective location (manual override or auto-detected)
   const getEffectiveLocation = () => {
     if (manualLocation) {
@@ -141,24 +147,8 @@ export function OffshoreCalculator({
   };
 
   // Helper to get effective location data for manual selection
-  const getEffectiveLocationForManual = (manual: ManualLocation) => {
-    // Map country name to Country code (only supported countries)
-    const countryNameToCode: Record<string, Country> = {
-      'United States': 'US',
-      'Australia': 'AU',
-      'Canada': 'CA',
-      'United Kingdom': 'UK',
-      'New Zealand': 'NZ',
-      'Singapore': 'SG'
-    };
-    
-    return {
-      country: countryNameToCode[manual.country] || 'AU', // Default to AU
-      countryName: manual.country,
-      currency: getCurrencyFromCountry(manual.country),
-      currencySymbol: getCurrencySymbolFromCountry(manual.country),
-      detected: false
-    };
+  const getEffectiveLocationForManual = (manual: ManualLocation): LocationData => {
+    return createLocationDataFromManual(manual, getCurrencyFromCountry, getCurrencySymbolFromCountry);
   };
 
   // Handle location edit cancel
@@ -186,17 +176,17 @@ export function OffshoreCalculator({
     
     // Update formData.userLocation to use auto-detected location
     if (locationData) {
-      const autoLocationData = {
-        country: (locationData.country_code as Country) || 'AU',
+      // Map country code to full country name
+      const autoLocationData: LocationData = {
+        country: getCountryFromCode(locationData.country_code),
         countryName: locationData.country_name,
         currency: locationData.currency,
         currencySymbol: getCurrencySymbolFromCountry(locationData.country_name),
         detected: true
       };
       updateFormData({ userLocation: autoLocationData });
+      console.log('📍 Location reset to auto-detected');
     }
-    
-    console.log('📍 Location reset to auto-detected');
   };
 
   // Fetch location data using ipapi
@@ -216,8 +206,9 @@ export function OffshoreCalculator({
         
         // Automatically set formData.userLocation when location is first detected
         if (data.country_code && !manualLocation) {
-          const autoLocationData = {
-            country: (data.country_code as Country) || 'AU',
+          // Map country code to full country name
+          const autoLocationData: LocationData = {
+            country: getCountryFromCode(data.country_code),
             countryName: data.country_name,
             currency: data.currency,
             currencySymbol: getCurrencySymbolFromCountry(data.country_name),
@@ -356,13 +347,19 @@ export function OffshoreCalculator({
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
       
+      console.log('🚀 OffshoreCalculator: Calling calculateSavings with dynamic data:', {
+        hasDynamicSalaryData: !!rolesSalaryComparison,
+        userLocation: formData.userLocation?.country,
+        manualLocation: manualLocation?.country,
+        isLoadingRoles,
+        rolesError
+      });
+      
       const result = await calculateSavings(
         formData, 
-        formData.portfolioIndicators,
-        formData.userLocation || manualLocation ? { 
-          country: formData.userLocation?.country || 'AU',
-          currency: formData.userLocation?.currency || 'AUD'
-        } : undefined
+        Object.values(formData.portfolioIndicators || {}),
+        formData.userLocation || (manualLocation ? getEffectiveLocationForManual(manualLocation) : undefined),
+        rolesSalaryComparison // Pass dynamic salary data from API
       );
       setCalculationResult(result);
       setProcessingStage('');
@@ -399,11 +396,11 @@ export function OffshoreCalculator({
       case 1: return formData.portfolioSize !== '';
       case 2: return Object.values(formData.selectedRoles).some(Boolean);
       case 3: return Object.values(formData.selectedTasks).some(Boolean) || 
-                     Object.values(formData.customTasks).some((tasks: any) => Array.isArray(tasks) && tasks.length > 0);
+                     Object.values(formData.customTasks).some((tasks: readonly unknown[]) => Array.isArray(tasks) && tasks.length > 0);
       case 4: {
         // NEW: Multi-level experience validation
         const selectedRoles = Object.entries(formData.selectedRoles)
-          .filter(([_, selected]: [string, boolean]) => selected)
+          .filter(([, selected]: [string, boolean]) => selected)
           .map(([roleId]: [string, boolean]) => roleId);
         
         // Check if all selected roles have complete experience distribution
@@ -495,29 +492,6 @@ export function OffshoreCalculator({
       default:
         return null;
     }
-  };
-
-  const getStepTitle = (step: CalculatorStep): string => {
-    const titles = {
-      1: 'Portfolio Size',
-      2: 'Team Roles',
-      3: 'Task Selection', 
-      4: 'Experience Level',
-      5: 'Your Results'
-    };
-    return titles[step] || 'Unknown Step';
-  };
-
-  const getStepIcon = (step: CalculatorStep) => {
-    const icons = {
-      1: TrendingUp,
-      2: Users,
-      3: Target,
-      4: Calculator,
-      5: Sparkles
-    };
-    const IconComponent = icons[step] || Calculator;
-    return <IconComponent className="h-5 w-5" />;
   };
 
   const getStepDescription = (step: CalculatorStep): string => {
