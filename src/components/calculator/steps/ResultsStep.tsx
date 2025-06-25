@@ -647,27 +647,55 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                    <Clock className="w-6 h-6 text-matrix-orange-700" />
                  </div>
                  <div>
-                   <h4 className="text-sm font-bold text-matrix-orange-800">Implementation</h4>
-                   <p className="text-xs text-matrix-orange-600">Time to full deployment</p>
+                   <h4 className="text-sm font-bold text-matrix-orange-800">Implementation Timeline</h4>
+                   <p className="text-xs text-matrix-orange-600">Start to fully operational team</p>
                  </div>
                </div>
-               <div className="space-y-2">
+               
+               {/* Total Time Display */}
+               <div className="text-center mb-4">
                  <p className="text-3xl font-bold text-matrix-orange-800">{result.implementationTimeline.fullImplementation}</p>
-                 <div className="flex items-center gap-2">
-                   <div className="flex items-center gap-1">
-                     <Zap className="w-4 h-4 text-matrix-orange-600" />
-                     <span className="text-sm font-medium text-matrix-orange-700">weeks</span>
-                   </div>
-                   <span className="text-xs text-matrix-orange-600">to go live</span>
+                 <div className="flex items-center justify-center gap-2">
+                   <Zap className="w-4 h-4 text-matrix-orange-600" />
+                   <span className="text-sm font-medium text-matrix-orange-700">weeks total</span>
                  </div>
-                 <div className="pt-2 border-t border-matrix-orange-200">
-                   <div className="flex justify-between text-xs">
-                     <span className="text-matrix-orange-600">First hire:</span>
-                     <span className="font-medium text-matrix-orange-700">Week {result.implementationTimeline.planning + result.implementationTimeline.hiring}</span>
+               </div>
+
+               {/* Phase Timeline */}
+               <div className="space-y-3">
+                 {/* Phase 1: Planning */}
+                 <div className="flex items-center gap-3 p-2 bg-white/50 rounded-lg">
+                   <div className="w-6 h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">1</div>
+                   <div className="flex-1">
+                     <div className="flex justify-between items-center">
+                       <span className="text-xs font-medium text-matrix-orange-800">Setup & Planning</span>
+                       <span className="text-xs text-matrix-orange-700">{result.implementationTimeline.planning} weeks</span>
+                     </div>
+                     <p className="text-xs text-matrix-orange-600">Process documentation & role definition</p>
                    </div>
-                   <div className="flex justify-between text-xs mt-1">
-                     <span className="text-matrix-orange-600">Training complete:</span>
-                     <span className="font-medium text-matrix-orange-700">Week {result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training}</span>
+                 </div>
+
+                 {/* Phase 2: Hiring */}
+                 <div className="flex items-center gap-3 p-2 bg-white/50 rounded-lg">
+                   <div className="w-6 h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">2</div>
+                   <div className="flex-1">
+                     <div className="flex justify-between items-center">
+                       <span className="text-xs font-medium text-matrix-orange-800">Recruitment</span>
+                       <span className="text-xs text-matrix-orange-700">{result.implementationTimeline.hiring} weeks</span>
+                     </div>
+                     <p className="text-xs text-matrix-orange-600">Interview & hire your team members</p>
+                   </div>
+                 </div>
+
+                 {/* Phase 3: Training */}
+                 <div className="flex items-center gap-3 p-2 bg-white/50 rounded-lg">
+                   <div className="w-6 h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
+                   <div className="flex-1">
+                     <div className="flex justify-between items-center">
+                       <span className="text-xs font-medium text-matrix-orange-800">Training & Integration</span>
+                       <span className="text-xs text-matrix-orange-700">{result.implementationTimeline.training} weeks</span>
+                     </div>
+                     <p className="text-xs text-matrix-orange-600">Onboarding & skills development</p>
                    </div>
                  </div>
                </div>
