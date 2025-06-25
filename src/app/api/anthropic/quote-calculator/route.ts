@@ -30,7 +30,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if API key is available
+    // For roles, return static data without API call
+    if (requestType === 'roles') {
+      console.log('✅ Using static role data instead of API call');
+      return NextResponse.json({
+        roles: {
+          assistantPropertyManager: {
+            id: 'assistantPropertyManager',
+            title: 'Assistant Property Manager',
+            icon: '🏢',
+            description: 'Handles day-to-day property operations, tenant relations, and administrative tasks.',
+            category: 'property-management',
+            type: 'predefined',
+            color: 'brand-primary',
+            requiredSkills: ['Property Management', 'Tenant Relations', 'Administrative Skills', 'Communication'],
+            optionalSkills: ['Maintenance Coordination', 'Compliance Knowledge', 'Basic Accounting'],
+            searchKeywords: ['property', 'manager', 'tenant', 'administration', 'operations', 'maintenance', 'compliance']
+          },
+          leasingCoordinator: {
+            id: 'leasingCoordinator',
+            title: 'Leasing Coordinator',
+            icon: '🗝️',
+            description: 'Manages leasing activities, prospect communication, and application processing.',
+            category: 'leasing',
+            type: 'predefined',
+            color: 'brand-secondary',
+            requiredSkills: ['Sales Skills', 'Customer Service', 'Application Processing', 'Market Knowledge'],
+            optionalSkills: ['Marketing Skills', 'CRM Software', 'Negotiation Skills'],
+            searchKeywords: ['leasing', 'coordinator', 'sales', 'applications', 'prospects', 'tours', 'inquiries']
+          },
+          marketingSpecialist: {
+            id: 'marketingSpecialist',
+            title: 'Marketing Specialist',
+            icon: '📈',
+            description: 'Creates marketing campaigns, manages digital presence, and analyzes market trends.',
+            category: 'marketing',
+            type: 'predefined',
+            color: 'brand-accent',
+            requiredSkills: ['Digital Marketing', 'Content Creation', 'Analytics', 'Social Media'],
+            optionalSkills: ['Graphic Design', 'SEO/SEM', 'Video Production', 'Data Analysis'],
+            searchKeywords: ['marketing', 'specialist', 'digital', 'social media', 'content', 'campaigns', 'analytics']
+          }
+        }
+      });
+    }
+
+    // Check if API key is available for other request types
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       console.error('❌ ANTHROPIC_API_KEY environment variable is not set');
@@ -52,14 +97,20 @@ export async function POST(request: NextRequest) {
     
     if (requestType === 'roles') {
       responseKey = 'roles';
-      prompt = `You are a property management industry expert. Generate location-specific role definitions for ${countryName}.
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      prompt = `You are a property management industry expert. Generate location-specific role definitions for ${countryName} as of ${currentDate}.
 
 Context:
 - Country: ${countryName}
 - Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
 - Target: Property management companies considering offshore teams
 
-Based on ${countryName}'s property management market and job requirements, create realistic role definitions for property management positions. Consider:
+Based on ${countryName}'s property management market and job requirements as of ${currentDate}, create realistic role definitions for property management positions. Consider:
 - Local property management practices and regulations
 - Cultural communication styles and expectations
 - Technology adoption in the region
@@ -121,14 +172,20 @@ Respond with ONLY a valid JSON object in this exact format:
 }`;
     } else if (requestType === 'salary') {
       responseKey = 'rolesSalaryComparison';
-      prompt = `You are a property management industry expert. Generate location-specific salary data for ${countryName}.
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      prompt = `You are a property management industry expert. Generate location-specific salary data for ${countryName} as of ${currentDate}.
 
 Context:
 - Country: ${countryName}
 - Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
 - Target: Property management salary benchmarking
 
-Based on ${countryName}'s employment market, generate realistic salary data for property management roles. Consider:
+Based on ${countryName}'s employment market as of ${currentDate}, generate realistic salary data for property management roles. Consider:
 - Local salary standards and employment costs
 - Tax rates and benefit structures
 - Market competitiveness
@@ -175,14 +232,20 @@ Respond with ONLY a valid JSON object in this exact format:
 }`;
     } else {
       responseKey = 'portfolioIndicators';
-      prompt = `You are a property management industry expert. Generate location-specific portfolio indicators for ${countryName}.
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      prompt = `You are a property management industry expert. Generate location-specific portfolio indicators for ${countryName} as of ${currentDate}.
 
 Context:
 - Country: ${countryName}
 - Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
 - Target: Property management companies considering offshore teams
 
-Based on ${countryName}'s property management market conditions, create 4 realistic portfolio size ranges that make sense for local companies, considering:
+Based on ${countryName}'s property management market conditions as of ${currentDate}, create 4 realistic portfolio size ranges that make sense for local companies, considering:
 - Typical property management company sizes in ${countryName}
 - Local market structure and competition
 - Average properties per manager ratios

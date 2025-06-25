@@ -1,7 +1,201 @@
 /**
  * Currency utilities for ScaleMate
  * Can be used in both client and server environments
+ * 
+ * Flow: Live API → Static fallback data
  */
+
+// Cache for live exchange rates (24-hour cache)
+interface ExchangeRateCache {
+  rates: Record<string, number>;
+  timestamp: number;
+  baseCurrency: string;
+}
+
+const EXCHANGE_RATE_CACHE_KEY = 'scalemate-exchange-rates';
+const EXCHANGE_RATE_CACHE_DURATION = 1000 * 60 * 60 * 24; // 24 hours
+
+// Load cached exchange rates from localStorage
+function loadExchangeRateCache(): ExchangeRateCache | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    
+    const cached = localStorage.getItem(EXCHANGE_RATE_CACHE_KEY);
+    if (!cached) return null;
+    
+    const parsed: ExchangeRateCache = JSON.parse(cached);
+    const now = Date.now();
+    
+    // Check if cache is still valid
+    if (now - parsed.timestamp < EXCHANGE_RATE_CACHE_DURATION) {
+      return parsed;
+    }
+    
+    // Cache expired, remove it
+    localStorage.removeItem(EXCHANGE_RATE_CACHE_KEY);
+    return null;
+  } catch (error) {
+    console.warn('⚠️ Failed to load exchange rate cache:', error);
+    return null;
+  }
+}
+
+// Save exchange rates to localStorage cache
+function saveExchangeRateCache(cache: ExchangeRateCache): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    
+    localStorage.setItem(EXCHANGE_RATE_CACHE_KEY, JSON.stringify(cache));
+    console.log('💾 Cached live exchange rates for 24 hours');
+  } catch (error) {
+    console.warn('⚠️ Failed to save exchange rate cache:', error);
+  }
+}
+
+/**
+ * Fetch live exchange rates from free APIs
+ * Uses multiple fallback endpoints for reliability
+ */
+async function fetchLiveExchangeRates(baseCurrency: string = 'USD'): Promise<Record<string, number> | null> {
+  const base = baseCurrency.toUpperCase();
+  
+  // API endpoints in order of preference
+  const apis = [
+    // Primary: Fawaz Ahmed (completely free, no API key)
+    {
+      url: `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${base.toLowerCase()}.json`,
+      parser: (data: any) => data[base.toLowerCase()]
+    },
+    // Fallback 1: Cloudflare mirror
+    {
+      url: `https://latest.currency-api.pages.dev/v1/currencies/${base.toLowerCase()}.json`,
+      parser: (data: any) => data[base.toLowerCase()]
+    },
+    // Fallback 2: ExchangeRate.host
+    {
+      url: `https://api.exchangerate.host/latest?base=${base}`,
+      parser: (data: any) => data.rates
+    }
+  ];
+
+  for (const api of apis) {
+    try {
+      console.log(`🌐 Fetching live exchange rates from API (base: ${base})`);
+      
+      const response = await fetch(api.url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        // Add timeout for better UX
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const rates = api.parser(data);
+      
+      if (rates && typeof rates === 'object') {
+        console.log(`✅ Successfully fetched live exchange rates from API (${Object.keys(rates).length} currencies)`);
+        
+        // Cache the successful result
+        const cacheEntry: ExchangeRateCache = {
+          rates,
+          timestamp: Date.now(),
+          baseCurrency: base
+        };
+        saveExchangeRateCache(cacheEntry);
+        
+        return rates;
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to fetch from ${api.url}:`, error);
+      continue; // Try next API
+    }
+  }
+  
+  console.log('❌ All live exchange rate APIs failed, falling back to static data');
+  return null;
+}
+
+/**
+ * Get live exchange rate multiplier for a currency
+ * Falls back to static data if API fails
+ */
+export async function getLiveExchangeRateMultiplier(targetCurrency: string, baseCurrency: string = 'USD'): Promise<number> {
+  const target = targetCurrency.toUpperCase();
+  const base = baseCurrency.toUpperCase();
+  
+  // If same currency, return 1
+  if (target === base) return 1.0;
+  
+  try {
+    // First check cache
+    const cached = loadExchangeRateCache();
+    if (cached && cached.baseCurrency === base) {
+      const cachedRate = cached.rates[target.toLowerCase()];
+      if (cachedRate) {
+        console.log(`📊 Using cached exchange rate: ${base} → ${target}`);
+        return cachedRate;
+      }
+    }
+    
+    // Fetch live rates
+    const liveRates = await fetchLiveExchangeRates(base);
+    if (liveRates) {
+      const liveRate = liveRates[target.toLowerCase()];
+      if (liveRate) {
+        console.log(`🌐 Using live exchange rate: ${base} → ${target} = ${liveRate}`);
+        return liveRate;
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Error fetching live exchange rates:', error);
+  }
+  
+  // Fallback to static multipliers
+  console.log(`📋 Using static exchange rate fallback: ${base} → ${target}`);
+  
+  if (base === 'USD') {
+    return getCurrencyMultiplier(target);
+  } else {
+    // Convert through USD: base → USD → target
+    const baseToUsd = 1 / getCurrencyMultiplier(base);
+    const usdToTarget = getCurrencyMultiplier(target);
+    return baseToUsd * usdToTarget;
+  }
+}
+
+/**
+ * Clear exchange rate cache (useful for testing or manual refresh)
+ */
+export function clearExchangeRateCache(): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(EXCHANGE_RATE_CACHE_KEY);
+      console.log('🗑️ Exchange rate cache cleared');
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to clear exchange rate cache:', error);
+  }
+}
+
+/**
+ * Get the best available exchange rate multiplier
+ * Tries live API first, falls back to static data
+ * Recommended for all new implementations
+ */
+export async function getBestExchangeRateMultiplier(targetCurrency: string, baseCurrency: string = 'USD'): Promise<number> {
+  try {
+    return await getLiveExchangeRateMultiplier(targetCurrency, baseCurrency);
+  } catch (error) {
+    console.warn('⚠️ Failed to get live exchange rate, using static fallback:', error);
+    return getCurrencyMultiplier(targetCurrency);
+  }
+}
 
 // Helper function to get currency symbol from currency code
 export function getCurrencySymbol(currencyCode: string): string {
@@ -400,9 +594,11 @@ export function getCurrencyByCountry(countryName: string): string {
 }
 
 /**
- * Get currency multiplier for revenue adjustments
+ * Get currency multiplier for revenue adjustments (STATIC FALLBACK)
  * Used for converting base USD revenue values to local currency equivalents
- * Updated with 2025 exchange rates
+ * Updated with 2025 exchange rates - serves as fallback when live API fails
+ * 
+ * NOTE: Use getLiveExchangeRateMultiplier() for live rates with this as fallback
  */
 export function getCurrencyMultiplier(currency: string): number {
   const multipliers: Record<string, number> = {

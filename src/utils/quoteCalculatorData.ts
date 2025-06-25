@@ -3,414 +3,9 @@ import { PortfolioSize, PortfolioIndicator } from '@/types';
 import { Country, LocationContext } from '@/types/location';
 import { getCurrencyMultiplier, getCurrencyByCountry } from './currency';
 
-// Predefined revenue data for supported Country types
-const COUNTRY_REVENUE_DATA: Readonly<Record<Country, Record<PortfolioSize, PortfolioIndicator>>> = {
-  AU: {
-    '500-999': {
-      min: 500,
-      max: 999,
-      tier: 'growing',
-      description: 'Perfect for testing offshore teams',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 750000, max: 2250000 }, // AUD values
-      implementationComplexity: 'simple'
-    },
-    '1000-1999': {
-      min: 1000,
-      max: 1999,
-      tier: 'large',
-      description: 'Ideal for full team implementation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 2,
-        leasingCoordinator: 2,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 2250000, max: 6000000 },
-      implementationComplexity: 'moderate'
-    },
-    '2000-4999': {
-      min: 2000,
-      max: 4999,
-      tier: 'major',
-      description: 'Multiple teams across departments',
-      recommendedTeamSize: {
-        assistantPropertyManager: 3,
-        leasingCoordinator: 2,
-        marketingSpecialist: 2
-      },
-      averageRevenue: { min: 6000000, max: 22500000 },
-      implementationComplexity: 'complex'
-    },
-    '5000+': {
-      min: 5000,
-      max: 99999,
-      tier: 'enterprise',
-      description: 'Full offshore operation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 5,
-        leasingCoordinator: 3,
-        marketingSpecialist: 3
-      },
-      averageRevenue: { min: 22500000, max: 150000000 },
-      implementationComplexity: 'enterprise'
-    },
-    'manual': {
-      min: 0,
-      max: 99999,
-      tier: 'growing',
-      description: 'Custom portfolio size with precise inputs',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 0, max: 150000000 },
-      implementationComplexity: 'simple'
-    }
-  },
-  US: {
-    '500-999': {
-      min: 500,
-      max: 999,
-      tier: 'growing',
-      description: 'Perfect for testing offshore teams',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 500000, max: 1500000 }, // USD values (base)
-      implementationComplexity: 'simple'
-    },
-    '1000-1999': {
-      min: 1000,
-      max: 1999,
-      tier: 'large',
-      description: 'Ideal for full team implementation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 2,
-        leasingCoordinator: 2,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 1500000, max: 4000000 },
-      implementationComplexity: 'moderate'
-    },
-    '2000-4999': {
-      min: 2000,
-      max: 4999,
-      tier: 'major',
-      description: 'Multiple teams across departments',
-      recommendedTeamSize: {
-        assistantPropertyManager: 3,
-        leasingCoordinator: 2,
-        marketingSpecialist: 2
-      },
-      averageRevenue: { min: 4000000, max: 15000000 },
-      implementationComplexity: 'complex'
-    },
-    '5000+': {
-      min: 5000,
-      max: 99999,
-      tier: 'enterprise',
-      description: 'Full offshore operation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 5,
-        leasingCoordinator: 3,
-        marketingSpecialist: 3
-      },
-      averageRevenue: { min: 15000000, max: 100000000 },
-      implementationComplexity: 'enterprise'
-    },
-    'manual': {
-      min: 0,
-      max: 99999,
-      tier: 'growing',
-      description: 'Custom portfolio size with precise inputs',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 0, max: 100000000 },
-      implementationComplexity: 'simple'
-    }
-  },
-  CA: {
-    '500-999': {
-      min: 500,
-      max: 999,
-      tier: 'growing',
-      description: 'Perfect for testing offshore teams',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 675000, max: 2025000 }, // CAD values
-      implementationComplexity: 'simple'
-    },
-    '1000-1999': {
-      min: 1000,
-      max: 1999,
-      tier: 'large',
-      description: 'Ideal for full team implementation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 2,
-        leasingCoordinator: 2,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 2025000, max: 5400000 },
-      implementationComplexity: 'moderate'
-    },
-    '2000-4999': {
-      min: 2000,
-      max: 4999,
-      tier: 'major',
-      description: 'Multiple teams across departments',
-      recommendedTeamSize: {
-        assistantPropertyManager: 3,
-        leasingCoordinator: 2,
-        marketingSpecialist: 2
-      },
-      averageRevenue: { min: 5400000, max: 20250000 },
-      implementationComplexity: 'complex'
-    },
-    '5000+': {
-      min: 5000,
-      max: 99999,
-      tier: 'enterprise',
-      description: 'Full offshore operation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 5,
-        leasingCoordinator: 3,
-        marketingSpecialist: 3
-      },
-      averageRevenue: { min: 20250000, max: 135000000 },
-      implementationComplexity: 'enterprise'
-    },
-    'manual': {
-      min: 0,
-      max: 99999,
-      tier: 'growing',
-      description: 'Custom portfolio size with precise inputs',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 0, max: 135000000 },
-      implementationComplexity: 'simple'
-    }
-  },
-  UK: {
-    '500-999': {
-      min: 500,
-      max: 999,
-      tier: 'growing',
-      description: 'Perfect for testing offshore teams',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 400000, max: 1200000 }, // GBP values
-      implementationComplexity: 'simple'
-    },
-    '1000-1999': {
-      min: 1000,
-      max: 1999,
-      tier: 'large',
-      description: 'Ideal for full team implementation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 2,
-        leasingCoordinator: 2,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 1200000, max: 3200000 },
-      implementationComplexity: 'moderate'
-    },
-    '2000-4999': {
-      min: 2000,
-      max: 4999,
-      tier: 'major',
-      description: 'Multiple teams across departments',
-      recommendedTeamSize: {
-        assistantPropertyManager: 3,
-        leasingCoordinator: 2,
-        marketingSpecialist: 2
-      },
-      averageRevenue: { min: 3200000, max: 12000000 },
-      implementationComplexity: 'complex'
-    },
-    '5000+': {
-      min: 5000,
-      max: 99999,
-      tier: 'enterprise',
-      description: 'Full offshore operation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 5,
-        leasingCoordinator: 3,
-        marketingSpecialist: 3
-      },
-      averageRevenue: { min: 12000000, max: 80000000 },
-      implementationComplexity: 'enterprise'
-    },
-    'manual': {
-      min: 0,
-      max: 99999,
-      tier: 'growing',
-      description: 'Custom portfolio size with precise inputs',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 0, max: 80000000 },
-      implementationComplexity: 'simple'
-    }
-  },
-  NZ: {
-    '500-999': {
-      min: 500,
-      max: 999,
-      tier: 'growing',
-      description: 'Perfect for testing offshore teams',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 800000, max: 2400000 }, // NZD values
-      implementationComplexity: 'simple'
-    },
-    '1000-1999': {
-      min: 1000,
-      max: 1999,
-      tier: 'large',
-      description: 'Ideal for full team implementation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 2,
-        leasingCoordinator: 2,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 2400000, max: 6400000 },
-      implementationComplexity: 'moderate'
-    },
-    '2000-4999': {
-      min: 2000,
-      max: 4999,
-      tier: 'major',
-      description: 'Multiple teams across departments',
-      recommendedTeamSize: {
-        assistantPropertyManager: 3,
-        leasingCoordinator: 2,
-        marketingSpecialist: 2
-      },
-      averageRevenue: { min: 6400000, max: 24000000 },
-      implementationComplexity: 'complex'
-    },
-    '5000+': {
-      min: 5000,
-      max: 99999,
-      tier: 'enterprise',
-      description: 'Full offshore operation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 5,
-        leasingCoordinator: 3,
-        marketingSpecialist: 3
-      },
-      averageRevenue: { min: 24000000, max: 160000000 },
-      implementationComplexity: 'enterprise'
-    },
-    'manual': {
-      min: 0,
-      max: 99999,
-      tier: 'growing',
-      description: 'Custom portfolio size with precise inputs',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 0, max: 160000000 },
-      implementationComplexity: 'simple'
-    }
-  },
-  SG: {
-    '500-999': {
-      min: 500,
-      max: 999,
-      tier: 'growing',
-      description: 'Perfect for testing offshore teams',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 675000, max: 2025000 }, // SGD values
-      implementationComplexity: 'simple'
-    },
-    '1000-1999': {
-      min: 1000,
-      max: 1999,
-      tier: 'large',
-      description: 'Ideal for full team implementation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 2,
-        leasingCoordinator: 2,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 2025000, max: 5400000 },
-      implementationComplexity: 'moderate'
-    },
-    '2000-4999': {
-      min: 2000,
-      max: 4999,
-      tier: 'major',
-      description: 'Multiple teams across departments',
-      recommendedTeamSize: {
-        assistantPropertyManager: 3,
-        leasingCoordinator: 2,
-        marketingSpecialist: 2
-      },
-      averageRevenue: { min: 5400000, max: 20250000 },
-      implementationComplexity: 'complex'
-    },
-    '5000+': {
-      min: 5000,
-      max: 99999,
-      tier: 'enterprise',
-      description: 'Full offshore operation',
-      recommendedTeamSize: {
-        assistantPropertyManager: 5,
-        leasingCoordinator: 3,
-        marketingSpecialist: 3
-      },
-      averageRevenue: { min: 20250000, max: 135000000 },
-      implementationComplexity: 'enterprise'
-    },
-    'manual': {
-      min: 0,
-      max: 99999,
-      tier: 'growing',
-      description: 'Custom portfolio size with precise inputs',
-      recommendedTeamSize: {
-        assistantPropertyManager: 1,
-        leasingCoordinator: 1,
-        marketingSpecialist: 1
-      },
-      averageRevenue: { min: 0, max: 135000000 },
-      implementationComplexity: 'simple'
-    }
-  }
-} as const;
-
-// Static fallback data for portfolio indicators (USD base)
-const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
+// Predefined portfolio data for supported Country types
+const PORTFOLIO_INFO: Readonly<Record<Country, Record<PortfolioSize, PortfolioIndicator>>> = {
+  Australia: {
   '500-999': {
     min: 500,
     max: 999,
@@ -421,7 +16,7 @@ const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
       leasingCoordinator: 1,
       marketingSpecialist: 1
     },
-    averageRevenue: { min: 500000, max: 1500000 },
+      averageRevenue: { min: 400000, max: 800000 }, // AUD values - 2025 market-adjusted
     implementationComplexity: 'simple'
   },
   '1000-1999': {
@@ -434,7 +29,7 @@ const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
       leasingCoordinator: 2,
       marketingSpecialist: 1
     },
-    averageRevenue: { min: 1500000, max: 4000000 },
+      averageRevenue: { min: 800000, max: 2000000 },
     implementationComplexity: 'moderate'
   },
   '2000-4999': {
@@ -447,7 +42,7 @@ const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
       leasingCoordinator: 2,
       marketingSpecialist: 2
     },
-    averageRevenue: { min: 4000000, max: 15000000 },
+      averageRevenue: { min: 2000000, max: 5000000 },
     implementationComplexity: 'complex'
   },
   '5000+': {
@@ -460,7 +55,7 @@ const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
       leasingCoordinator: 3,
       marketingSpecialist: 3
     },
-    averageRevenue: { min: 15000000, max: 100000000 },
+      averageRevenue: { min: 5000000, max: 15000000 },
     implementationComplexity: 'enterprise'
   },
   'manual': {
@@ -473,10 +68,349 @@ const PORTFOLIO_INFO: Readonly<Record<PortfolioSize, PortfolioIndicator>> = {
       leasingCoordinator: 1,
       marketingSpecialist: 1
     },
-    averageRevenue: { min: 0, max: 100000000 },
+      averageRevenue: { min: 0, max: 15000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  "United States": {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 300000, max: 700000 }, // USD values - 2025 market-adjusted
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 700000, max: 1800000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 1800000, max: 4500000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 4500000, max: 12000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 12000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  Canada: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 400000, max: 900000 }, // CAD values - 2025 market-adjusted
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 900000, max: 2200000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 2200000, max: 5500000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 5500000, max: 16000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 16000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  "United Kingdom": {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 250000, max: 600000 }, // GBP values - 2025 market-adjusted
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 600000, max: 1500000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 1500000, max: 3800000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 3800000, max: 10000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 10000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  "New Zealand": {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 450000, max: 950000 }, // NZD values - 2025 market-adjusted
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 950000, max: 2300000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 2300000, max: 5800000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 5800000, max: 17000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 17000000 },
+      implementationComplexity: 'simple'
+    }
+  },
+  Singapore: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 400000, max: 850000 }, // SGD values - 2025 market-adjusted
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 850000, max: 2100000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 2100000, max: 5200000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 5200000, max: 15000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 15000000 },
     implementationComplexity: 'simple'
+    }
   }
 } as const;
+
+// Default fallback data (using US market as base)
+const DEFAULT_PORTFOLIO_INFO = PORTFOLIO_INFO["United States"];
 
 // Cache for dynamic data to avoid repeated API calls
 interface CacheEntry {
@@ -600,32 +534,30 @@ async function generateDynamicPortfolioIndicators(location: LocationContext): Pr
 }
 
 /**
- * Helper function to determine if a country code is a supported Country type
+ * Helper function to determine if a country name is a supported Country type
  */
-function isSupportedCountry(countryCode: string): countryCode is Country {
-  return ['AU', 'US', 'CA', 'UK', 'NZ', 'SG'].includes(countryCode);
+function isSupportedCountry(countryName: string): countryName is Country {
+  return ['Australia', 'United States', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore'].includes(countryName);
 }
 
 /**
- * Helper function to get country code from location context
+ * Helper function to get standardized country name from location context
  */
-function getCountryCodeFromLocation(location: LocationContext): string | null {
-  // Try to get 2-letter country code from location context
-  if (location.country && location.country.length === 2) {
-    return location.country.toUpperCase();
-  }
+function getCountryNameFromLocation(location: LocationContext): string {
+  // Use countryName if available (from auto-detection), otherwise use country (from manual selection)
+  const countryName = location.countryName || location.country;
   
-  // Fallback: try to convert country name to code
-  const countryNameToCode: Record<string, string> = {
-    'United States': 'US',
-    'Australia': 'AU', 
-    'Canada': 'CA',
-    'United Kingdom': 'UK',
-    'New Zealand': 'NZ',
-    'Singapore': 'SG'
+  // If we get a country code, convert it to country name
+  const countryCodeToName: Record<string, string> = {
+    'US': 'United States',
+    'AU': 'Australia', 
+    'CA': 'Canada',
+    'UK': 'United Kingdom',
+    'NZ': 'New Zealand',
+    'SG': 'Singapore'
   };
   
-  return countryNameToCode[location.country] || null;
+  return countryCodeToName[countryName] || countryName;
 }
 
 /**
@@ -634,9 +566,9 @@ function getCountryCodeFromLocation(location: LocationContext): string | null {
  * Falls back to static data if dynamic generation fails
  */
 export async function getPortfolioIndicators(location?: LocationContext): Promise<Record<PortfolioSize, PortfolioIndicator>> {
-  // If no location provided, return static data
+  // If no location provided, return default US data
   if (!location?.country) {
-    return PORTFOLIO_INFO;
+    return DEFAULT_PORTFOLIO_INFO;
   }
 
   // Create normalized cache key for consistency between auto-detected and manual selection
@@ -673,48 +605,22 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
     console.error('Error generating dynamic portfolio indicators:', error);
   }
 
-  // Get country code from location for fallback logic
-  const countryCode = getCountryCodeFromLocation(location);
+  // Get standardized country name from location for fallback logic
+  const countryName = getCountryNameFromLocation(location);
   
   // Fallback: Use predefined data for supported Country types when API fails
-  if (countryCode && isSupportedCountry(countryCode)) {
-    console.log('📋 API failed - using predefined portfolio data for supported country:', countryCode);
-    return COUNTRY_REVENUE_DATA[countryCode];
+  if (isSupportedCountry(countryName)) {
+    console.log('📋 API failed - using predefined portfolio data for supported country:', countryName);
+    return PORTFOLIO_INFO[countryName];
   }
 
-  // Final fallback: Use currency multiplier to adjust static data for unsupported countries
-  console.log('💱 Using currency multiplier fallback for:', location.country);
-  const currency = location.currency || getCurrencyByCountry(location.country);
-  return getLocationAdjustedStaticData(currency);
+  // Final fallback: Use USA data as-is for unsupported countries (no currency conversion)
+  console.log('🇺🇸 Using USA portfolio data as fallback for unsupported country:', location.country);
+  return DEFAULT_PORTFOLIO_INFO;
 }
 
-/**
- * Apply currency-based adjustments to static data
- * Only uses currency - other location data not needed for static fallback
- */
-function getLocationAdjustedStaticData(currency: string): Record<PortfolioSize, PortfolioIndicator> {
-  const adjustedData = { ...PORTFOLIO_INFO };
-  
-  // Apply currency-based revenue adjustments
-  const currencyMultiplier = getCurrencyMultiplier(currency || 'USD');
-  
-  Object.keys(adjustedData).forEach(key => {
-    const portfolioKey = key as PortfolioSize;
-    const originalData = adjustedData[portfolioKey];
-    if (originalData) {
-      adjustedData[portfolioKey] = {
-        ...originalData,
-        averageRevenue: {
-          min: Math.round(originalData.averageRevenue.min * currencyMultiplier),
-          max: Math.round(originalData.averageRevenue.max * currencyMultiplier)
-        }
-        // Note: description unchanged for static fallback
-      };
-    }
-  });
-
-  return adjustedData;
-}
+// getLocationAdjustedStaticData function removed - no longer needed
+// Unsupported countries now use USA data as-is without currency conversion
 
 
 
@@ -761,5 +667,5 @@ export function hasCachedData(country: string): boolean {
  * Get static portfolio indicators (for fallback or testing)
  */
 export function getStaticPortfolioIndicators(): Record<PortfolioSize, PortfolioIndicator> {
-  return PORTFOLIO_INFO;
-}
+  return DEFAULT_PORTFOLIO_INFO;
+} 

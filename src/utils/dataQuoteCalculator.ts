@@ -309,10 +309,10 @@ export const BASIC_ROLES: Readonly<Record<RoleId, Role>> = {
 
 // Task complexity multipliers
 export const TASK_COMPLEXITY_MULTIPLIERS: Readonly<Record<TaskComplexity | 'custom', number>> = {
-  low: 0.9,
-  medium: 1.0,
-  high: 1.2,
-  custom: 1.15
+  low: 1,
+  medium: 1.5,
+  high: 2,
+  custom: 1
 } as const;
 
 

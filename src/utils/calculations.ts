@@ -8,62 +8,68 @@ import {
   PortfolioSize,
   Task,
   RoleExperienceDistribution,
-  PortfolioIndicator
+  PortfolioIndicator,
+  LocationData
 } from '@/types';
 import { 
-  SALARY_DATA, 
   TASK_COMPLEXITY_MULTIPLIERS
 } from './dataQuoteCalculator';
-// Business tier detection removed - handled via direct tier selection
 import { ROLES, ROLES_SALARY_COMPARISON } from './rolesData';
-import { getCurrencyMultiplier } from './currency';
+import { getCurrencyMultiplier, getBestExchangeRateMultiplier } from './currency';
 import { Country } from '@/types/location';
 
 /**
  * Helper function to get salary data with currency conversion
  */
 const getSalaryData = (roleId: RoleId, userCountry?: string) => {
-  // Try to use new multi-country data first
   const multiCountryData = ROLES_SALARY_COMPARISON[roleId];
-  if (multiCountryData && userCountry) {
-    const countryData = multiCountryData[userCountry as Country];
-    const philippineData = multiCountryData.PH;
-    
-    if (countryData && philippineData) {
-      // Convert Philippines PHP to USD for calculations
-      const phpMultiplier = getCurrencyMultiplier('PHP');
-      
-      return {
-        local: {
-          entry: { base: countryData.entry.base, total: countryData.entry.total },
-          moderate: { base: countryData.moderate.base, total: countryData.moderate.total },
-          experienced: { base: countryData.experienced.base, total: countryData.experienced.total }
-        },
-        philippine: {
-          entry: { base: Math.round(philippineData.entry.base / phpMultiplier), total: Math.round(philippineData.entry.total / phpMultiplier) },
-          moderate: { base: Math.round(philippineData.moderate.base / phpMultiplier), total: Math.round(philippineData.moderate.total / phpMultiplier) },
-          experienced: { base: Math.round(philippineData.experienced.base / phpMultiplier), total: Math.round(philippineData.experienced.total / phpMultiplier) }
-        }
-      };
-    }
+  if (!multiCountryData) {
+    console.warn(`No salary data found for role: ${roleId}`);
+    return null;
   }
+
+  // Default to United States if no country specified
+  const effectiveCountry = (userCountry || 'United States') as Country;
+  const countryData = multiCountryData[effectiveCountry];
+  const philippineData = multiCountryData.Philippines;
   
-  // Fallback to legacy SALARY_DATA
-  return SALARY_DATA[roleId] ? {
-    local: SALARY_DATA[roleId].australian,
-    philippine: SALARY_DATA[roleId].philippine
-  } : null;
+  if (!countryData || !philippineData) {
+    console.warn(`Missing salary data for ${effectiveCountry} or PH for role: ${roleId}`);
+    return null;
+  }
+
+  return {
+    local: {
+      entry: { base: countryData.entry.base, total: countryData.entry.total },
+      moderate: { base: countryData.moderate.base, total: countryData.moderate.total },
+      experienced: { base: countryData.experienced.base, total: countryData.experienced.total }
+    },
+    philippine: {
+      entry: { base: philippineData.entry.base, total: philippineData.entry.total },
+      moderate: { base: philippineData.moderate.base, total: philippineData.moderate.total },
+      experienced: { base: philippineData.experienced.base, total: philippineData.experienced.total }
+    }
+  };
 };
 
 /**
  * Main calculation engine - calculates savings for offshore team scaling
  * Updated to handle multi-level experience distribution per role and location-based salaries
  */
-export const calculateSavings = (
-  formData: FormData, 
-  portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>,
-  userLocation?: { country: string; currency?: string }
-): CalculationResult => {
+export const calculateSavings = async (
+  formData: FormData,
+  portfolioIndicators: PortfolioIndicator[],
+  userLocation?: LocationData
+): Promise<CalculationResult> => {
+  if (!formData.roles?.length) {
+    return {
+      totalSavings: 0,
+      savingsPercentage: 0,
+      roleSavings: [],
+      portfolioIndicators: []
+    };
+  }
+
   const selectedRoles = Object.entries(formData.selectedRoles)
     .filter(([_, selected]) => selected)
     .map(([roleId]) => roleId as RoleId);
@@ -77,7 +83,7 @@ export const calculateSavings = (
   const breakdown: Record<RoleId, RoleSavings> = {} as Record<RoleId, RoleSavings>;
   
   // Calculate savings for each selected role
-  selectedRoles.forEach(roleId => {
+  for (const roleId of selectedRoles) {
     const teamSize = formData.teamSize[roleId] || 1;
     const roleData = ROLES[roleId as keyof typeof ROLES];
     const roleSalaryData = getSalaryData(roleId, userLocation?.country);
@@ -100,21 +106,25 @@ export const calculateSavings = (
       let totalWeightedValue = 0;
       let totalMembers = 0;
       
-      experienceLevels.forEach(level => {
+      for (const level of experienceLevels) {
         const memberCount = experienceDistribution[level];
         if (memberCount > 0) {
           const localSalary = roleSalaryData.local[level];
           const philippineSalary = roleSalaryData.philippine[level];
           
           australianCost += localSalary.total * memberCount;
-          philippineCost += philippineSalary.total * memberCount;
+          
+          // Convert Philippine salary from PHP to user's local currency using live API
+          const phpToUsd = philippineSalary.total / await getBestExchangeRateMultiplier('PHP');
+          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'AUD');
+          philippineCost += usdToLocal * memberCount;
           
           // Calculate weighted experience level for risk assessment
           const levelWeight = level === 'entry' ? 1 : level === 'moderate' ? 2 : 3;
           totalWeightedValue += levelWeight * memberCount;
           totalMembers += memberCount;
         }
-      });
+      }
       
       // Determine weighted experience level for legacy compatibility
       if (totalMembers > 0) {
@@ -130,7 +140,11 @@ export const calculateSavings = (
       const philippineSalary = roleSalaryData.philippine[experienceLevel];
       
       australianCost = localSalary.total * teamSize;
-      philippineCost = philippineSalary.total * teamSize;
+      
+      // Convert Philippine salary from PHP to user's local currency using live API
+      const phpToUsd = philippineSalary.total / await getBestExchangeRateMultiplier('PHP');
+      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'AUD');
+      philippineCost = usdToLocal * teamSize;
     }
 
     // Count selected tasks for this role
@@ -212,7 +226,7 @@ export const calculateSavings = (
     totalSelectedTasks += selectedTasksForRole;
     totalCustomTasks += customTasksForRole;
     totalTeamSize += teamSize;
-  });
+  }
 
   const totalSavings = totalAustralianCost - totalPhilippineCost;
   const averageSavingsPercentage = totalAustralianCost > 0 

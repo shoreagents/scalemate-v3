@@ -1,7 +1,7 @@
 // Location and geographic types for the ScaleMate application
 
 // Supported countries for savings comparison
-export type Country = 'AU' | 'US' | 'CA' | 'UK' | 'NZ' | 'SG';
+export type Country = 'Australia' | 'United States' | 'Canada' | 'United Kingdom' | 'New Zealand' | 'Singapore';
 
 // IP geolocation API response format (from ipapi.co)
 export interface IPLocationData {

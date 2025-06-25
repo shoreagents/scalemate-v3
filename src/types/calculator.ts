@@ -31,13 +31,21 @@ export interface CountrySalaryData {
 }
 
 export interface MultiCountryRoleSalaryData {
-  readonly AU: CountrySalaryData; // Australia
-  readonly US: CountrySalaryData; // United States
-  readonly CA: CountrySalaryData; // Canada
-  readonly UK: CountrySalaryData; // United Kingdom
-  readonly NZ: CountrySalaryData; // New Zealand
-  readonly SG: CountrySalaryData; // Singapore
-  readonly PH: CountrySalaryData; // Philippines (offshore)
+  readonly Australia: CountrySalaryData;
+  readonly "United States": CountrySalaryData;
+  readonly Canada: CountrySalaryData;
+  readonly "United Kingdom": CountrySalaryData;
+  readonly "New Zealand": CountrySalaryData;
+  readonly Singapore: CountrySalaryData;
+  readonly Philippines: CountrySalaryData; // Philippines (offshore)
+  // Keep old keys for backward compatibility with existing data
+  readonly AU?: CountrySalaryData;
+  readonly US?: CountrySalaryData;
+  readonly CA?: CountrySalaryData;
+  readonly UK?: CountrySalaryData;
+  readonly NZ?: CountrySalaryData;
+  readonly SG?: CountrySalaryData;
+  readonly PH?: CountrySalaryData;
 }
 
 // Custom role definition

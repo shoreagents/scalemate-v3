@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Globe, Check, X, ChevronDown, MapPinIcon } from 'lucide-react';
 import { fetchCountries, searchCountries, type Country } from '@/utils/locationApi';
 import { ManualLocation } from '@/types/location';
+import { Button } from '@/components/ui/Button';
 
 interface EnhancedLocationSelectorProps {
   initialLocation?: ManualLocation;
@@ -156,22 +157,26 @@ export function EnhancedLocationSelector({
         </div>
 
         {/* Action Buttons */}
-        <button
+        <Button
           onClick={onCancel}
           disabled={disabled}
-          className="px-4 py-3 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          variant="quantum-secondary"
+          size="neural-md"
+          leftIcon={<X className="w-4 h-4" />}
+          className="whitespace-nowrap"
         >
-          <X className="w-4 h-4" />
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onSave}
           disabled={!isValid || disabled}
-          className="px-4 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors whitespace-nowrap"
+          variant="neural-primary"
+          size="neural-md"
+          leftIcon={<Check className="w-4 h-4" />}
+          className="whitespace-nowrap"
         >
-          <Check className="w-4 h-4" />
           Save Location
-        </button>
+        </Button>
       </div>
 
       {/* Selected Location Preview */}

@@ -22,7 +22,8 @@ import {
   RefreshCw,
   CheckCircle,
   AlertCircle,
-  Info
+  Info,
+  DollarSign
 } from 'lucide-react';
 
 export default function TestPage() {
@@ -66,20 +67,28 @@ export default function TestPage() {
 
   const testPages = [
     {
-      title: 'Location Test',
-      description: 'Comprehensive location tracking and IP geolocation testing using ipapi.co service',
+      title: 'Location API',
+      description: 'Comprehensive location tracking and IP geolocation API testing using ipapi.co service',
       href: '/test/location' as const,
       icon: MapPin,
       color: 'blue' as const,
-      features: ['IP Detection', 'Geolocation', 'Timezone Info', 'Currency Data']
+      features: ['IP Detection API', 'Geolocation API', 'Timezone API', 'Currency Detection']
     },
     {
-      title: 'Comprehensive Test',
-      description: 'Full-featured testing suite for all calculator components and functionality',
+      title: 'Currency API',
+      description: 'Live exchange rates API testing with fallback to static data and performance monitoring',
+      href: '/test/currency' as const,
+      icon: DollarSign,
+      color: 'green' as const,
+      features: ['Live Exchange API', 'Static Fallback', 'Cache System', 'Performance Monitor']
+    },
+    {
+      title: 'Calculator API',
+      description: 'Full-featured testing suite for all calculator API components and functionality',
       href: '/test/comprehensive' as const,
       icon: TestTube,
       color: 'purple' as const,
-      features: ['Calculator Testing', 'Component Tests', 'Integration Tests', 'Performance']
+      features: ['Calculator API', 'Component Tests', 'Integration Tests', 'Performance Tests']
     }
   ];
 
@@ -144,23 +153,30 @@ export default function TestPage() {
           className="mb-12"
         >
           <h2 className="text-2xl font-bold text-neural-blue-900 mb-6 text-center">
-            Test Pages
+            API Tests
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {testPages.map((page, index) => (
               <motion.div
                 key={page.href}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
                 className="h-full"
               >
                 <Card className="p-6 h-full flex flex-col">
                   <>
                     <div className="flex items-start gap-4 mb-4">
-                      <div className={`p-3 rounded-xl ${page.color === 'blue' ? 'bg-blue-100' : 'bg-purple-100'}`}>
-                        <page.icon className={`w-6 h-6 ${page.color === 'blue' ? 'text-blue-600' : 'text-purple-600'}`} />
+                      <div className={`p-3 rounded-xl ${
+                        page.color === 'blue' ? 'bg-blue-100' : 
+                        page.color === 'green' ? 'bg-green-100' : 
+                        'bg-purple-100'
+                      }`}>
+                        <page.icon className={`w-6 h-6 ${
+                          page.color === 'blue' ? 'text-blue-600' : 
+                          page.color === 'green' ? 'text-green-600' : 
+                          'text-purple-600'
+                        }`} />
                       </div>
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-neural-blue-900 mb-2">

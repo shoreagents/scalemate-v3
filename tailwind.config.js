@@ -217,6 +217,9 @@ module.exports = {
         'ai-think': 'aiThink 1.5s ease-in-out infinite',
         'ai-process': 'aiProcess 2s ease-in-out infinite',
         
+        // Gradient animations
+        'gradient-x': 'gradientX 3s ease infinite',
+        
         // Legacy animations (for backward compatibility)
         'fade-in': 'neuralFadeIn 0.5s ease-in-out',
         'slide-up': 'neuralSlideUp 0.4s ease-out',
@@ -337,6 +340,12 @@ module.exports = {
           },
         },
         
+        // Gradient keyframes
+        gradientX: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' }
+        },
+        
         // Legacy keyframes (for backward compatibility)
         bounceGentle: {
           '0%, 100%': { transform: 'translateY(0)' },
@@ -366,19 +375,19 @@ module.exports = {
         xs: '2px'
       },
       boxShadow: {
-        'neural-glow': '0 0 20px rgba(0, 102, 255, 0.3)',
-        'quantum-glow': '0 0 20px rgba(107, 70, 193, 0.3)',
-        'cyber-glow': '0 0 20px rgba(16, 185, 129, 0.3)',
-        'matrix-glow': '0 0 20px rgba(245, 158, 11, 0.3)',
-        'neural-lg': '0 20px 40px rgba(0, 102, 255, 0.2)',
-        'ai-processing': '0 0 30px rgba(0, 102, 255, 0.4)',
+        'neural-glow': '0 0 15px rgba(0, 102, 255, 0.15)',
+        'quantum-glow': '0 0 15px rgba(107, 70, 193, 0.15)',
+        'cyber-glow': '0 0 15px rgba(16, 185, 129, 0.15)',
+        'matrix-glow': '0 0 15px rgba(245, 158, 11, 0.15)',
+        'neural-lg': '0 15px 30px rgba(0, 102, 255, 0.1)',
+        'ai-processing': '0 0 20px rgba(0, 102, 255, 0.2)',
         
         // Legacy shadows (for backward compatibility)
-        'glow': '0 0 20px rgba(0, 102, 255, 0.3)',
-        'glow-lg': '0 0 40px rgba(0, 102, 255, 0.4)',
-        'inner-glow': 'inset 0 0 20px rgba(0, 102, 255, 0.1)',
-        'brand': '0 10px 40px rgba(0, 102, 255, 0.2)',
-        'brand-lg': '0 20px 60px rgba(0, 102, 255, 0.3)'
+        'glow': '0 0 15px rgba(0, 102, 255, 0.15)',
+        'glow-lg': '0 0 30px rgba(0, 102, 255, 0.2)',
+        'inner-glow': 'inset 0 0 15px rgba(0, 102, 255, 0.05)',
+        'brand': '0 8px 30px rgba(0, 102, 255, 0.1)',
+        'brand-lg': '0 15px 45px rgba(0, 102, 255, 0.15)'
       }
     }
   },
