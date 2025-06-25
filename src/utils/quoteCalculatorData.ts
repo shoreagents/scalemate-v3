@@ -1,10 +1,10 @@
 // Portfolio Data Service - Dynamic location-based portfolio indicators
 import { PortfolioSize, PortfolioIndicator } from '@/types';
-import { Country, LocationContext } from '@/types/location';
-import { getCurrencyMultiplier, getCurrencyByCountry } from './currency';
+import { LocationData } from '@/types/location';
+import { getDirectExchangeRate, getCurrencyByCountry } from './currency';
 
-// Predefined portfolio data for supported Country types
-const PORTFOLIO_INFO: Readonly<Record<Country, Record<PortfolioSize, PortfolioIndicator>>> = {
+// Predefined portfolio data for supported countries (using string keys)
+const PORTFOLIO_INFO: Readonly<Record<string, Record<PortfolioSize, PortfolioIndicator>>> = {
   Australia: {
   '500-999': {
     min: 500,
@@ -410,7 +410,7 @@ const PORTFOLIO_INFO: Readonly<Record<Country, Record<PortfolioSize, PortfolioIn
 } as const;
 
 // Default fallback data (using US market as base)
-const DEFAULT_PORTFOLIO_INFO = PORTFOLIO_INFO["United States"];
+const DEFAULT_PORTFOLIO_INFO = PORTFOLIO_INFO["United States"]!; // Safe because "United States" is always in PORTFOLIO_INFO
 
 // Cache for dynamic data to avoid repeated API calls
 interface CacheEntry {
@@ -483,7 +483,7 @@ function saveCacheToStorage(cache: Map<string, CacheEntry>): void {
 const cache = loadCacheFromStorage();
 
 // Helper function to normalize country name to consistent cache key
-function normalizeCacheKey(location: LocationContext): string {
+function normalizeCacheKey(location: LocationData): string {
   // Use countryName if available (from auto-detection), otherwise use country (from manual selection)
   // Both should already be full country names at this point
   return location.countryName || location.country;
@@ -494,7 +494,7 @@ function normalizeCacheKey(location: LocationContext): string {
 /**
  * Generate location-specific portfolio indicators using Anthropic API
  */
-async function generateDynamicPortfolioIndicators(location: LocationContext): Promise<Record<PortfolioSize, PortfolioIndicator> | null> {
+async function generateDynamicPortfolioIndicators(location: LocationData): Promise<Record<PortfolioSize, PortfolioIndicator> | null> {
   try {
     console.log('🚀 Calling /api/anthropic/quote-calculator with location:', location);
     
@@ -534,38 +534,66 @@ async function generateDynamicPortfolioIndicators(location: LocationContext): Pr
 }
 
 /**
- * Helper function to determine if a country name is a supported Country type
- */
-function isSupportedCountry(countryName: string): countryName is Country {
-  return ['Australia', 'United States', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore'].includes(countryName);
-}
-
-/**
  * Helper function to get standardized country name from location context
  */
-function getCountryNameFromLocation(location: LocationContext): string {
+function getCountryNameFromLocation(location: LocationData): string {
   // Use countryName if available (from auto-detection), otherwise use country (from manual selection)
   const countryName = location.countryName || location.country;
   
-  // If we get a country code, convert it to country name
-  const countryCodeToName: Record<string, string> = {
-    'US': 'United States',
-    'AU': 'Australia', 
-    'CA': 'Canada',
-    'UK': 'United Kingdom',
-    'NZ': 'New Zealand',
-    'SG': 'Singapore'
-  };
-  
-  return countryCodeToName[countryName] || countryName;
+  // LocationData should already contain full country names, not codes
+  // Country code translation is handled during LocationData creation
+  return countryName;
+}
+
+/**
+ * Helper function to check if static data is available for a country
+ */
+function hasStaticDataForCountry(countryName: string): countryName is keyof typeof PORTFOLIO_INFO {
+  return countryName in PORTFOLIO_INFO;
+}
+
+/**
+ * Helper function to convert portfolio data from USD to target currency
+ */
+async function convertPortfolioDataToCurrency(
+  portfolioData: Record<PortfolioSize, PortfolioIndicator>,
+  targetCurrency: string
+): Promise<Record<PortfolioSize, PortfolioIndicator>> {
+  try {
+    const multiplier = await getDirectExchangeRate('USD', targetCurrency);
+    
+    if (multiplier === 1.0) {
+      // No conversion needed for USD
+      return portfolioData;
+    }
+    
+    console.log(`💱 Converting portfolio data from USD to ${targetCurrency} (multiplier: ${multiplier})`);
+    
+    const convertedData: Record<PortfolioSize, PortfolioIndicator> = {};
+    
+    for (const [size, indicator] of Object.entries(portfolioData)) {
+      convertedData[size as PortfolioSize] = {
+        ...indicator,
+        averageRevenue: {
+          min: Math.round(indicator.averageRevenue.min * multiplier),
+          max: Math.round(indicator.averageRevenue.max * multiplier)
+        }
+      };
+    }
+    
+    return convertedData;
+  } catch (error) {
+    console.warn('Failed to convert portfolio data, using original USD data:', error);
+    return portfolioData;
+  }
 }
 
 /**
  * Get portfolio indicators with location-based customization
- * Uses predefined data for supported Country types, currency multipliers for others
+ * Uses predefined data for countries with static data, currency multipliers for others
  * Falls back to static data if dynamic generation fails
  */
-export async function getPortfolioIndicators(location?: LocationContext): Promise<Record<PortfolioSize, PortfolioIndicator>> {
+export async function getPortfolioIndicators(location?: LocationData): Promise<Record<PortfolioSize, PortfolioIndicator>> {
   // If no location provided, return default US data
   if (!location?.country) {
     return DEFAULT_PORTFOLIO_INFO;
@@ -608,14 +636,17 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
   // Get standardized country name from location for fallback logic
   const countryName = getCountryNameFromLocation(location);
   
-  // Fallback: Use predefined data for supported Country types when API fails
-  if (isSupportedCountry(countryName)) {
-    console.log('📋 API failed - using predefined portfolio data for supported country:', countryName);
-    return PORTFOLIO_INFO[countryName];
+  // Fallback: Use predefined data if available for this country when API fails
+  if (hasStaticDataForCountry(countryName)) {
+    const staticData = PORTFOLIO_INFO[countryName]!; // Safe because we checked hasStaticDataForCountry
+    console.log('📋 API failed - using predefined portfolio data for country:', countryName);
+    return staticData;
   }
 
-  // Final fallback: Use USA data as-is for unsupported countries (no currency conversion)
-  console.log('🇺🇸 Using USA portfolio data as fallback for unsupported country:', location.country);
+  // Final fallback: Use USA data as-is for countries without static data
+  console.log('🇺🇸 Using USA portfolio data as-is for country:', location.country);
+  
+  // Return USA data without conversion
   return DEFAULT_PORTFOLIO_INFO;
 }
 
@@ -627,45 +658,37 @@ export async function getPortfolioIndicators(location?: LocationContext): Promis
 // Note: getLocationAdjustedDescription removed - was unused in static fallback
 
 /**
- * Clear cache (useful for testing or manual refresh)
- */
-export function clearPortfolioIndicatorsCache(): void {
-  cache.clear();
-  
-  // Also clear localStorage
-  try {
-    localStorage.removeItem(CACHE_KEY);
-    localStorage.removeItem(CACHE_VERSION_KEY);
-    console.log('🗑️ Portfolio indicators cache cleared from memory and localStorage');
-  } catch (error) {
-    console.warn('⚠️ Failed to clear localStorage cache:', error);
-    console.log('🗑️ Portfolio indicators cache cleared from memory only');
-  }
-}
-
-/**
- * Get cache statistics
- */
-export function getCacheStats(): { size: number; entries: string[]; duration: number } {
-  return {
-    size: cache.size,
-    entries: Array.from(cache.keys()),
-    duration: CACHE_DURATION
-  };
-}
-
-/**
- * Check if cache has entry for a specific country
- */
-export function hasCachedData(country: string): boolean {
-  const normalizedKey = normalizeCacheKey({ country });
-  const entry = cache.get(normalizedKey);
-  return entry ? (Date.now() - entry.timestamp) < CACHE_DURATION : false;
-}
-
-/**
  * Get static portfolio indicators (for fallback or testing)
  */
 export function getStaticPortfolioIndicators(): Record<PortfolioSize, PortfolioIndicator> {
   return DEFAULT_PORTFOLIO_INFO;
+}
+
+export async function getPortfolioDataInCurrency(
+  targetCurrency: string
+): Promise<Record<PortfolioSize, PortfolioIndicator>> {
+  try {
+    const multiplier = await getDirectExchangeRate('USD', targetCurrency);
+    
+    if (multiplier === 1.0) {
+      return DEFAULT_PORTFOLIO_INFO;
+    }
+    
+    const convertedData: Record<PortfolioSize, PortfolioIndicator> = {};
+    
+    for (const [size, indicator] of Object.entries(DEFAULT_PORTFOLIO_INFO)) {
+      convertedData[size as PortfolioSize] = {
+        ...indicator,
+        averageRevenue: {
+          min: Math.round(indicator.averageRevenue.min * multiplier),
+          max: Math.round(indicator.averageRevenue.max * multiplier)
+        }
+      };
+    }
+    
+    return convertedData;
+  } catch (error) {
+    console.warn('Failed to convert portfolio data, using USD fallback:', error);
+    return DEFAULT_PORTFOLIO_INFO;
+  }
 } 

@@ -55,7 +55,7 @@ export const Button: React.FC<ButtonProps> = ({
     
     const variantClasses = {
       // Neural Design System Variants
-      'neural-primary': 'bg-gradient-to-r from-neural-blue-500 via-quantum-purple-500 to-neural-blue-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-neural-blue-500/50 bg-[length:200%_100%]',
+      'neural-primary': 'bg-gradient-to-r from-neural-blue-500 via-quantum-purple-500 to-neural-blue-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-neural-blue-500/50 bg-[length:200%_100%] animate-gradient-x',
       'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm hover:bg-gradient-to-r hover:from-neural-blue-100 hover:via-neural-blue-50 hover:to-neural-blue-100 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-quantum-purple-500/50',
       'cyber-success': 'bg-gradient-to-r from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-cyber-green-500/50 bg-[length:200%_100%]',
       'matrix-energy': 'bg-gradient-to-r from-matrix-orange-500 via-matrix-orange-600 to-matrix-orange-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-matrix-orange-500/50 bg-[length:200%_100%]',

@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const countryName = location.countryName || location.country;
+    const countryName = location.countryName;
+    const country = location.country;
     const currency = location.currency || 'USD';
     const currencySymbol = getCurrencySymbol(currency);
 
@@ -87,6 +88,14 @@ export async function POST(request: NextRequest) {
       currency,
       source: 'auto-detected'
     });
+
+    // Safety check: countryName is required for AI prompts
+    if (!countryName) {
+      return NextResponse.json(
+        { error: 'countryName is required for generating roles' },
+        { status: 400 }
+      );
+    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -118,6 +127,7 @@ export async function POST(request: NextRequest) {
 
 Context:
 - Country: ${countryName}
+- Market Type: ${country}
 - Currency: ${currency} (${currencySymbol})
 - Current Date: ${currentDate}
 - Target: Property management companies considering offshore teams

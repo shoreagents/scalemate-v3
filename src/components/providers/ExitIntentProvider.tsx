@@ -33,12 +33,16 @@ export function ExitIntentProvider({ children, enabled = true }: ExitIntentProvi
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [calculationResult, setCalculationResult] = useState<any>(null);
+  const [sessionId, setSessionId] = useState<string>('None');
 
   useEffect(() => {
     setIsClient(true);
     // Initialize analytics if not already done
     if (typeof window !== 'undefined') {
       analytics.init();
+      // Set session ID after initialization
+      const id = analytics.getSessionId();
+      setSessionId(id?.slice(-8) || 'None');
     }
   }, []);
 
@@ -119,7 +123,7 @@ export function ExitIntentProvider({ children, enabled = true }: ExitIntentProvi
               <div><strong>🎯 Exit Intent:</strong> {hasShown ? 'Shown' : 'Waiting'}</div>
               <div><strong>👁️ Popup:</strong> {showExitPopup ? 'Visible' : 'Hidden'}</div>
               <div><strong>📍 Page:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'Unknown'}</div>
-              <div><strong>📊 Session:</strong> {analytics.getSessionId()?.slice(-8) || 'None'}</div>
+              <div><strong>📊 Session:</strong> {sessionId}</div>
               <button 
                 onClick={showPopup}
                 className="mt-2 bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors duration-200"

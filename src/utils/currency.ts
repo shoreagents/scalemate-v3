@@ -123,7 +123,8 @@ async function fetchLiveExchangeRates(baseCurrency: string = 'USD'): Promise<Rec
 
 /**
  * Get live exchange rate multiplier for a currency
- * Falls back to static data if API fails
+ * NOW: Uses only live API - no static fallback
+ * Throws error if all APIs fail
  */
 export async function getLiveExchangeRateMultiplier(targetCurrency: string, baseCurrency: string = 'USD'): Promise<number> {
   const target = targetCurrency.toUpperCase();
@@ -156,17 +157,9 @@ export async function getLiveExchangeRateMultiplier(targetCurrency: string, base
     console.warn('⚠️ Error fetching live exchange rates:', error);
   }
   
-  // Fallback to static multipliers
-  console.log(`📋 Using static exchange rate fallback: ${base} → ${target}`);
-  
-  if (base === 'USD') {
-    return getCurrencyMultiplier(target);
-  } else {
-    // Convert through USD: base → USD → target
-    const baseToUsd = 1 / getCurrencyMultiplier(base);
-    const usdToTarget = getCurrencyMultiplier(target);
-    return baseToUsd * usdToTarget;
-  }
+  // No static fallback - throw error
+  console.error('❌ All currency APIs failed, cannot provide exchange rate');
+  throw new Error(`Unable to get exchange rate for ${base} to ${target}. Please check your internet connection and try again.`);
 }
 
 /**
@@ -184,16 +177,76 @@ export function clearExchangeRateCache(): void {
 }
 
 /**
+ * Get direct exchange rate between two currencies
+ * This avoids using USD as an intermediary for more accurate conversions
+ * NOW: Uses only live API - no static fallback
+ */
+export async function getDirectExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+  console.log('🔄 Attempting direct conversion from', fromCurrency, 'to', toCurrency);
+  const apis = [
+    // Primary: Free currency API (different URL structure)
+    {
+      url: `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${fromCurrency.toLowerCase()}.json`,
+      parser: (data: any) => data[fromCurrency.toLowerCase()][toCurrency.toLowerCase()]
+    },
+    // Fallback: Alternative free API
+    {
+      url: `https://api.exchangerate-api.com/v4/latest/${fromCurrency.toUpperCase()}`,
+      parser: (data: any) => data.rates[toCurrency.toUpperCase()]
+    },
+    // Additional fallback: ExchangeRate.host
+    {
+      url: `https://api.exchangerate.host/latest?base=${fromCurrency.toUpperCase()}`,
+      parser: (data: any) => data.rates[toCurrency.toUpperCase()]
+    }
+  ];
+
+  for (const api of apis) {
+    try {
+      console.log('📡 Trying API:', api.url);
+      const response = await fetch(api.url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+      
+      if (!response.ok) {
+        console.log('❌ API failed:', api.url, response.status);
+        continue;
+      }
+      
+      const data = await response.json();
+      const rate = api.parser(data);
+      
+      if (rate && typeof rate === 'number' && !isNaN(rate) && rate > 0) {
+        console.log('✅ Got live rate:', rate);
+        return rate;
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch direct rate from ${api.url}:`, error);
+      continue;
+    }
+  }
+
+  // If all APIs fail, throw error - no static fallback
+  throw new Error(`All currency APIs failed for ${fromCurrency} to ${toCurrency} conversion`);
+}
+
+/**
  * Get the best available exchange rate multiplier
- * Tries live API first, falls back to static data
- * Recommended for all new implementations
+ * NOW: Uses only live API - no static fallback
+ * Throws error if all APIs fail
  */
 export async function getBestExchangeRateMultiplier(targetCurrency: string, baseCurrency: string = 'USD'): Promise<number> {
   try {
-    return await getLiveExchangeRateMultiplier(targetCurrency, baseCurrency);
+    // Try to get direct exchange rate first
+    const directRate = await getDirectExchangeRate(baseCurrency, targetCurrency);
+    return directRate;
   } catch (error) {
-    console.warn('⚠️ Failed to get live exchange rate, using static fallback:', error);
-    return getCurrencyMultiplier(targetCurrency);
+    console.error('❌ All currency APIs failed, cannot provide exchange rate:', error);
+    throw new Error(`Unable to get exchange rate for ${baseCurrency} to ${targetCurrency}. Please check your internet connection and try again.`);
   }
 }
 

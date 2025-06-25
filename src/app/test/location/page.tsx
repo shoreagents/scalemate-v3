@@ -17,26 +17,11 @@ import {
   Check
 } from 'lucide-react';
 import Link from 'next/link';
+import { fetchIPLocation } from '@/utils/locationApi';
+import { IPLocationData } from '@/types/location';
 
-interface LocationData {
-  ip: string;
-  city: string;
-  region: string;
-  country_name: string;
-  country_code: string;
-  timezone: string;
-  latitude: number;
-  longitude: number;
-  currency: string;
-  currency_name: string;
-  languages: string;
-  org: string;
-  asn: string;
-  country_calling_code: string;
-  country_tld: string;
-  postal: string;
-  utc_offset: string;
-}
+// Use IPLocationData directly for this test page
+type LocationData = IPLocationData;
 
 export default function LocationTestPage() {
   const [locationData, setLocationData] = useState<LocationData | null>(null);
@@ -49,12 +34,7 @@ export default function LocationTestPage() {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('https://ipapi.co/json/');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data: LocationData = await response.json();
+      const data = await fetchIPLocation();
       setLocationData(data);
       console.log('📍 Complete location data:', data);
     } catch (error) {

@@ -63,21 +63,30 @@ export const ADDITIONAL_PROPERTY_ROLES: Readonly<Record<string, Partial<Enhanced
 // Location detection helper function
 export const detectUserLocation = async (): Promise<LocationData> => {
   try {
-    // In a real app, you'd use an IP geolocation service
-    // For now, we'll return a default location consistent with the rest of the system (USD fallback)
-    const defaultLocation: LocationData = {
-      country: 'US',
-      countryName: 'United States',
-      currency: 'USD',
-      currencySymbol: '$',
-      detected: false
-    };
+    // Import here to avoid circular dependencies
+    const { fetchIPLocation } = await import('./locationApi');
+    const { getCountryFromCode } = await import('../types/location');
+    const { getCurrencySymbol } = await import('./currency');
     
-    return defaultLocation;
+    const ipData = await fetchIPLocation();
+    
+    // Convert IP location data to our standard LocationData format
+    const translatedCountry = getCountryFromCode(ipData.country_code);
+    const country = translatedCountry || ipData.country_name;
+    
+    return {
+      country: country,
+      countryName: ipData.country_name,
+      currency: ipData.currency,
+      currencySymbol: getCurrencySymbol(ipData.currency),
+      detected: true,
+      ipAddress: ipData.ip
+    };
   } catch (error) {
     console.error('Failed to detect location:', error);
+    // Fallback to default US location
     return {
-      country: 'US',
+      country: 'United States',
       countryName: 'United States',
       currency: 'USD',
       currencySymbol: '$',

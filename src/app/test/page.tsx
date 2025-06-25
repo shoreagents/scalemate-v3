@@ -23,12 +23,20 @@ import {
   CheckCircle,
   AlertCircle,
   Info,
-  DollarSign
+  DollarSign,
+  Calendar,
+  Users,
+  Calculator,
+  TrendingUp,
+  AlertTriangle,
+  Target,
+  Clock
 } from 'lucide-react';
 
 export default function TestPage() {
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionId, setSessionId] = useState<string>('Not initialized');
 
   // Initialize analytics
   useEffect(() => {
@@ -36,7 +44,20 @@ export default function TestPage() {
       analytics.init();
       analytics.trackEvent('page_view', { page: 'test' });
       setSessionData(analytics.getSessionData());
+      setSessionId(analytics.getSessionId() || 'Not initialized');
     }
+
+    // Set up interval to refresh session data
+    const interval = setInterval(() => {
+      const currentData = analytics.getSessionData();
+      setSessionData(currentData);
+      
+      // Update session ID if it changes
+      const currentId = analytics.getSessionId();
+      setSessionId(currentId || 'Not initialized');
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Exit intent hook with test settings
@@ -333,7 +354,7 @@ export default function TestPage() {
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-xs font-medium text-blue-600 mb-1">Session ID</div>
                   <div className="text-sm font-mono text-blue-900 truncate">
-                    {analytics.getSessionId() || 'Not initialized'}
+                    {sessionId}
                   </div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">

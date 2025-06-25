@@ -8,6 +8,7 @@ import { ManualLocation, IPLocationData } from '@/types/location';
 import { useQuoteCalculatorData, getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 import { Building, TrendingUp, Users, Edit3, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, Globe } from 'lucide-react';
 import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
+import { Button } from '@/components/ui/Button';
 
 interface PortfolioStepProps {
   value: PortfolioSize | '';
@@ -26,6 +27,7 @@ interface PortfolioStepProps {
   onTempLocationChange?: (location: ManualLocation) => void;
   getEffectiveLocation?: () => IPLocationData | { country_name: string; country: string; currency: string; currencySymbol: string; } | null | undefined;
   onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => void;
+  showPortfolioGridSkeleton?: boolean;
 }
 
 export function PortfolioStep({ 
@@ -44,7 +46,8 @@ export function PortfolioStep({
   onLocationReset,
   onTempLocationChange,
   getEffectiveLocation,
-  onChange 
+  onChange,
+  showPortfolioGridSkeleton = false
 }: PortfolioStepProps) {
   const [showPreciseInput, setShowPreciseInput] = useState(value === 'manual');
   const [manualInput, setManualInput] = useState<ManualPortfolioData>(
@@ -54,11 +57,20 @@ export function PortfolioStep({
     }
   );
 
+  // Transform IPLocationData to LocationData
+  const transformedLocationData = locationData ? {
+    country: locationData.country_code,
+    countryName: locationData.country_name,
+    currency: locationData.currency,
+    currencySymbol: getCurrencySymbol(locationData.currency),
+    detected: true
+  } : locationData;
+
   // Use dynamic portfolio indicators based on location
   const { 
     portfolioIndicators, 
     isLoading: isLoadingIndicators
-  } = useQuoteCalculatorData(locationData, manualLocation);
+  } = useQuoteCalculatorData(transformedLocationData, manualLocation);
 
   const portfolioOptions = Object.entries(portfolioIndicators)
     .filter(([size]) => size !== 'manual')
@@ -208,29 +220,8 @@ export function PortfolioStep({
           
           {/* Horizontal Location Row */}
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            {isLoadingLocation ? (
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
-                <span className="text-neutral-700 font-medium">
-                  Detecting your location...
-                </span>
-              </div>
-            ) : locationError && !isLoadingLocation && !manualLocation ? (
-              <>
-                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
-                  <Globe className="w-5 h-5 text-neutral-500" />
-                  <span className="text-neutral-700 font-medium">
-                    {locationError}
-                  </span>
-                </div>
-                <button
-                  onClick={onLocationEditStart}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Set Location Manually
-                </button>
-              </>
-            ) : (getEffectiveLocation?.()) ? (
+            {/* Location Display or Error/Loading */}
+            {getEffectiveLocation?.() ? (
               <>
                 {/* Location Display */}
                 <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-blue-200 shadow-sm">
@@ -258,7 +249,33 @@ export function PortfolioStep({
                   </button>
                 )}
               </>
-            ) : null}
+            ) : (
+              <>
+                {/* Error or Loading State */}
+                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
+                  {isLoadingLocation ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                  ) : null}
+                  {isLoadingLocation ? (
+                    <span className="text-neutral-700 font-medium">
+                      Detecting your location...
+                    </span>
+                  ) : (
+                    <span className="text-neutral-700 font-medium">
+                      {locationError || 'Unable to detect location'}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Set Location Manually Button - Always Visible */}
+                <Button
+                  onClick={onLocationEditStart}
+                  variant="neural-primary"
+                >
+                  Set Location Manually
+                </Button>
+              </>
+            )}
           </div>
           
           {/* Location Edit Modal */}
@@ -266,10 +283,11 @@ export function PortfolioStep({
             <div className="mt-6">
               <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
                 <EnhancedLocationSelector
-                  initialLocation={tempLocation || { country: '' }}
+                  initialLocation={tempLocation || { country: '', currency: getCurrencyByCountry('') }}
                   onLocationChange={(location: { country: string }) => {
                     onTempLocationChange?.({
-                      country: location.country
+                      country: location.country,
+                      currency: getCurrencyByCountry(location.country)
                     });
                   }}
                   onCancel={onLocationEditCancel || (() => {})}
@@ -288,108 +306,138 @@ export function PortfolioStep({
 
       <AnimatePresence mode="wait">
         {!showPreciseInput ? (
-          <motion.div
-            key="quick-select"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* Preset Portfolio Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
-        {portfolioOptions.map((option) => {
-          const isSelected = value === option.value;
-          
-          return (
-            <motion.div
-              key={option.value}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative"
-            >
-              <button
-                      onClick={() => handlePresetSelection(option.value)}
-                className={`
-                  w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200 flex flex-col
-                  ${isSelected 
-                    ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
-                    : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
-                  }
-                `}
-              >
-                {/* Selected Indicator */}
-                {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
-                  >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </motion.div>
-                )}
-
-                {/* Portfolio Size - Fixed Height */}
-                <div className="mb-4">
-                  <div className={`
-                    text-xl font-bold mb-1
-                    ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
-                  `}>
-                    {option.label}
-                  </div>
-                  <div className={`
-                    text-sm font-medium uppercase tracking-wider
-                    ${isSelected ? 'text-brand-primary-600' : 'text-neutral-500'}
-                  `}>
-                    {option.tier} Portfolio
-                  </div>
-                </div>
-
-                {/* Description - Auto-adjusting Container */}
-                <div className="flex-1 mb-4 flex items-start">
-                  <p className="text-sm text-neutral-600 leading-relaxed">
-                    {option.description}
-                  </p>
-                </div>
-
-                {/* Stats Grid - Fixed Position */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="text-center p-3 rounded-lg bg-white/80">
-                    <div className="flex items-center justify-center mb-1">
-                      <Users className={`w-4 h-4 mr-1 ${getPortfolioIconColor(option.tier)}`} />
-                      <span className="text-sm font-medium text-neutral-900">
-                        {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
-                      </span>
+          <div key="quick-select">
+            {/* Preset Portfolio Options or Skeleton */}
+            {showPortfolioGridSkeleton ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="relative h-full">
+                    <div className="w-full h-full p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col">
+                      {/* Portfolio Size - Fixed Height */}
+                      <div className="mb-4">
+                        <div className="h-6 bg-gray-200 rounded mb-1 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                      </div>
+                      {/* Description - Auto-adjusting Container */}
+                      <div className="flex-1 mb-4">
+                        <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
+                      </div>
+                      {/* Stats Grid - Fixed Position */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="text-center p-3 rounded-lg bg-white/80">
+                          <div className="flex items-center justify-center mb-1">
+                            <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
+                            <div className="h-4 bg-gray-200 rounded w-8 animate-pulse" />
+                          </div>
+                          <div className="h-3 bg-gray-200 rounded w-16 mx-auto animate-pulse" />
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-white/80">
+                          <div className="flex items-center justify-center mb-1">
+                            <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
+                            <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                          </div>
+                          <div className="h-3 bg-gray-200 rounded w-20 mx-auto animate-pulse" />
+                        </div>
+                      </div>
+                      {/* Revenue Range - Fixed Position at Bottom */}
+                      <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
+                        <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
+                      </div>
                     </div>
-                    <div className="text-xs text-neutral-500">Team Size</div>
                   </div>
-                  
-                  <div className="text-center p-3 rounded-lg bg-white/80">
-                    <div className="flex items-center justify-center mb-1">
-                      <Zap className={`w-4 h-4 mr-1 flex-shrink-0 ${getPortfolioIconColor(option.tier)}`} />
-                      <span className="text-sm font-medium text-neutral-900 capitalize">
-                        {option.implementationComplexity}
-                      </span>
-                    </div>
-                    <div className="text-xs text-neutral-500">Complexity</div>
-                  </div>
-                </div>
-
-                {/* Revenue Range - Fixed Position at Bottom */}
-                <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
-                  <span>Revenue Range:</span>
-                  <span className="font-medium">
-                    {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.max / 1000000).toFixed(1)}M
-                  </span>
-                </div>
-              </button>
-            </motion.div>
-          );
-        })}
-      </div>
-
-                         {/* Need More Precision Card */}
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
+                {portfolioOptions.map((option) => {
+                  const isSelected = value === option.value;
+                  return (
+                    <motion.div
+                      key={option.value}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="relative"
+                    >
+                      <button
+                        onClick={() => handlePresetSelection(option.value)}
+                        className={`
+                          w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200 flex flex-col
+                          ${isSelected 
+                            ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
+                            : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
+                          }
+                        `}
+                      >
+                        {/* Selected Indicator */}
+                        {isSelected && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
+                          >
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </motion.div>
+                        )}
+                        {/* Portfolio Size - Fixed Height */}
+                        <div className="mb-4">
+                          <div className={`
+                            text-xl font-bold mb-1
+                            ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
+                          `}>
+                            {option.label}
+                          </div>
+                          <div className={`
+                            text-sm font-medium uppercase tracking-wider
+                            ${isSelected ? 'text-brand-primary-600' : 'text-neutral-500'}
+                          `}>
+                            {option.tier} Portfolio
+                          </div>
+                        </div>
+                        {/* Description - Auto-adjusting Container */}
+                        <div className="flex-1 mb-4 flex items-start">
+                          <p className="text-sm text-neutral-600 leading-relaxed">
+                            {option.description}
+                          </p>
+                        </div>
+                        {/* Stats Grid - Fixed Position */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="text-center p-3 rounded-lg bg-white/80">
+                            <div className="flex items-center justify-center mb-1">
+                              <Users className={`w-4 h-4 mr-1 ${getPortfolioIconColor(option.tier)}`} />
+                              <span className="text-sm font-medium text-neutral-900">
+                                {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
+                              </span>
+                            </div>
+                            <div className="text-xs text-neutral-500">Team Size</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg bg-white/80">
+                            <div className="flex items-center justify-center mb-1">
+                              <Zap className={`w-4 h-4 mr-1 flex-shrink-0 ${getPortfolioIconColor(option.tier)}`} />
+                              <span className="text-sm font-medium text-neutral-900 capitalize">
+                                {option.implementationComplexity}
+                              </span>
+                            </div>
+                            <div className="text-xs text-neutral-500">Complexity</div>
+                          </div>
+                        </div>
+                        {/* Revenue Range - Fixed Position at Bottom */}
+                        <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
+                          <span>Revenue Range:</span>
+                          <span className="font-medium">
+                            {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.max / 1000000).toFixed(1)}M
+                          </span>
+                        </div>
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+            {/* Need More Precision Card */}
              <div className="max-w-2xl mx-auto">
                              <button
                  onClick={handleShowPreciseInput}
@@ -408,7 +456,7 @@ export function PortfolioStep({
                  </div>
               </button>
             </div>
-          </motion.div>
+          </div>
         ) : (
           <motion.div
             key="precise-input"

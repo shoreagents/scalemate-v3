@@ -1,4 +1,5 @@
 // Location API utilities for fetching countries
+import { IPLocationData } from '@/types/location';
 
 export interface Country {
   name: {
@@ -62,4 +63,38 @@ export function searchCountries(query: string, countries: Country[]): Country[] 
     country.name.common.toLowerCase().includes(searchTerm) ||
     country.name.official.toLowerCase().includes(searchTerm)
   );
+}
+
+/**
+ * Fetch user's location based on IP address using ipapi.co
+ * Falls back to US if detection fails
+ */
+export async function fetchIPLocation(): Promise<IPLocationData> {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data: IPLocationData = await response.json();
+    console.log('📍 IP-based location detected:', data.country_name, `(${data.country_code})`);
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch IP location:', error);
+    // Return US fallback data
+    return {
+      ip: '',
+      city: '',
+      region: '',
+      country_name: 'United States',
+      country_code: 'US',
+      timezone: 'America/New_York',
+      latitude: 0,
+      longitude: 0,
+      currency: 'USD',
+      currency_name: 'US Dollar',
+      languages: 'en-US',
+      org: ''
+    };
+  }
 } 

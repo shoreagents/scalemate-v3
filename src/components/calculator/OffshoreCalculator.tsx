@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
-import { Country, ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
+import { ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
 import { getCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import type { LocalMultiCountryRoleSalaryData } from '@/utils/calculations';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -25,7 +26,8 @@ import {
   Users,
   Sparkles,
   Target,
-  Home
+  Home,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,7 +76,15 @@ export function OffshoreCalculator({
     completedSteps: [],
     sessionId: generateSessionId(),
     startedAt: new Date(),
-    lastUpdatedAt: new Date()
+    lastUpdatedAt: new Date(),
+    // Add default US location data
+    userLocation: {
+      country: 'United States',
+      countryName: 'United States',
+      currency: 'USD',
+      currencySymbol: '$',
+      detected: true
+    }
   });
 
   const [formData, setFormData] = useState<FormData>(getDefaultFormData());
@@ -88,11 +98,23 @@ export function OffshoreCalculator({
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
   
+  // Helper function to get currency from country
+  const getCurrencyFromCountry = (country: string): string => {
+    return getCurrencyByCountry(country);
+  };
+
+  // Helper function to get currency symbol from country
+  const getCurrencySymbolFromCountry = (country: string): string => {
+    const currency = getCurrencyFromCountry(country);
+    return getCurrencySymbol(currency);
+  };
+
   // Manual location override state
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [manualLocation, setManualLocation] = useState<ManualLocation | null>(null);
   const [tempLocation, setTempLocation] = useState<ManualLocation>({
-    country: ''
+    country: '',
+    currency: getCurrencyFromCountry('')
   });
 
   // Use global exit intent context
@@ -102,7 +124,8 @@ export function OffshoreCalculator({
   const { 
     rolesSalaryComparison, 
     isLoadingRoles, 
-    rolesError 
+    rolesError,
+    isLoading: isLoadingPortfolio
   } = useQuoteCalculatorData(formData.userLocation, manualLocation);
 
   // Get effective location (manual override or auto-detected)
@@ -118,22 +141,12 @@ export function OffshoreCalculator({
     return locationData;
   };
 
-  // Helper function to get currency from country
-  const getCurrencyFromCountry = (country: string): string => {
-    return getCurrencyByCountry(country);
-  };
-
-  // Helper function to get currency symbol from country
-  const getCurrencySymbolFromCountry = (country: string): string => {
-    const currency = getCurrencyFromCountry(country);
-    return getCurrencySymbol(currency);
-  };
-
   // Handle location edit save
   const saveLocationEdit = () => {
     if (tempLocation.country) {
       const newManualLocation = { 
-        country: tempLocation.country
+        country: tempLocation.country,
+        currency: getCurrencyFromCountry(tempLocation.country)
       };
       setManualLocation(newManualLocation);
       setIsEditingLocation(false);
@@ -154,8 +167,10 @@ export function OffshoreCalculator({
   // Handle location edit cancel
   const cancelLocationEdit = () => {
     const currentLocation = getEffectiveLocation();
+    const country = manualLocation?.country || currentLocation?.country_name || '';
     setTempLocation({
-      country: manualLocation?.country || currentLocation?.country_name || ''
+      country,
+      currency: getCurrencyFromCountry(country)
     });
     setIsEditingLocation(false);
   };
@@ -163,8 +178,10 @@ export function OffshoreCalculator({
   // Start editing location
   const startLocationEdit = () => {
     const currentLocation = getEffectiveLocation();
+    const country = manualLocation?.country || currentLocation?.country_name || '';
     setTempLocation({
-      country: manualLocation?.country || currentLocation?.country_name || ''
+      country,
+      currency: getCurrencyFromCountry(country)
     });
     setIsEditingLocation(true);
   };
@@ -176,25 +193,49 @@ export function OffshoreCalculator({
     
     // Update formData.userLocation to use auto-detected location
     if (locationData) {
-      // Map country code to full country name
-      const autoLocationData: LocationData = {
-        country: getCountryFromCode(locationData.country_code),
-        countryName: locationData.country_name,
-        currency: locationData.currency,
-        currencySymbol: getCurrencySymbolFromCountry(locationData.country_name),
+      const translatedCountry = getCountryFromCode(locationData.country_code);
+      const countryName = translatedCountry || locationData.country_name || 'United States';
+      
+      // Create LocationData without validation - use original country as-is
+      const locationDataResult: LocationData = {
+        country: countryName,
+        countryName: locationData.country_name || 'United States', // Always preserve original
+        currency: locationData.currency || 'USD',
+        currencySymbol: getCurrencySymbolFromCountry(locationData.country_name || 'United States'),
         detected: true
       };
-      updateFormData({ userLocation: autoLocationData });
-      console.log('📍 Location reset to auto-detected');
+      
+      updateFormData({ userLocation: locationDataResult });
+      console.log('📍 Auto-detected location set to formData:', {
+        original: locationData.country_name,
+        translated: countryName,
+        final: locationDataResult.country
+      });
+    } else {
+      // If no location data at all, use US as fallback
+      const usLocationData: LocationData = {
+        country: 'United States',
+        countryName: 'United States',
+        currency: 'USD',
+        currencySymbol: '$',
+        detected: true
+      };
+      updateFormData({ userLocation: usLocationData });
+      console.log('📍 Using US fallback location');
     }
   };
 
   // Fetch location data using ipapi
   useEffect(() => {
     const fetchLocation = async () => {
+      console.log('🔄 Starting location fetch...');
       try {
         setIsLoadingLocation(true);
         setLocationError(null);
+        console.log('🔄 Location loading state set to true');
+        
+        // Add a small delay to make skeleton visible
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const response = await fetch('https://ipapi.co/json/');
         if (!response.ok) {
@@ -203,19 +244,28 @@ export function OffshoreCalculator({
         
         const data: IPLocationData = await response.json();
         setLocationData(data);
+        console.log('🔄 Location data received:', data);
         
         // Automatically set formData.userLocation when location is first detected
         if (data.country_code && !manualLocation) {
-          // Map country code to full country name
-          const autoLocationData: LocationData = {
-            country: getCountryFromCode(data.country_code),
-            countryName: data.country_name,
+          const translatedCountry = getCountryFromCode(data.country_code);
+          const countryName = translatedCountry || data.country_name;
+          
+          // Create LocationData without validation - use original country as-is
+          const locationDataResult: LocationData = {
+            country: countryName,
+            countryName: data.country_name, // Always preserve original
             currency: data.currency,
             currencySymbol: getCurrencySymbolFromCountry(data.country_name),
             detected: true
           };
-          updateFormData({ userLocation: autoLocationData });
-          console.log('📍 Auto-detected location set to formData:', autoLocationData);
+          
+          updateFormData({ userLocation: locationDataResult });
+          console.log('📍 Auto-detected location set to formData:', {
+            original: data.country_name,
+            translated: countryName,
+            final: locationDataResult.country
+          });
         }
         
         console.log('📍 Location detected:', data);
@@ -223,7 +273,19 @@ export function OffshoreCalculator({
         console.error('Failed to fetch location:', error);
         setLocationError('Unable to detect location');
         analytics.trackEvent('error', { type: 'location_error', error: error?.toString() });
+        
+        // Set default US location when location detection fails
+        const usLocationData: LocationData = {
+          country: 'United States',
+          countryName: 'United States',
+          currency: 'USD',
+          currencySymbol: '$',
+          detected: false
+        };
+        updateFormData({ userLocation: usLocationData });
+        console.log('📍 Location failed - using US fallback');
       } finally {
+        console.log('🔄 Setting location loading to false');
         setIsLoadingLocation(false);
       }
     };
@@ -232,23 +294,23 @@ export function OffshoreCalculator({
   }, []);
 
   // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-        staggerChildren: 0.1
-      }
-    },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: { duration: 0.3 }
-    }
-  };
+  // const containerVariants = {
+  //   hidden: { opacity: 0, y: 20 },
+  //   visible: {
+  //     opacity: 1,
+  //     y: 0,
+  //     transition: {
+  //       duration: 0.6,
+  //       ease: "easeOut",
+  //       staggerChildren: 0.1
+  //     }
+  //   },
+  //   exit: {
+  //     opacity: 0,
+  //     y: -20,
+  //     transition: { duration: 0.3 }
+  //   }
+  // };
 
   const stepVariants = {
     hidden: { opacity: 0, x: 20 },
@@ -263,6 +325,222 @@ export function OffshoreCalculator({
       transition: { duration: 0.3 }
     }
   };
+
+  // Skeleton Loader Components
+  const PortfolioStepSkeleton = () => (
+    <div className="mx-auto" style={{ maxWidth: '1400px' }}>
+      {/* Skeleton for portfolio options only */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="relative h-full">
+            <div className="w-full h-full p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col">
+              {/* Portfolio Size - Fixed Height */}
+              <div className="mb-4">
+                <div className="h-6 bg-gray-200 rounded mb-1 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+              </div>
+              
+              {/* Description - Auto-adjusting Container */}
+              <div className="flex-1 mb-4">
+                <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
+              </div>
+              
+              {/* Stats Grid - Fixed Position */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center p-3 rounded-lg bg-white/80">
+                  <div className="flex items-center justify-center mb-1">
+                    <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-8 animate-pulse" />
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded w-16 mx-auto animate-pulse" />
+                </div>
+                
+                <div className="text-center p-3 rounded-lg bg-white/80">
+                  <div className="flex items-center justify-center mb-1">
+                    <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded w-20 mx-auto animate-pulse" />
+                </div>
+              </div>
+              
+              {/* Revenue Range - Fixed Position at Bottom */}
+              <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
+                <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Need More Precision Card - Show immediately */}
+      <div className="max-w-2xl mx-auto">
+        <div className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50">
+          <div className="flex items-center justify-between">
+            <div className="text-left">
+              <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
+                Want more accurate results?
+              </h3>
+              <p className="text-sm text-neural-blue-600">
+                Tell us your exact numbers for personalized recommendations and precise savings estimates
+              </p>
+            </div>
+            <div className="w-5 h-5 text-neural-blue-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const RoleSelectionStepSkeleton = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-8 bg-gray-200 rounded-lg w-3/4 mx-auto mb-2 animate-pulse" />
+        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse" />
+      </div>
+      
+      {/* Search and Filters Skeleton */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col min-[468px]:flex-row gap-4">
+          <div className="flex-1 relative">
+            <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse" />
+          </div>
+          <div className="h-12 bg-gray-200 rounded-lg w-40 animate-pulse" />
+        </div>
+        
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
+          <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+          <div className="flex-1"></div>
+          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="relative h-full">
+            <div className="p-6 rounded-xl border-2 border-neutral-200 bg-white h-full flex flex-col">
+              {/* Role Header */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-12 animate-pulse" />
+                </div>
+                <div className="h-5 bg-gray-200 rounded mb-1 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+              </div>
+              
+              {/* Enhanced Savings Preview */}
+              <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
+                <div className="text-center mb-3">
+                  <div className="h-4 bg-gray-200 rounded w-32 mx-auto animate-pulse" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
+                    <div className="text-right">
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                      <div className="h-3 bg-gray-200 rounded w-12 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="border-t border-green-300 pt-2 mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                      <div className="text-right">
+                        <div className="h-5 bg-gray-200 rounded w-20 animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const TaskSelectionStepSkeleton = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-8 bg-gray-200 rounded-lg w-3/4 mx-auto mb-2 animate-pulse" />
+        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse" />
+      </div>
+      
+      <div className="space-y-6">
+        {[1, 2].map((role) => (
+          <div key={role} className="border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="p-4 bg-neutral-50">
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 bg-gray-200 rounded flex-1 animate-pulse" />
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              {[1, 2, 3].map((task) => (
+                <div key={task} className="p-4 border border-neutral-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-5 bg-gray-200 rounded flex-1 animate-pulse" />
+                  </div>
+                  <div className="ml-8">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const ExperienceStepSkeleton = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-8 bg-gray-200 rounded-lg w-3/4 mx-auto mb-2 animate-pulse" />
+        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse" />
+      </div>
+      
+      <div className="space-y-6">
+        {[1, 2].map((role) => (
+          <div key={role} className="p-6 border border-neutral-200 rounded-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
+              <div className="h-6 bg-gray-200 rounded flex-1 animate-pulse" />
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((level) => (
+                <div key={level} className="p-4 border border-neutral-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                    <div className="h-5 bg-gray-200 rounded w-16 animate-pulse" />
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   // Initialize analytics tracking
   useEffect(() => {
@@ -359,7 +637,7 @@ export function OffshoreCalculator({
         formData, 
         Object.values(formData.portfolioIndicators || {}),
         formData.userLocation || (manualLocation ? getEffectiveLocationForManual(manualLocation) : undefined),
-        rolesSalaryComparison // Pass dynamic salary data from API
+        rolesSalaryComparison as unknown as Readonly<Record<string, LocalMultiCountryRoleSalaryData>> // Pass dynamic salary data from API
       );
       setCalculationResult(result);
       setProcessingStage('');
@@ -414,6 +692,14 @@ export function OffshoreCalculator({
   };
 
   const renderStep = () => {
+    // Debug logging to understand loading states
+    console.log('🔍 renderStep debug:', {
+      isLoadingLocation,
+      isLoadingPortfolio,
+      currentStep: formData.currentStep,
+      shouldShowSkeleton: (isLoadingLocation || isLoadingPortfolio) && formData.currentStep === 1
+    });
+    
     switch (formData.currentStep) {
       case 1:
         return (
@@ -437,6 +723,7 @@ export function OffshoreCalculator({
               ...(manualData !== undefined && { manualPortfolioData: manualData }),
               ...(portfolioIndicators !== undefined && { portfolioIndicators })
             })}
+            showPortfolioGridSkeleton={(isLoadingLocation || isLoadingPortfolio) && formData.currentStep === 1}
           />
         );
       case 2:
@@ -511,12 +798,7 @@ export function OffshoreCalculator({
       <div className="absolute inset-0 pattern-neural-grid opacity-5 pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-neural-blue-400/10 to-quantum-purple-400/10 rounded-full blur-3xl animate-neural-float pointer-events-none" />
       
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10"
-      >
+      <div className="relative z-10">
         {/* Calculator Header */}
         <div className="mb-8 px-8 py-12 text-center">
           <div className="mb-6">
@@ -542,53 +824,6 @@ export function OffshoreCalculator({
           </div>
         </div>
 
-        {/* Processing Overlay */}
-        <AnimatePresence>
-          {isCalculating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center"
-            >
-              <Card 
-                variant="quantum-glass" 
-                className="p-12 text-center max-w-md mx-4"
-                aiPowered={true}
-                neuralGlow={true}
-              >
-                <>
-                  <div className="mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neural-primary rounded-full flex items-center justify-center shadow-neural-glow">
-                      <Calculator className="h-8 w-8 text-white animate-neural-pulse" />
-                    </div>
-                    
-                    <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
-                      Calculating Your Savings
-                    </h3>
-                    
-                    <motion.p 
-                      key={processingStage}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-neural-blue-600 font-medium"
-                    >
-                      {processingStage}
-                    </motion.p>
-                  </div>
-                  
-                  {/* Processing dots */}
-                  <div className="loading-neural-dots justify-center">
-                    <div className="animate-neural-pulse"></div>
-                    <div className="animate-neural-pulse [animation-delay:0.2s]"></div>
-                    <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
-                  </div>
-                </>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Step Content */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -612,13 +847,78 @@ export function OffshoreCalculator({
             <>
               {/* Desktop Layout */}
               <div className="hidden sm:flex items-center justify-between">
-              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
+                  {formData.currentStep === 1 ? (
+                    <Link href="/">
+                      <Button
+                        variant="quantum-secondary"
+                        leftIcon={<Home className="h-4 w-4" />}
+                        className="w-40 h-12"
+                        disabled={isLoadingLocation}
+                      >
+                        Back to Home
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      variant="quantum-secondary"
+                      onClick={prevStep}
+                      leftIcon={<ArrowLeft className="h-4 w-4" />}
+                      className="w-40 h-12"
+                      disabled={isLoadingRoles}
+                    >
+                      Previous
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-neural-blue-600 font-medium">
+                    Step {formData.currentStep} of 5
+                  </div>
+                  
+                  {formData.currentStep < 4 && (
+                    <Button
+                      variant="neural-primary"
+                      onClick={nextStep}
+                      disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
+                      rightIcon={<ArrowRight className="h-4 w-4" />}
+                      className="w-40 h-12"
+                    >
+                      Continue
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile Layout (stacked vertically) */}
+              <div className="flex sm:hidden flex-col items-center gap-4">
+                {/* Step counter at top */}
+                <div className="text-sm text-neural-blue-600 font-medium">
+                  Step {formData.currentStep} of 5
+                </div>
+                
+                {/* Continue button */}
+                {formData.currentStep < 4 && (
+                  <Button
+                    variant="neural-primary"
+                    onClick={nextStep}
+                    disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                    className="w-full h-12"
+                  >
+                    Continue
+                  </Button>
+                )}
+                
+                {/* Back/Previous button at bottom */}
                 {formData.currentStep === 1 ? (
-                  <Link href="/">
+                  <Link href="/" className="w-full">
                     <Button
                       variant="quantum-secondary"
                       leftIcon={<Home className="h-4 w-4" />}
-                      className="w-40 h-12"
+                      className="w-full h-12"
+                      disabled={isLoadingLocation}
                     >
                       Back to Home
                     </Button>
@@ -628,78 +928,17 @@ export function OffshoreCalculator({
                     variant="quantum-secondary"
                     onClick={prevStep}
                     leftIcon={<ArrowLeft className="h-4 w-4" />}
-                    className="w-40 h-12"
+                    className="w-full h-12"
+                    disabled={isLoadingRoles}
                   >
                     Previous
                   </Button>
                 )}
               </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-neural-blue-600 font-medium">
-                  Step {formData.currentStep} of 5
-                </div>
-                
-                {formData.currentStep < 4 && (
-                  <Button
-                    variant="neural-primary"
-                    onClick={nextStep}
-                    disabled={!canProceedFromStep(formData.currentStep)}
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                    className="w-40 h-12"
-                  >
-                    Continue
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Layout (stacked vertically) */}
-            <div className="flex sm:hidden flex-col items-center gap-4">
-              {/* Step counter at top */}
-              <div className="text-sm text-neural-blue-600 font-medium">
-                Step {formData.currentStep} of 5
-              </div>
-              
-              {/* Continue button */}
-              {formData.currentStep < 4 && (
-                <Button
-                  variant="neural-primary"
-                  onClick={nextStep}
-                  disabled={!canProceedFromStep(formData.currentStep)}
-                  rightIcon={<ArrowRight className="h-4 w-4" />}
-                  className="w-full h-12"
-                >
-                  Continue
-                </Button>
-              )}
-              
-              {/* Back/Previous button at bottom */}
-              {formData.currentStep === 1 ? (
-                <Link href="/" className="w-full">
-                  <Button
-                    variant="quantum-secondary"
-                    leftIcon={<Home className="h-4 w-4" />}
-                    className="w-full h-12"
-                  >
-                    Back to Home
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  variant="quantum-secondary"
-                  onClick={prevStep}
-                  leftIcon={<ArrowLeft className="h-4 w-4" />}
-                  className="w-full h-12"
-                >
-                  Previous
-                </Button>
-              )}
-            </div>
             </>
           </Card>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 } 

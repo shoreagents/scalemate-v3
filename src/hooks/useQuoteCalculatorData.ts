@@ -1,22 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PortfolioSize, PortfolioIndicator } from '@/types';
-import { ManualLocation } from '@/types/location';
+import { ManualLocation, LocationData } from '@/types/location';
 import { getPortfolioIndicators, getStaticPortfolioIndicators } from '@/utils/quoteCalculatorData';
 import { getRoles, getRolesSalaryComparison, getStaticRoles, getStaticRolesSalaryComparison, ROLES, ROLES_SALARY_COMPARISON } from '@/utils/rolesData';
 import { getCurrencySymbol, getCurrencyByCountry } from '@/utils/currency';
 
 // Re-export currency utilities for backward compatibility
 export { getCurrencySymbol, getCurrencyByCountry };
-
-interface LocationData {
-  ip?: string;
-  city?: string;
-  region?: string;
-  country_name?: string;
-  country_code?: string;
-  currency?: string;
-  currency_name?: string;
-}
 
 interface UseQuoteCalculatorDataResult {
   portfolioIndicators: Record<PortfolioSize, PortfolioIndicator>;
@@ -48,43 +38,39 @@ export function useQuoteCalculatorData(
   const [isUsingDynamicData, setIsUsingDynamicData] = useState(false);
   const [isUsingDynamicRoles, setIsUsingDynamicRoles] = useState(false);
 
-  // Get effective location (manual override takes precedence)
-  const getEffectiveLocation = useCallback(() => {
+  // Get effective location data (manual takes priority)
+  const getEffectiveLocation = useCallback((): LocationData | null => {
     if (manualLocation?.country) {
+      // Convert manual location to LocationData format
       return {
-        country: manualLocation.country,
+        country: manualLocation.country as any, // Manual location bypass validation
         countryName: manualLocation.country,
-        currency: getCurrencyByCountry(manualLocation.country)
+        currency: getCurrencyByCountry(manualLocation.country),
+        currencySymbol: getCurrencySymbol(getCurrencyByCountry(manualLocation.country)),
+        detected: false
       };
     }
-
-    if (locationData?.country_code) {
-      return {
-        country: locationData.country_code,
-        countryName: locationData.country_name || undefined,
-        region: locationData.region || undefined,
-        city: locationData.city || undefined,
-        currency: locationData.currency || undefined
-      };
-    }
-
-    return null;
+    return locationData || null;
   }, [locationData, manualLocation]);
 
   // Load portfolio indicators based on location
   const loadPortfolioIndicators = useCallback(async () => {
     const location = getEffectiveLocation();
     
-    if (!location?.country) {
+    // Always show loading state, even for static data
+    setIsLoading(true);
+    setError(null);
+    
+    // Add a small delay to make loading visible
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    if (!location) {
       // No location available, use static data
       setPortfolioIndicators(getStaticPortfolioIndicators());
       setIsUsingDynamicData(false);
-      setError(null);
+      setIsLoading(false);
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
 
     try {
       console.log('🔄 Loading portfolio indicators for location:', location.countryName || location.country);
@@ -119,17 +105,24 @@ export function useQuoteCalculatorData(
   const loadRolesData = useCallback(async () => {
     const location = getEffectiveLocation();
     
-    if (!location?.country) {
-      // No location available, use static data
-      setRoles(getStaticRoles());
-      setRolesSalaryComparison(getStaticRolesSalaryComparison());
-      setIsUsingDynamicRoles(false);
-      setRolesError(null);
-      return;
-    }
-
+    // Always show loading state, even for static data
     setIsLoadingRoles(true);
     setRolesError(null);
+    
+    // Add a small delay to make loading visible
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    if (!location) {
+      // No location available, use static data
+      console.log('📋 No location data, using static roles data');
+      const staticRoles = getStaticRoles();
+      const staticSalary = getStaticRolesSalaryComparison();
+      setRoles(staticRoles);
+      setRolesSalaryComparison(staticSalary);
+      setIsUsingDynamicRoles(false);
+      setIsLoadingRoles(false);
+      return;
+    }
 
     try {
       console.log('🔄 Loading roles data for location:', location.countryName || location.country);
@@ -139,6 +132,12 @@ export function useQuoteCalculatorData(
         getRoles(location),
         getRolesSalaryComparison(location)
       ]);
+      
+      console.log('📊 Loaded roles data:', {
+        rolesData,
+        salaryData,
+        location
+      });
       
       setRoles(rolesData);
       setRolesSalaryComparison(salaryData);
@@ -163,8 +162,11 @@ export function useQuoteCalculatorData(
       setRolesError(err instanceof Error ? err.message : 'Failed to load roles data');
       
       // Fallback to static data
-      setRoles(getStaticRoles());
-      setRolesSalaryComparison(getStaticRolesSalaryComparison());
+      console.log('📋 Error occurred, falling back to static data');
+      const staticRoles = getStaticRoles();
+      const staticSalary = getStaticRolesSalaryComparison();
+      setRoles(staticRoles);
+      setRolesSalaryComparison(staticSalary);
       setIsUsingDynamicRoles(false);
     } finally {
       setIsLoadingRoles(false);

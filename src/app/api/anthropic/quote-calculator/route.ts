@@ -88,7 +88,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const countryName = location.countryName || location.country;
+    const countryName = location.countryName;
+    const country = location.country;
     const currency = location.currency || 'USD';
     const currencySymbol = getCurrencySymbol(currency);
 
@@ -241,6 +242,7 @@ Respond with ONLY a valid JSON object in this exact format:
 
 Context:
 - Country: ${countryName}
+- Market Type: ${country}
 - Currency: ${currency} (${currencySymbol})
 - Current Date: ${currentDate}
 - Target: Property management companies considering offshore teams
