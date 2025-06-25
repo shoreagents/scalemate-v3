@@ -338,7 +338,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
   const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
   const [showImplementationPlan, setShowImplementationPlan] = useState(false);
   const [showAIPlan, setShowAIPlan] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'implementation' | 'pitch'>('overview');
+  type TabType = 'overview' | 'implementation' | 'pitch';
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [savingsView, setSavingsView] = useState<'annual' | 'monthly'>('annual');
 
   // Fetch Claude-generated implementation plan
   const { implementationPlan, isLoading: isPlanLoading, error: planError, refetch } = useImplementationPlan(
@@ -377,10 +379,6 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         transition={{ duration: 0.6 }}
         className="text-center"
       >
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyber-green-100 text-cyber-green-800 rounded-full text-sm font-medium mb-6">
-          <Trophy className="w-4 h-4" />
-          Calculation Complete
-        </div>
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="w-16 h-16 rounded-2xl border-2 border-neural-blue-500 bg-neural-blue-500 flex items-center justify-center shadow-lg">
             <TrendingUp className="w-8 h-8 text-white" />
@@ -500,88 +498,278 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             transition={{ duration: 0.3 }}
             className="space-y-8"
           >
-            {/* Key Metrics - Enhanced Responsive Design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="sm:col-span-2 xl:col-span-1"
-        >
-          <Card className="p-4 lg:p-6 border-l-4 border-l-cyber-green-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-cyber-green-50/30 h-full">
-            <div className="flex items-center gap-3 lg:gap-4">
-              <div className="p-2 lg:p-3 rounded-xl bg-cyber-green-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                <DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-cyber-green-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs lg:text-sm font-medium text-cyber-green-700 mb-1 truncate">Total Annual Savings</p>
-                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-cyber-green-800 truncate">{formatCurrency(result.totalSavings)}</p>
-                <p className="text-xs lg:text-sm text-cyber-green-600 mt-1 truncate">{formatPercentage(result.averageSavingsPercentage)} average savings</p>
-              </div>
+            {/* Comprehensive Key Metrics Dashboard */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="p-6 lg:p-8 bg-gradient-to-br from-white via-neural-blue-50/30 to-cyber-green-50/30 border-2 border-neural-blue-200 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-3 rounded-xl bg-neural-blue-100 shadow-sm">
+              <BarChart3 className="w-6 h-6 text-neural-blue-600" />
             </div>
-          </Card>
-        </motion.div>
+            <div>
+              <h3 className="text-xl lg:text-2xl font-bold text-neural-blue-900">Key Performance Metrics</h3>
+              <p className="text-sm lg:text-base text-neural-blue-700">
+                Comprehensive overview of financial benefits and timeline
+              </p>
+            </div>
+          </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="xl:col-span-1"
-        >
-          <Card className="p-4 lg:p-6 border-l-4 border-l-neural-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-neural-blue-50/30 h-full">
-            <div className="flex items-center gap-3 lg:gap-4">
-              <div className="p-2 lg:p-3 rounded-xl bg-neural-blue-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                <Users className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs lg:text-sm font-medium text-neural-blue-700 mb-1 truncate">Team Size</p>
-                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-neural-blue-800 truncate">{result.totalTeamSize}</p>
-                <p className="text-xs lg:text-sm text-neural-blue-600 mt-1 truncate">Across {Object.keys(result.breakdown).length} roles</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+          {/* Main Metrics Grid - Top 3 Cards */}
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+             {/* Savings with Toggle */}
+             <div className="bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 rounded-2xl p-6 border-l-4 border-l-cyber-green-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 rounded-xl bg-cyber-green-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <DollarSign className="w-6 h-6 text-cyber-green-700" />
+                 </div>
+                 <div className="flex-1">
+                   <h4 className="text-sm font-bold text-cyber-green-800">
+                     {savingsView === 'annual' ? 'Annual Savings' : 'Monthly Savings'}
+                   </h4>
+                   <p className="text-xs text-cyber-green-600">
+                     {savingsView === 'annual' ? 'Total yearly benefit' : 'Recurring monthly benefit'}
+                   </p>
+                 </div>
+               </div>
+               
+               {/* Toggle Switch */}
+               <div className="flex justify-center mb-4">
+                 <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
+                   <button
+                     onClick={() => setSavingsView('annual')}
+                     className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                       savingsView === 'annual'
+                         ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                         : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                     }`}
+                   >
+                     Annual
+                   </button>
+                   <button
+                     onClick={() => setSavingsView('monthly')}
+                     className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                       savingsView === 'monthly'
+                         ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                         : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                     }`}
+                   >
+                     Monthly
+                   </button>
+                 </div>
+               </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="xl:col-span-1"
-        >
-          <Card className="p-4 lg:p-6 border-l-4 border-l-quantum-purple-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-quantum-purple-50/30 h-full">
-            <div className="flex items-center gap-3 lg:gap-4">
-              <div className="p-2 lg:p-3 rounded-xl bg-quantum-purple-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-quantum-purple-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs lg:text-sm font-medium text-quantum-purple-700 mb-1 truncate">ROI Estimate</p>
-                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-quantum-purple-800 truncate">{result.estimatedROI.toFixed(1)}x</p>
-                <p className="text-xs lg:text-sm text-quantum-purple-600 mt-1 truncate">Return on investment</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+               <div className="space-y-2">
+                 <p className="text-3xl font-bold text-cyber-green-800 text-center">
+                   {savingsView === 'annual' 
+                     ? formatCurrency(result.totalSavings)
+                     : formatCurrency(Math.round(result.totalSavings / 12))
+                   }
+                 </p>
+                 <div className="flex items-center justify-center gap-2">
+                   <div className="flex items-center gap-1">
+                     <TrendingDown className="w-4 h-4 text-cyber-green-600" />
+                     <span className="text-sm font-medium text-cyber-green-700">{formatPercentage(result.averageSavingsPercentage)}</span>
+                   </div>
+                   <span className="text-xs text-cyber-green-600">cost reduction</span>
+                 </div>
+                 <div className="pt-2 border-t border-cyber-green-200">
+                   {savingsView === 'annual' ? (
+                     <>
+                       <div className="flex justify-between text-xs">
+                         <span className="text-cyber-green-600">Quarterly:</span>
+                         <span className="font-medium text-cyber-green-700">{formatCurrency(Math.round(result.totalSavings / 4))}</span>
+                       </div>
+                       <div className="flex justify-between text-xs mt-1">
+                         <span className="text-cyber-green-600">Semi-Annual:</span>
+                         <span className="font-medium text-cyber-green-700">{formatCurrency(Math.round(result.totalSavings / 2))}</span>
+                       </div>
+                     </>
+                   ) : (
+                     <>
+                       <div className="flex justify-between text-xs">
+                         <span className="text-cyber-green-600">Weekly:</span>
+                         <span className="font-medium text-cyber-green-700">{formatCurrency(Math.round(result.totalSavings / 52))}</span>
+                       </div>
+                       <div className="flex justify-between text-xs mt-1">
+                         <span className="text-cyber-green-600">Daily:</span>
+                         <span className="font-medium text-cyber-green-700">{formatCurrency(Math.round(result.totalSavings / 365))}</span>
+                       </div>
+                     </>
+                   )}
+                 </div>
+               </div>
+             </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="xl:col-span-1"
-        >
-          <Card className="p-4 lg:p-6 border-l-4 border-l-amber-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group bg-gradient-to-br from-white to-amber-50/30 h-full">
-            <div className="flex items-center gap-3 lg:gap-4">
-              <div className="p-2 lg:p-3 rounded-xl bg-amber-100 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-amber-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs lg:text-sm font-medium text-amber-700 mb-1 truncate">Implementation</p>
-                <p className="text-lg lg:text-2xl xl:text-3xl font-bold text-amber-800 truncate">{result.implementationTimeline.fullImplementation}</p>
-                <p className="text-xs lg:text-sm text-amber-600 mt-1 truncate">weeks to deploy</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
+             {/* Team Structure */}
+             <div className="bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 rounded-2xl p-6 border-l-4 border-l-neural-blue-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 rounded-xl bg-neural-blue-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <Users className="w-6 h-6 text-neural-blue-700" />
+                 </div>
+                 <div>
+                   <h4 className="text-sm font-bold text-neural-blue-800">Team Scaling</h4>
+                   <p className="text-xs text-neural-blue-600">Offshore workforce size</p>
+                 </div>
+               </div>
+                                <div className="space-y-2">
+                   <p className="text-lg text-neural-blue-800 text-center">
+                     <span className="font-bold text-neural-blue-900">{result.totalTeamSize}</span> team members across <span className="font-bold text-neural-blue-900">{Object.keys(result.breakdown).length}</span> different roles
+                   </p>
+                 <div className="pt-2 border-t border-neural-blue-200">
+                   {/* Table Headers */}
+                   <div className="grid grid-cols-[1fr,auto] gap-4 mb-2 pb-1 border-b border-neural-blue-200">
+                     <div className="text-xs font-bold text-neural-blue-800 uppercase tracking-wide">ROLE</div>
+                     <div className="text-xs font-bold text-neural-blue-800 uppercase tracking-wide text-right">MEMBERS</div>
+                   </div>
+                   {/* Table Rows */}
+                   <div className="space-y-1">
+                     {Object.values(result.breakdown).map((role: any, index: number) => (
+                       <div key={index} className="grid grid-cols-[1fr,auto] gap-4 text-xs">
+                         <span className="text-neural-blue-600">{role.roleName}</span>
+                         <span className="font-medium text-neural-blue-700 text-right">{role.teamSize}</span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               </div>
+             </div>
+
+
+
+             {/* Implementation Timeline */}
+             <div className="bg-gradient-to-br from-matrix-orange-50 to-matrix-orange-100 rounded-2xl p-6 border-l-4 border-l-matrix-orange-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 rounded-xl bg-matrix-orange-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <Clock className="w-6 h-6 text-matrix-orange-700" />
+                 </div>
+                 <div>
+                   <h4 className="text-sm font-bold text-matrix-orange-800">Implementation</h4>
+                   <p className="text-xs text-matrix-orange-600">Time to full deployment</p>
+                 </div>
+               </div>
+               <div className="space-y-2">
+                 <p className="text-3xl font-bold text-matrix-orange-800">{result.implementationTimeline.fullImplementation}</p>
+                 <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-1">
+                     <Zap className="w-4 h-4 text-matrix-orange-600" />
+                     <span className="text-sm font-medium text-matrix-orange-700">weeks</span>
+                   </div>
+                   <span className="text-xs text-matrix-orange-600">to go live</span>
+                 </div>
+                 <div className="pt-2 border-t border-matrix-orange-200">
+                   <div className="flex justify-between text-xs">
+                     <span className="text-matrix-orange-600">First hire:</span>
+                     <span className="font-medium text-matrix-orange-700">Week {result.implementationTimeline.planning + result.implementationTimeline.hiring}</span>
+                   </div>
+                   <div className="flex justify-between text-xs mt-1">
+                     <span className="text-matrix-orange-600">Training complete:</span>
+                     <span className="font-medium text-matrix-orange-700">Week {result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training}</span>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           {/* Investment Returns - Full Width Section */}
+           <div className="mb-8">
+             <div className="bg-gradient-to-br from-quantum-purple-50 to-quantum-purple-100 rounded-2xl p-6 border-l-4 border-l-quantum-purple-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-3 mb-4">
+                 <div className="p-3 rounded-xl bg-quantum-purple-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <TrendingUp className="w-6 h-6 text-quantum-purple-700" />
+                 </div>
+                 <div>
+                   <h4 className="text-sm font-bold text-quantum-purple-800">Investment Returns</h4>
+                   <p className="text-xs text-quantum-purple-600">Your offshore investment performance</p>
+                 </div>
+               </div>
+               <div className="space-y-4">
+                 {/* Investment Flow */}
+                 <div className="bg-white/60 rounded-xl p-4 border border-quantum-purple-200">
+                   <div className="grid grid-cols-3 gap-4 items-center">
+                     {/* You Invest */}
+                     <div className="text-center">
+                       <div className="text-xs text-quantum-purple-600 mb-1">You Invest</div>
+                       <div className="text-lg font-bold text-quantum-purple-800">
+                         {formatCurrency(Math.round(result.totalPhilippineCost * 1.2))}
+                       </div>
+                       <div className="text-xs text-quantum-purple-600 mt-1">Initial cost</div>
+                     </div>
+                     
+                     {/* Arrow */}
+                     <div className="text-center">
+                       <div className="flex items-center justify-center">
+                         <div className="text-2xl text-quantum-purple-500">→</div>
+                       </div>
+                       <div className="text-xs text-quantum-purple-600 mt-1">Generates</div>
+                     </div>
+                     
+                     {/* You Get Back */}
+                     <div className="text-center">
+                       <div className="text-xs text-quantum-purple-600 mb-1">You Save</div>
+                       <div className="text-lg font-bold text-green-700">
+                         {formatCurrency(result.totalSavings)}
+                       </div>
+                       <div className="text-xs text-quantum-purple-600 mt-1">Annual savings</div>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* ROI Summary & Key Details - Single Row */}
+                 <div className="grid grid-cols-3 gap-4 text-center">
+                   {/* ROI Summary */}
+                   <div className="bg-white/60 rounded-xl p-3 border border-quantum-purple-200">
+                     <div className="text-xs text-quantum-purple-600 mb-1">Your Return on Investment</div>
+                     <div className="text-xl font-bold text-quantum-purple-800">
+                       {result.estimatedROI.toFixed(0)}% Annual Return
+                     </div>
+                     <div className="text-xs text-quantum-purple-600 mt-1">
+                       Every $1 returns ${(result.estimatedROI / 100).toFixed(2)}
+                     </div>
+                   </div>
+                   
+                   {/* Payback Time */}
+                   <div className="bg-white/60 rounded-xl p-3 border border-quantum-purple-200">
+                     <div className="text-xs text-quantum-purple-600 mb-1">Payback Time</div>
+                     <div className="text-xl font-bold text-quantum-purple-800">5 Months</div>
+                     <div className="text-xs text-quantum-purple-600 mt-1">Investment recovery</div>
+                   </div>
+                   
+                   {/* Investment Grade */}
+                   <div className="bg-white/60 rounded-xl p-3 border border-quantum-purple-200">
+                     <div className="text-xs text-quantum-purple-600 mb-1">Investment Grade</div>
+                     <div className="text-xl font-bold text-quantum-purple-800">
+                       {(() => {
+                         const roi = result.estimatedROI / 100;
+                         if (roi >= 5.0) return 'Exceptional';
+                         if (roi >= 3.0) return 'Excellent';
+                         if (roi >= 2.0) return 'Good';
+                         if (roi >= 1.5) return 'Fair';
+                         if (roi >= 1.0) return 'Modest';
+                         return 'Poor';
+                       })()}
+                     </div>
+                     <div className="text-xs text-quantum-purple-600 mt-1">Quality rating</div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           {/* Explanatory Text */}
+           <div className="mt-8 p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-neural-blue-200">
+             <p className="text-neural-blue-800 leading-relaxed">
+               Your offshore scaling strategy shows promising results across all key metrics. With an annual savings of {formatCurrency(result.totalSavings)} ({formatPercentage(result.averageSavingsPercentage)} cost reduction), 
+               the plan demonstrates strong financial viability. The implementation timeline of {result.implementationTimeline.fullImplementation} weeks ensures a measured approach to building your team of {result.totalTeamSize} members across {Object.keys(result.breakdown).length} specialized roles. 
+               The exceptional ROI of {result.estimatedROI.toFixed(1)}x, combined with a rapid break-even point in Week {Math.ceil(result.implementationTimeline.fullImplementation / 2)}, indicates a highly effective scaling strategy.
+             </p>
+           </div>
+
+        </Card>
+      </motion.div>
 
       {/* Enhanced Team Composition Overview */}
       <motion.div
