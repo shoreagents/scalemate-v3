@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalculationResult, FormData, RoleId } from '@/types';
 import { ROLES } from '@/utils/quoteCalculatorData';
@@ -110,6 +110,18 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
     }
   };
 
+  // Calculate total experience distribution across all roles
+  let totalEntry = 0, totalModerate = 0, totalExperienced = 0;
+  Object.keys(breakdown).forEach(roleId => {
+    const distribution = formData.roleExperienceDistribution?.[roleId];
+    if (distribution) {
+      totalEntry += distribution.entry;
+      totalModerate += distribution.moderate;
+      totalExperienced += distribution.experienced;
+    }
+  });
+  const totalMembers = totalEntry + totalModerate + totalExperienced;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -126,8 +138,8 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
               <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Role-by-Role Breakdown</h3>
-              <p className="text-sm lg:text-base text-neutral-600 hidden sm:block">Detailed savings analysis for each role</p>
+              <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Complete Team Overview & Role Breakdown</h3>
+              <p className="text-sm lg:text-base text-neutral-600 hidden sm:block">Team composition and detailed savings analysis for each role</p>
               <p className="text-xs text-neutral-600 sm:hidden">Tap to expand details</p>
             </div>
           </div>
@@ -142,6 +154,121 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
             )}
           </div>
         </div>
+
+        {/* Team Overview - Always Visible */}
+        {totalMembers > 0 && (
+          <div className="mt-6 p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Your Team: {totalMembers} Members
+                </h4>
+                <p className="text-sm text-gray-600">Experience level breakdown</p>
+              </div>
+            </div>
+
+            {/* Simplified Team Composition */}
+            <div className="space-y-4">
+              {/* Entry Level */}
+              {totalEntry > 0 && (
+                <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
+                      {totalEntry}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Entry Level</div>
+                      <div className="text-sm text-gray-600">1-2 years experience</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-green-600">
+                      {Math.round((totalEntry / totalMembers) * 100)}%
+                    </div>
+                    <div className="text-xs text-gray-500">of your team</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mid Level */}
+              {totalModerate > 0 && (
+                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
+                      {totalModerate}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Mid-Level</div>
+                      <div className="text-sm text-gray-600">3-5 years experience</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-blue-600">
+                      {Math.round((totalModerate / totalMembers) * 100)}%
+                    </div>
+                    <div className="text-xs text-gray-500">of your team</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Senior Level */}
+              {totalExperienced > 0 && (
+                <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-purple-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
+                      {totalExperienced}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Senior Level</div>
+                      <div className="text-sm text-gray-600">6+ years experience</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-purple-600">
+                      {Math.round((totalExperienced / totalMembers) * 100)}%
+                    </div>
+                    <div className="text-xs text-gray-500">of your team</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Visual Summary Bar */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                  <span>Team Composition</span>
+                  <span>{totalMembers} total members</span>
+                </div>
+                <div className="flex rounded-lg overflow-hidden h-3 bg-gray-200">
+                  {totalEntry > 0 && (
+                    <div 
+                      className="bg-green-500"
+                      style={{ width: `${(totalEntry / totalMembers) * 100}%` }}
+                      title={`${totalEntry} Entry Level (${Math.round((totalEntry / totalMembers) * 100)}%)`}
+                    />
+                  )}
+                  {totalModerate > 0 && (
+                    <div 
+                      className="bg-blue-500"
+                      style={{ width: `${(totalModerate / totalMembers) * 100}%` }}
+                      title={`${totalModerate} Mid-Level (${Math.round((totalModerate / totalMembers) * 100)}%)`}
+                    />
+                  )}
+                  {totalExperienced > 0 && (
+                    <div 
+                      className="bg-purple-500"
+                      style={{ width: `${(totalExperienced / totalMembers) * 100}%` }}
+                      title={`${totalExperienced} Senior Level (${Math.round((totalExperienced / totalMembers) * 100)}%)`}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <AnimatePresence>
           {isExpanded && (
@@ -338,9 +465,23 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
   const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
   const [showImplementationPlan, setShowImplementationPlan] = useState(false);
   const [showAIPlan, setShowAIPlan] = useState(false);
+  const [showTableOfContents, setShowTableOfContents] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
   type TabType = 'overview' | 'implementation' | 'pitch';
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [savingsView, setSavingsView] = useState<'annual' | 'monthly'>('annual');
+
+  // Toggle tooltip every 15 seconds (loop)
+  useEffect(() => {
+    const toggleTooltip = () => {
+      setShowTooltip(prev => !prev);
+    };
+
+    // Start the loop after initial 15 seconds
+    const timer = setInterval(toggleTooltip, 15000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch Claude-generated implementation plan
   const { implementationPlan, isLoading: isPlanLoading, error: planError, refetch } = useImplementationPlan(
@@ -370,15 +511,64 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
     }
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const headerOffset = 100; // Adjust this value based on your header height
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+      setShowTableOfContents(false); // Close TOC on mobile after navigation
+    }
+  };
+
+  // Table of Contents sections based on active tab
+  const getTableOfContents = () => {
+    switch (activeTab) {
+      case 'overview':
+        return [
+          { id: 'key-metrics', title: 'Key Performance Metrics', icon: <BarChart3 className="w-4 h-4" /> },
+          { id: 'cost-comparison', title: 'Cost Comparison', icon: <PieChart className="w-4 h-4" /> },
+          { id: 'role-breakdown', title: 'Complete Team Overview & Role Breakdown', icon: <BarChart3 className="w-4 h-4" /> },
+        ];
+      case 'implementation':
+        return [
+          { id: 'executive-summary', title: 'Executive Summary', icon: <FileText className="w-4 h-4" /> },
+          { id: 'implementation-phases', title: 'Implementation Phases', icon: <ClipboardList className="w-4 h-4" /> },
+          { id: 'business-risk-assessment', title: 'Business Risk Assessment', icon: <Shield className="w-4 h-4" /> },
+          { id: 'risk-mitigation', title: 'Implementation Risk Mitigation', icon: <Shield className="w-4 h-4" /> },
+          { id: 'ai-setup-guide', title: 'Claude AI Setup Guide', icon: <Brain className="w-4 h-4" /> },
+          { id: 'next-steps', title: 'Next Steps', icon: <Target className="w-4 h-4" /> },
+        ];
+      case 'pitch':
+        return [
+          { id: 'pitch-header', title: 'Executive Pitch Deck', icon: <Presentation className="w-4 h-4" /> },
+          { id: 'slide-1', title: 'Executive Summary', icon: <FileText className="w-4 h-4" /> },
+          { id: 'slide-2', title: 'Financial Impact', icon: <DollarSign className="w-4 h-4" /> },
+          { id: 'slide-3', title: 'Team Structure', icon: <Users className="w-4 h-4" /> },
+          { id: 'slide-4', title: 'Implementation Roadmap', icon: <Calendar className="w-4 h-4" /> },
+          { id: 'slide-5', title: 'Risk Assessment', icon: <Shield className="w-4 h-4" /> },
+          { id: 'slide-6', title: 'Recommendations', icon: <Target className="w-4 h-4" /> },
+        ];
+      default:
+        return [];
+    }
+  };
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center"
-      >
+    <div className="relative">
+      {/* Main Content Area - Keep centered */}
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center"
+        >
         <div className="flex items-center justify-center gap-3 mb-4">
           <div className="w-16 h-16 rounded-2xl border-2 border-neural-blue-500 bg-neural-blue-500 flex items-center justify-center shadow-lg">
             <TrendingUp className="w-8 h-8 text-white" />
@@ -403,7 +593,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         <div className="hidden md:block bg-white/80 backdrop-blur-sm border border-neural-blue-200 rounded-2xl p-1 shadow-lg">
           <div className="flex">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => {
+                setActiveTab('overview');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`flex items-center gap-2 px-4 lg:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === 'overview'
                   ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg transform scale-105'
@@ -416,7 +609,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </button>
             
             <button
-              onClick={() => setActiveTab('implementation')}
+              onClick={() => {
+                setActiveTab('implementation');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`flex items-center gap-2 px-4 lg:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === 'implementation'
                   ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg transform scale-105'
@@ -429,7 +625,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </button>
             
             <button
-              onClick={() => setActiveTab('pitch')}
+              onClick={() => {
+                setActiveTab('pitch');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`flex items-center gap-2 px-4 lg:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                 activeTab === 'pitch'
                   ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg transform scale-105'
@@ -448,7 +647,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           <div className="bg-white/80 backdrop-blur-sm border border-neural-blue-200 rounded-2xl p-1 shadow-lg">
             <div className="grid grid-cols-3 gap-1">
               <button
-                onClick={() => setActiveTab('overview')}
+                onClick={() => {
+                  setActiveTab('overview');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 ${
                   activeTab === 'overview'
                     ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg'
@@ -460,7 +662,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </button>
               
               <button
-                onClick={() => setActiveTab('implementation')}
+                onClick={() => {
+                  setActiveTab('implementation');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 ${
                   activeTab === 'implementation'
                     ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg'
@@ -472,7 +677,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </button>
               
               <button
-                onClick={() => setActiveTab('pitch')}
+                onClick={() => {
+                  setActiveTab('pitch');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 ${
                   activeTab === 'pitch'
                     ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-lg'
@@ -500,6 +708,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           >
             {/* Comprehensive Key Metrics Dashboard */}
       <motion.div
+        id="key-metrics"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
@@ -799,226 +1008,237 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         </Card>
       </motion.div>
 
-      {/* Enhanced Team Composition Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-      >
-        <Card className="p-6 bg-gradient-to-br from-neural-blue-50/50 to-quantum-purple-50/50 border border-neural-blue-100 shadow-lg">
-          <div className="text-center mb-6">
-            <h3 className="text-headline-3 font-bold text-neural-blue-900 mb-2">
-              Complete Team Overview
-            </h3>
-            <p className="text-body-small text-neural-blue-700">
-              Your optimized offshore team configuration and experience distribution
-            </p>
-          </div>
 
-          {(() => {
-            // Calculate total experience distribution across all roles
-            let totalEntry = 0, totalModerate = 0, totalExperienced = 0;
-            Object.keys(result.breakdown).forEach(roleId => {
-              const distribution = formData.roleExperienceDistribution?.[roleId];
-              if (distribution) {
-                totalEntry += distribution.entry;
-                totalModerate += distribution.moderate;
-                totalExperienced += distribution.experienced;
-              }
-            });
-
-            const totalMembers = totalEntry + totalModerate + totalExperienced;
-
-            return (
-              <div className="space-y-6">
-                {/* Overall Experience Distribution */}
-                {totalMembers > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="text-center">
-                      <div className="w-20 h-20 mx-auto rounded-2xl bg-green-100 text-green-700 flex items-center justify-center mb-3 shadow-sm">
-                        <div>
-                          <div className="text-2xl font-bold">{totalEntry}</div>
-                          <div className="text-xs">Entry</div>
-                        </div>
-                      </div>
-                      <h4 className="font-semibold text-green-700 mb-1">Entry Level</h4>
-                      <p className="text-sm text-neutral-600">Fresh talent, cost-effective</p>
-                      <p className="text-xs text-green-600 font-medium mt-1">
-                        {Math.round((totalEntry / totalMembers) * 100)}% of team
-                      </p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="w-20 h-20 mx-auto rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3 shadow-sm">
-                        <div>
-                          <div className="text-2xl font-bold">{totalModerate}</div>
-                          <div className="text-xs">Mid</div>
-                        </div>
-                      </div>
-                      <h4 className="font-semibold text-blue-700 mb-1">Mid-Level</h4>
-                      <p className="text-sm text-neutral-600">Experienced professionals</p>
-                      <p className="text-xs text-blue-600 font-medium mt-1">
-                        {Math.round((totalModerate / totalMembers) * 100)}% of team
-                      </p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="w-20 h-20 mx-auto rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 shadow-sm">
-                        <div>
-                          <div className="text-2xl font-bold">{totalExperienced}</div>
-                          <div className="text-xs">Senior</div>
-                        </div>
-                      </div>
-                      <h4 className="font-semibold text-purple-700 mb-1">Senior Level</h4>
-                      <p className="text-sm text-neutral-600">Leadership & expertise</p>
-                      <p className="text-xs text-purple-600 font-medium mt-1">
-                        {Math.round((totalExperienced / totalMembers) * 100)}% of team
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Visual Distribution Bar */}
-                {totalMembers > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-neutral-700">Team Distribution</span>
-                      <span className="text-neutral-600">{totalMembers} total members</span>
-                    </div>
-                    <div className="flex rounded-full overflow-hidden h-4 bg-neutral-200 shadow-inner">
-                      {totalEntry > 0 && (
-                        <div 
-                          className="bg-gradient-to-r from-green-500 to-green-600 transition-all duration-700"
-                          style={{ width: `${(totalEntry / totalMembers) * 100}%` }}
-                          title={`${totalEntry} Entry Level members (${Math.round((totalEntry / totalMembers) * 100)}%)`}
-                        />
-                      )}
-                      {totalModerate > 0 && (
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-700"
-                          style={{ width: `${(totalModerate / totalMembers) * 100}%` }}
-                          title={`${totalModerate} Mid-Level members (${Math.round((totalModerate / totalMembers) * 100)}%)`}
-                        />
-                      )}
-                      {totalExperienced > 0 && (
-                        <div 
-                          className="bg-gradient-to-r from-purple-500 to-purple-600 transition-all duration-700"
-                          style={{ width: `${(totalExperienced / totalMembers) * 100}%` }}
-                          title={`${totalExperienced} Senior Level members (${Math.round((totalExperienced / totalMembers) * 100)}%)`}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </Card>
-      </motion.div>
 
       {/* Enhanced Cost Comparison */}
       <motion.div
+        id="cost-comparison"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <Card className="p-4 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 lg:p-3 bg-neural-blue-100 rounded-xl shadow-sm">
-              <PieChart className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Cost Comparison</h3>
-              <p className="text-sm lg:text-base text-neutral-600">Australian vs Philippine workforce costs</p>
-            </div>
-          </div>
-
-          {/* Mobile-first layout */}
-          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
-            {/* Current Cost */}
-            <div className="relative">
-              <div className="p-4 lg:p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 text-center">
-                <div className="flex items-center justify-center mb-3">
-                  <div className="p-2 bg-red-200 rounded-full">
-                    <Globe className="w-6 h-6 lg:w-8 lg:h-8 text-red-600" />
-                  </div>
-                </div>
-                <p className="text-xs lg:text-sm font-medium text-red-800 mb-2">Current Australian Cost</p>
-                <p className="text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 mb-1">
-                  {formatCurrency(result.totalAustralianCost)}
-                </p>
-                <p className="text-xs lg:text-sm text-red-600">per year</p>
+        <Card className="p-6 bg-white border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
+                <PieChart className="w-6 h-6 text-neural-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-neutral-900">Detailed Cost Analysis</h3>
+                <p className="text-sm text-neutral-600">Complete breakdown of your potential savings</p>
               </div>
             </div>
-
-            {/* Savings Arrow - Hidden on mobile, shown on desktop */}
-            <div className="hidden lg:flex items-center justify-center">
-              <div className="text-center">
-                <motion.div
-                  animate={{ x: [0, 10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ArrowRight className="w-8 h-8 lg:w-10 lg:h-10 text-neural-blue-400 mx-auto mb-3" />
-                </motion.div>
-                <div className="px-4 lg:px-6 py-2 lg:py-3 bg-gradient-to-r from-cyber-green-100 to-cyber-green-200 text-cyber-green-800 rounded-full shadow-md">
-                  <p className="text-sm lg:text-base font-bold">Save {formatPercentage(result.averageSavingsPercentage)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile Savings Badge */}
-            <div className="lg:hidden flex justify-center">
-              <div className="px-6 py-3 bg-gradient-to-r from-cyber-green-100 to-cyber-green-200 text-cyber-green-800 rounded-full shadow-md">
-                <p className="text-base font-bold flex items-center gap-2">
-                  <TrendingDown className="w-5 h-5" />
-                  Save {formatPercentage(result.averageSavingsPercentage)}
-                </p>
-              </div>
-            </div>
-
-            {/* Offshore Cost */}
-            <div className="relative">
-              <div className="p-4 lg:p-6 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 text-center">
-                <div className="flex items-center justify-center mb-3">
-                  <div className="p-2 bg-cyber-green-200 rounded-full">
-                    <Globe className="w-6 h-6 lg:w-8 lg:h-8 text-cyber-green-600" />
-                  </div>
-                </div>
-                <p className="text-xs lg:text-sm font-medium text-cyber-green-800 mb-2">Offshore Philippine Cost</p>
-                <p className="text-xl lg:text-2xl xl:text-3xl font-bold text-cyber-green-600 mb-1">
-                  {formatCurrency(result.totalPhilippineCost)}
-                </p>
-                <p className="text-xs lg:text-sm text-cyber-green-600">per year</p>
-              </div>
-              
-              {/* Mobile savings badge overlay */}
-              <div className="lg:hidden absolute -top-2 -right-2">
-                <div className="w-8 h-8 bg-cyber-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
+            
+            {/* Cost View Toggle */}
+            <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
+              <button
+                onClick={() => setSavingsView('annual')}
+                className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                  savingsView === 'annual'
+                    ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                    : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                }`}
+              >
+                Annual
+              </button>
+              <button
+                onClick={() => setSavingsView('monthly')}
+                className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                  savingsView === 'monthly'
+                    ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                    : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                }`}
+              >
+                Monthly
+              </button>
             </div>
           </div>
 
-          {/* Total Savings Summary */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-cyber-green-50 to-emerald-50 border border-cyber-green-200 rounded-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-cyber-green-100 rounded-lg">
-                  <Star className="w-5 h-5 text-cyber-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-cyber-green-800">Your Annual Savings</p>
-                  <p className="text-xs text-cyber-green-600">By switching to offshore talent</p>
-                </div>
+          {/* Main Cost Comparison Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                         {/* Australian Costs */}
+             <div className="bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border-2 border-neural-blue-200 rounded-2xl p-6">
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="p-3 bg-neural-blue-100 rounded-xl">
+                   <Globe className="w-6 h-6 text-neural-blue-600" />
+                 </div>
+                 <div>
+                   <h4 className="text-lg font-bold text-neural-blue-800">Australian Workforce</h4>
+                   <p className="text-sm text-neural-blue-600">Current market rates</p>
+                 </div>
+               </div>
+
+                             <div className="space-y-4">
+                 <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-4">
+                   <div className="flex justify-between items-center">
+                     <span className="text-sm font-medium text-gray-700">
+                       {savingsView === 'annual' ? 'Annual Cost' : 'Monthly Cost'}
+                     </span>
+                     <span className="text-xl font-bold text-neural-blue-600">
+                       {savingsView === 'annual' 
+                         ? formatCurrency(result.totalAustralianCost)
+                         : formatCurrency(Math.round(result.totalAustralianCost / 12))
+                       }
+                     </span>
+                   </div>
+                 </div>
+
+                 <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-4">
+                   <div className="text-sm font-medium text-gray-700 mb-3">Cost Breakdown</div>
+                   <div className="space-y-2">
+                     {Object.values(result.breakdown).map((role: any, index) => (
+                       <div key={index} className="flex justify-between items-center text-xs">
+                         <span className="text-gray-600">{role.roleName}</span>
+                         <span className="font-medium text-neural-blue-600">
+                           {savingsView === 'annual'
+                             ? `${formatCurrency(role.australianCost)}/year`
+                             : `${formatCurrency(Math.round(role.australianCost / 12))}/month`
+                           }
+                         </span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div className="bg-neural-blue-100 border border-neural-blue-300 rounded-lg p-3">
+                   <div className="flex items-center gap-2 text-neural-blue-700">
+                     <AlertTriangle className="w-4 h-4" />
+                     <span className="text-xs font-medium">High operational costs impacting growth</span>
+                   </div>
+                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xl lg:text-2xl font-bold text-cyber-green-700">
-                  {formatCurrency(result.totalSavings)}
-                </p>
-                <p className="text-xs lg:text-sm text-cyber-green-600">
-                  {formatPercentage(result.averageSavingsPercentage)} reduction
-                </p>
+            </div>
+
+                         {/* Philippine Costs */}
+             <div className="bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border-2 border-cyber-green-200 rounded-2xl p-6">
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="p-3 bg-cyber-green-100 rounded-xl">
+                   <Globe className="w-6 h-6 text-cyber-green-600" />
+                 </div>
+                 <div>
+                   <h4 className="text-lg font-bold text-cyber-green-800">Philippine Offshore</h4>
+                   <p className="text-sm text-cyber-green-600">Optimized talent strategy</p>
+                 </div>
+               </div>
+
+                             <div className="space-y-4">
+                 <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-4">
+                   <div className="flex justify-between items-center">
+                     <span className="text-sm font-medium text-gray-700">
+                       {savingsView === 'annual' ? 'Annual Cost' : 'Monthly Cost'}
+                     </span>
+                     <span className="text-xl font-bold text-cyber-green-600">
+                       {savingsView === 'annual' 
+                         ? formatCurrency(result.totalPhilippineCost)
+                         : formatCurrency(Math.round(result.totalPhilippineCost / 12))
+                       }
+                     </span>
+                   </div>
+                 </div>
+
+                 <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-4">
+                   <div className="text-sm font-medium text-gray-700 mb-3">Cost Breakdown</div>
+                   <div className="space-y-2">
+                     {Object.values(result.breakdown).map((role: any, index) => (
+                       <div key={index} className="flex justify-between items-center text-xs">
+                         <span className="text-gray-600">{role.roleName}</span>
+                         <span className="font-medium text-cyber-green-600">
+                           {savingsView === 'annual'
+                             ? `${formatCurrency(role.philippineCost)}/year`
+                             : `${formatCurrency(Math.round(role.philippineCost / 12))}/month`
+                           }
+                         </span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div className="bg-cyber-green-100 border border-cyber-green-300 rounded-lg p-3">
+                   <div className="flex items-center gap-2 text-cyber-green-700">
+                     <CheckCircle2 className="w-4 h-4" />
+                     <span className="text-xs font-medium">Access to top 1% talent at 60-80% savings</span>
+                   </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+                     {/* Savings Summary & Projections */}
+           <div className="bg-gradient-to-r from-cyber-green-50 to-cyber-green-100 border-2 border-cyber-green-200 rounded-2xl p-6">
+             <div className="flex items-center gap-3 mb-6">
+               <div className="p-3 bg-cyber-green-100 rounded-xl">
+                 <TrendingUp className="w-6 h-6 text-cyber-green-600" />
+               </div>
+               <div>
+                 <h4 className="text-lg font-bold text-cyber-green-800">Your Savings Impact</h4>
+                 <p className="text-sm text-cyber-green-600">Financial benefits and projections</p>
+               </div>
+             </div>
+
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+               {/* Annual Savings */}
+               <div className="bg-white border border-cyber-green-200 rounded-xl p-4 text-center">
+                 <div className="text-2xl font-bold text-cyber-green-600 mb-2">{formatCurrency(result.totalSavings)}</div>
+                 <div className="text-sm font-medium text-gray-700 mb-1">Annual Savings</div>
+                 <div className="text-xs text-cyber-green-600">{formatPercentage(result.averageSavingsPercentage)} reduction</div>
+               </div>
+
+               {/* Monthly Savings */}
+               <div className="bg-white border border-cyber-green-200 rounded-xl p-4 text-center">
+                 <div className="text-2xl font-bold text-cyber-green-600 mb-2">{formatCurrency(Math.round(result.totalSavings / 12))}</div>
+                 <div className="text-sm font-medium text-gray-700 mb-1">Monthly Savings</div>
+                 <div className="text-xs text-cyber-green-600">Recurring cash flow improvement</div>
+               </div>
+
+               {/* 3-Year Projection */}
+               <div className="bg-white border border-cyber-green-200 rounded-xl p-4 text-center">
+                 <div className="text-2xl font-bold text-cyber-green-600 mb-2">{formatCurrency(result.totalSavings * 3)}</div>
+                 <div className="text-sm font-medium text-gray-700 mb-1">3-Year Savings</div>
+                 <div className="text-xs text-cyber-green-600">Compound growth opportunity</div>
+               </div>
+             </div>
+
+            
+          </div>
+
+                     {/* What This Means Section */}
+           <div className="mt-6 p-6 bg-gradient-to-r from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-xl">
+             <div className="flex items-start gap-3">
+               <div className="p-2 bg-neural-blue-100 rounded-lg">
+                 <Lightbulb className="w-5 h-5 text-neural-blue-600" />
+               </div>
+               <div className="flex-1">
+                 <h5 className="text-lg font-bold text-neural-blue-800 mb-3">What This Means for Your Business</h5>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
+                       <span className="text-sm text-gray-700">Reinvest {formatCurrency(Math.round(result.totalSavings * 0.5))} annually into growth</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
+                       <span className="text-sm text-gray-700">Scale operations by {Math.round(result.averageSavingsPercentage)}% without cost increase</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
+                       <span className="text-sm text-gray-700">Improve profit margins significantly</span>
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
+                       <span className="text-sm text-gray-700">Access specialized skills at lower cost</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
+                       <span className="text-sm text-gray-700">24/7 operations across time zones</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
+                       <span className="text-sm text-gray-700">Competitive advantage through cost efficiency</span>
+                     </div>
+                   </div>
+                 </div>
               </div>
             </div>
           </div>
@@ -1026,489 +1246,20 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
       </motion.div>
 
       {/* Role Breakdown */}
-      <RoleBreakdown 
-        breakdown={result.breakdown}
-              formData={formData}
-        isExpanded={isBreakdownExpanded}
-        onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
-      />
+      <div id="role-breakdown">
+        <RoleBreakdown 
+          breakdown={result.breakdown}
+          formData={formData}
+          isExpanded={isBreakdownExpanded}
+          onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
+        />
+      </div>
 
-      {/* AI-Generated Implementation Plan */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.65, duration: 0.5 }}
-      >
-        <Card className="p-6 border-2 border-neural-blue-200 bg-gradient-to-br from-neural-blue-50 to-quantum-purple-50 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-          <div 
-            className="flex items-center justify-between cursor-pointer group"
-            onClick={() => setShowAIPlan(!showAIPlan)}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm group-hover:bg-neural-blue-200 transition-colors duration-300">
-                <Brain className="w-6 h-6 text-neural-blue-600" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-headline-3 font-bold text-neutral-900">AI-Generated Implementation Plan</h3>
-                  <span className="px-3 py-1 text-caption font-medium bg-gradient-to-r from-neural-blue-100 to-quantum-purple-100 text-neural-blue-700 rounded-full shadow-sm">
-                    Powered by Claude AI
-                  </span>
-                </div>
-                <p className="text-body-small text-neutral-600">
-                  {isPlanLoading ? 'Generating customized plan...' : 'Detailed roadmap tailored to your specific requirements'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isPlanLoading && (
-                <Loader2 className="w-5 h-5 text-neural-blue-600 animate-spin" />
-              )}
-              {planError && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refetch();
-                  }}
-                  className="text-neutral-500 hover:text-neural-blue-600 transition-colors duration-300"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                </Button>
-              )}
-              {showAIPlan ? (
-                <ChevronUp className="w-6 h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-              ) : (
-                <ChevronDown className="w-6 h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-              )}
-            </div>
-          </div>
 
-          <AnimatePresence>
-            {showAIPlan && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-6">
-                  {isPlanLoading && (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="text-center">
-                        <Loader2 className="w-10 h-10 text-neural-blue-600 animate-spin mx-auto mb-4" />
-                        <p className="text-body text-neutral-600">Generating your personalized implementation plan...</p>
-                        <p className="text-body-small text-neutral-500 mt-2">This may take a few moments</p>
-                      </div>
-                    </div>
-                  )}
 
-                  {planError && (
-                    <div className="text-center py-12">
-                      <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-4" />
-                      <p className="text-body text-neutral-600 mb-4">Unable to generate implementation plan</p>
-                      <Button variant="outline" onClick={refetch} className="flex items-center gap-2 border-neural-blue-200 text-neural-blue-600 hover:bg-neural-blue-50">
-                        <RefreshCw className="w-5 h-5" />
-                        Try Again
-                      </Button>
-                    </div>
-                  )}
 
-                  {implementationPlan && (
-                    <div className="space-y-6">
-                      {/* Executive Summary */}
-                      <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl border border-neural-blue-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <h4 className="text-body-large font-bold text-neutral-900 mb-4 flex items-center gap-2">
-                          <FileText className="w-6 h-6 text-neural-blue-600" />
-                          Executive Summary
-                        </h4>
-                        <p className="text-body text-neutral-700 leading-relaxed">{implementationPlan.executiveSummary}</p>
-                      </div>
 
-                      {/* Detailed Plan */}
-                      <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl border border-neural-blue-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <h4 className="text-body-large font-bold text-neutral-900 mb-6 flex items-center gap-2">
-                          <ClipboardList className="w-6 h-6 text-neural-blue-600" />
-                          Implementation Phases
-                        </h4>
-                        <div className="space-y-6">
-                          {implementationPlan.detailedPlan.map((phase, index) => (
-                            <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                              <div className="flex items-center justify-between mb-4">
-                                <h5 className="text-body-large font-bold text-neutral-900">{phase.phase}</h5>
-                                <span className="text-body-small font-medium text-neural-blue-700 bg-neural-blue-100 px-3 py-1 rounded-full shadow-sm">
-                                  {phase.duration}
-                                </span>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-body-small">
-                                <div className="bg-white/70 p-4 rounded-lg">
-                                  <h6 className="text-body font-bold text-neutral-800 mb-3 flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4 text-cyber-green-600" />
-                                    Objectives
-                                  </h6>
-                                  <ul className="space-y-2">
-                                    {phase.objectives.map((obj, idx) => (
-                                      <li key={idx} className="flex items-start gap-2 text-neutral-600">
-                                        <span className="w-1 h-1 bg-cyber-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                                        {obj}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                                
-                                <div className="bg-white/70 p-4 rounded-lg">
-                                  <h6 className="text-body font-bold text-neutral-800 mb-3 flex items-center gap-2">
-                                    <ArrowRight className="w-4 h-4 text-neural-blue-600" />
-                                    Key Activities
-                                  </h6>
-                                  <ul className="space-y-2">
-                                    {phase.keyActivities.map((activity, idx) => (
-                                      <li key={idx} className="flex items-start gap-2 text-neutral-600">
-                                        <span className="w-1 h-1 bg-neural-blue-600 rounded-full mt-2 flex-shrink-0"></span>
-                                        {activity}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
 
-                      {/* Risk Assessment */}
-                      {implementationPlan.riskAssessment && implementationPlan.riskAssessment.length > 0 && (
-                        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-xl border border-neural-blue-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                          <h4 className="text-body-large font-bold text-neutral-900 mb-6 flex items-center gap-2">
-                            <Shield className="w-6 h-6 text-neural-blue-600" />
-                            Risk Assessment & Mitigation
-                          </h4>
-                          <div className="space-y-4">
-                            {implementationPlan.riskAssessment.map((risk, index) => (
-                              <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/20 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                                <div className="flex items-start justify-between mb-3">
-                                  <h5 className="text-body font-bold text-neutral-900">{risk.risk}</h5>
-                                  <div className="flex gap-2">
-                                    <span className={`text-caption font-medium px-3 py-1 rounded-full ${getRiskColor(risk.impact)}`}>
-                                      {risk.impact} Impact
-                                    </span>
-                                    <span className={`text-caption font-medium px-3 py-1 rounded-full ${getRiskColor(risk.probability)}`}>
-                                      {risk.probability} Probability
-                                    </span>
-                                  </div>
-                                </div>
-                                <p className="text-body-small text-neutral-600">
-                                  <strong className="text-neural-blue-700">Mitigation:</strong> {risk.mitigation}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Claude AI Guide */}
-                      {implementationPlan.claudeAIGuide && (
-                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg border border-purple-200">
-                          <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <Brain className="w-5 h-5 text-purple-600" />
-                            Complete Claude AI Setup Guide for Offshore Teams
-                          </h4>
-                          
-                          {/* Setup Steps */}
-                          <div className="mb-6">
-                            <h5 className="font-medium text-gray-800 mb-3">🚀 Getting Started with Claude AI</h5>
-                            <div className="space-y-4">
-                              {implementationPlan.claudeAIGuide.setupSteps.map((step, index) => (
-                                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <h6 className="font-semibold text-gray-900 mb-2">{step.step}</h6>
-                                  <p className="text-sm text-gray-600 mb-3">{step.description}</p>
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                                         <div>
-                                       <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Instructions</div>
-                                       <ul className="space-y-1">
-                                         {step.instructions.map((instruction, idx) => (
-                                           <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                                             <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                                             {instruction}
-                                           </li>
-                                         ))}
-                                       </ul>
-                                     </div>
-                                     <div>
-                                       <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Pro Tips</div>
-                                      <ul className="space-y-1">
-                                        {step.tips.map((tip, idx) => (
-                                          <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                                            <Lightbulb className="w-3 h-3 text-amber-500 mt-0.5 flex-shrink-0" />
-                                            {tip}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Job Description Templates */}
-                          <div className="mb-6">
-                            <h5 className="font-medium text-gray-800 mb-3">📋 AI-Powered Job Description Templates</h5>
-                            <div className="space-y-4">
-                              {implementationPlan.claudeAIGuide.jobDescriptionTemplates.map((template, index) => (
-                                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <h6 className="font-semibold text-gray-900 mb-2">{template.role}</h6>
-                                  <p className="text-sm text-gray-600 mb-3">{template.template}</p>
-                                                                     <div className="bg-gray-50 p-3 rounded border">
-                                     <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Claude Prompt Template</div>
-                                     <p className="text-xs text-gray-600 font-mono">{template.claudePrompt}</p>
-                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Training Processes */}
-                          <div className="mb-6">
-                            <h5 className="font-medium text-gray-800 mb-3">🎓 AI-Enhanced Training Programs</h5>
-                            <div className="space-y-4">
-                              {implementationPlan.claudeAIGuide.trainingProcesses.map((process, index) => (
-                                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <h6 className="font-semibold text-gray-900 mb-2">{process.process}</h6>
-                                  <p className="text-sm text-gray-600 mb-3">{process.description}</p>
-                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                     <div>
-                                       <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Claude Prompts</div>
-                                       <div className="space-y-2">
-                                         {process.claudePrompts.map((prompt, idx) => (
-                                           <div key={idx} className="bg-gray-50 p-2 rounded border">
-                                             <p className="text-xs text-gray-600">{prompt}</p>
-                                           </div>
-                                         ))}
-                                       </div>
-                                     </div>
-                                     <div>
-                                       <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Expected Outcomes</div>
-                                      <ul className="space-y-1">
-                                        {process.expectedOutcomes.map((outcome, idx) => (
-                                          <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                                            <Target className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                                            {outcome}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Workflow Automation */}
-                          <div>
-                            <h5 className="font-medium text-gray-800 mb-3">⚡ Claude AI Workflow Automation</h5>
-                            <div className="space-y-4">
-                              {implementationPlan.claudeAIGuide.workflowAutomation.map((workflow, index) => (
-                                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                                  <h6 className="font-semibold text-gray-900 mb-2">{workflow.workflow}</h6>
-                                  <p className="text-sm text-gray-600 mb-3">{workflow.description}</p>
-                                                                     <div className="mb-3">
-                                     <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Implementation Guide</div>
-                                     <div className="bg-gray-50 p-3 rounded border">
-                                       <p className="text-xs text-gray-600">{workflow.claudeIntegration}</p>
-                                     </div>
-                                   </div>
-                                   <div>
-                                     <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Key Benefits</div>
-                                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                                      {workflow.benefits.map((benefit, idx) => (
-                                        <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
-                                          <Zap className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
-                                          {benefit}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Next Steps */}
-                      <div className="bg-white p-6 rounded-lg border border-indigo-200">
-                        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                          <Target className="w-5 h-5 text-indigo-600" />
-                          Immediate Next Steps
-                        </h4>
-                        <div className="space-y-2">
-                          {implementationPlan.nextSteps.map((step, index) => (
-                            <div key={index} className="flex items-start gap-3">
-                              <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 text-sm font-medium rounded-full flex items-center justify-center">
-                                {index + 1}
-                              </span>
-                              <p className="text-gray-700">{step}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
-      </motion.div>
-
-      {/* Risk Assessment */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-      >
-        <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-amber-100 rounded-xl shadow-sm">
-              <Shield className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-headline-3 font-bold text-neutral-900">Risk Assessment</h3>
-              <p className="text-body-small text-neutral-600">Implementation considerations and mitigation strategies</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4 ${getRiskLevelColor(result.riskAssessment.level)}`}>
-                <Activity className="w-4 h-4" />
-                {result.riskAssessment.level.charAt(0).toUpperCase() + result.riskAssessment.level.slice(1)} Risk
-              </div>
-              
-              <h4 className="text-body-large font-bold text-neutral-900 mb-4">Risk Factors</h4>
-              <ul className="space-y-3">
-                {result.riskAssessment.factors.map((factor, index) => (
-                  <li key={index} className="flex items-start gap-3 text-body-small text-neutral-600 p-3 bg-amber-50/50 rounded-lg">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                    {factor}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-body-large font-bold text-neutral-900 mb-4">Mitigation Strategies</h4>
-              <ul className="space-y-3">
-                {result.riskAssessment.mitigationStrategies.map((strategy, index) => (
-                  <li key={index} className="flex items-start gap-3 text-body-small text-neutral-600 p-3 bg-cyber-green-50/50 rounded-lg">
-                    <CheckCircle2 className="w-5 h-5 text-cyber-green-500 mt-0.5 flex-shrink-0" />
-                    {strategy}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Implementation Timeline */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
-      >
-        <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-          <div 
-            className="flex items-center justify-between cursor-pointer group"
-            onClick={() => setShowImplementationPlan(!showImplementationPlan)}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm group-hover:bg-neural-blue-200 transition-colors duration-300">
-                <Calendar className="w-6 h-6 text-neural-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-headline-3 font-bold text-neutral-900">Implementation Timeline</h3>
-                <p className="text-body-small text-neutral-600">Step-by-step deployment plan</p>
-              </div>
-            </div>
-            {showImplementationPlan ? (
-              <ChevronUp className="w-6 h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-            ) : (
-              <ChevronDown className="w-6 h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-            )}
-          </div>
-
-          <AnimatePresence>
-            {showImplementationPlan && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-6 space-y-6">
-                  {[
-                    { 
-                      phase: 'Planning & Setup', 
-                      duration: result.implementationTimeline.planning, 
-                      icon: <FileText className="w-6 h-6" />,
-                      color: 'bg-neural-blue-100 text-neural-blue-600',
-                      description: 'Strategy development, requirements gathering, team structure planning'
-                    },
-                    { 
-                      phase: 'Hiring & Recruitment', 
-                      duration: result.implementationTimeline.hiring, 
-                      icon: <Users className="w-6 h-6" />,
-                      color: 'bg-cyber-green-100 text-cyber-green-600',
-                      description: 'Candidate sourcing, interviews, background checks, offer negotiations'
-                    },
-                    { 
-                      phase: 'Training & Onboarding', 
-                      duration: result.implementationTimeline.training, 
-                      icon: <Lightbulb className="w-6 h-6" />,
-                      color: 'bg-quantum-purple-100 text-quantum-purple-600',
-                      description: 'System training, process documentation, cultural integration'
-                    },
-                    { 
-                      phase: 'Full Implementation', 
-                      duration: result.implementationTimeline.fullImplementation, 
-                      icon: <Zap className="w-6 h-6" />,
-                      color: 'bg-matrix-orange-100 text-matrix-orange-600',
-                      description: 'Complete transition, performance monitoring, optimization'
-                    }
-                  ].map((phase, index) => (
-                    <motion.div
-                      key={phase.phase}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1, duration: 0.3 }}
-                      className="flex items-center gap-4 p-5 border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/20 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
-                    >
-                      <div className={`p-4 rounded-xl shadow-sm ${phase.color}`}>
-                        {phase.icon}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-body-large font-bold text-neutral-900">{phase.phase}</h4>
-                          <span className="text-body-small font-medium text-neural-blue-700 bg-neural-blue-100 px-3 py-1 rounded-full">
-                            {phase.duration} week{phase.duration > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <p className="text-body-small text-neutral-600">{phase.description}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
-      </motion.div>
 
 
 
@@ -1528,97 +1279,131 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             transition={{ duration: 0.3 }}
             className="space-y-8"
           >
-            {/* AI-Generated Implementation Plan */}
-            <Card className="p-6 border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <Brain className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-gray-900">AI-Generated Implementation Plan</h3>
-                    <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
-                      Powered by Claude AI
-                    </span>
+            {/* Loading/Error States */}
+            {isPlanLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card className="p-12 text-center bg-gradient-to-br from-neural-blue-50 to-quantum-purple-50 border-2 border-neural-blue-200 shadow-lg">
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-12 h-12 text-neural-blue-600 animate-spin" />
+                    <div>
+                      <h3 className="text-2xl font-bold text-neural-blue-900 mb-2">Generating Implementation Plan</h3>
+                      <p className="text-neural-blue-700 text-lg max-w-md mx-auto">
+                        Claude AI is analyzing your requirements...
+                      </p>
+                      <p className="text-neural-blue-600 text-sm mt-2">This may take a few moments</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {isPlanLoading ? 'Generating customized plan...' : 'Detailed roadmap tailored to your specific requirements'}
-                  </p>
-                </div>
-              </div>
+                </Card>
+              </motion.div>
+            )}
 
-              {isPlanLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">Claude AI is analyzing your requirements...</p>
-                    <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
+            {planError && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card className="p-12 text-center bg-gradient-to-br from-amber-50 to-red-50 border-2 border-amber-200 shadow-lg">
+                  <div className="flex flex-col items-center gap-4">
+                    <AlertTriangle className="w-12 h-12 text-amber-600" />
+                    <div>
+                      <h3 className="text-2xl font-bold text-amber-900 mb-2">Unable to Generate Plan</h3>
+                      <p className="text-amber-700 text-lg max-w-md mx-auto mb-4">
+                        There was an issue generating your implementation plan.
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={refetch}
+                        className="flex items-center gap-2 border-amber-600 text-amber-700 hover:bg-amber-50"
+                      >
+                        <RefreshCw className="w-5 h-5" />
+                        Try Again
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                </Card>
+              </motion.div>
+            )}
 
-              {planError && (
-                <div className="text-center py-12">
-                  <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Unable to Generate Plan</h4>
-                  <p className="text-gray-600 mb-4">There was an issue generating your implementation plan.</p>
-                  <Button
-                    variant="outline"
-                    onClick={refetch}
-                    className="flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Try Again
-                  </Button>
-                </div>
-              )}
+            {implementationPlan && (
+              <>
+                {/* Executive Summary */}
+                <motion.div
+                  id="executive-summary"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.5 }}
+                >
+                  <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
+                        <FileText className="w-6 h-6 text-neural-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-headline-3 font-bold text-neutral-900">Executive Summary</h3>
+                        <p className="text-body-small text-neutral-600">Strategic overview of your implementation approach</p>
+                      </div>
+                    </div>
+                    <p className="text-body text-neutral-700 leading-relaxed">{implementationPlan.executiveSummary}</p>
+                  </Card>
+                </motion.div>
 
-              {implementationPlan && (
-                <div className="space-y-6">
-                  {/* Executive Summary */}
-                  <div className="bg-white p-6 rounded-lg border border-indigo-200">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                      Executive Summary
-                    </h4>
-                    <p className="text-gray-700 leading-relaxed">{implementationPlan.executiveSummary}</p>
-                  </div>
-
-                  {/* Detailed Plan */}
-                  <div className="bg-white p-6 rounded-lg border border-indigo-200">
-                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <ClipboardList className="w-5 h-5 text-indigo-600" />
-                      Implementation Phases
-                    </h4>
-                    <div className="space-y-4">
+                {/* Implementation Phases */}
+                <motion.div
+                  id="implementation-phases"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                  <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
+                        <ClipboardList className="w-6 h-6 text-neural-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-headline-3 font-bold text-neutral-900">Implementation Phases</h3>
+                        <p className="text-body-small text-neutral-600">Detailed step-by-step implementation roadmap</p>
+                      </div>
+                    </div>
+                    <div className="space-y-6">
                       {implementationPlan.detailedPlan.map((phase, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h5 className="font-semibold text-gray-900">{phase.phase}</h5>
-                            <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="text-body-large font-bold text-neutral-900">{phase.phase}</h5>
+                            <span className="text-body-small font-medium text-neural-blue-700 bg-neural-blue-100 px-3 py-1 rounded-full shadow-sm">
                               {phase.duration}
                             </span>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <h6 className="font-medium text-gray-800 mb-2">Objectives</h6>
-                              <ul className="space-y-1">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-body-small">
+                            <div className="bg-white/70 p-4 rounded-lg">
+                              <h6 className="text-body font-bold text-neutral-800 mb-3 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-cyber-green-600" />
+                                Objectives
+                              </h6>
+                              <ul className="space-y-2">
                                 {phase.objectives.map((obj, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-gray-600">
-                                    <CheckCircle2 className="w-3 h-3 text-green-500 mt-1 flex-shrink-0" />
+                                  <li key={idx} className="flex items-start gap-2 text-neutral-600">
+                                    <span className="w-1 h-1 bg-cyber-green-600 rounded-full mt-2 flex-shrink-0"></span>
                                     {obj}
                                   </li>
                                 ))}
                               </ul>
                             </div>
                             
-                            <div>
-                              <h6 className="font-medium text-gray-800 mb-2">Key Activities</h6>
-                              <ul className="space-y-1">
+                            <div className="bg-white/70 p-4 rounded-lg">
+                              <h6 className="text-body font-bold text-neutral-800 mb-3 flex items-center gap-2">
+                                <ArrowRight className="w-4 h-4 text-neural-blue-600" />
+                                Key Activities
+                              </h6>
+                              <ul className="space-y-2">
                                 {phase.keyActivities.map((activity, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-gray-600">
-                                    <ArrowRight className="w-3 h-3 text-blue-500 mt-1 flex-shrink-0" />
+                                  <li key={idx} className="flex items-start gap-2 text-neutral-600">
+                                    <span className="w-1 h-1 bg-neural-blue-600 rounded-full mt-2 flex-shrink-0"></span>
                                     {activity}
                                   </li>
                                 ))}
@@ -1628,28 +1413,275 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </Card>
+                </motion.div>
 
-                  {/* Next Steps */}
-                  <div className="bg-white p-6 rounded-lg border border-indigo-200">
-                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Target className="w-5 h-5 text-indigo-600" />
-                      Immediate Next Steps
-                    </h4>
-                    <div className="space-y-2">
+                {/* Business Risk Assessment */}
+                <motion.div
+                  id="business-risk-assessment"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                  <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-amber-100 rounded-xl shadow-sm">
+                        <Shield className="w-6 h-6 text-amber-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-headline-3 font-bold text-neutral-900">Business Risk Assessment</h3>
+                        <p className="text-body-small text-neutral-600">Strategic risks and considerations for offshore scaling</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4 ${getRiskLevelColor(result.riskAssessment.level)}`}>
+                          <Activity className="w-4 h-4" />
+                          {result.riskAssessment.level.charAt(0).toUpperCase() + result.riskAssessment.level.slice(1)} Risk
+                        </div>
+                        
+                        <h4 className="text-body-large font-bold text-neutral-900 mb-4">Risk Factors</h4>
+                        <ul className="space-y-3">
+                          {result.riskAssessment.factors.map((factor, index) => (
+                            <li key={index} className="flex items-start gap-3 text-body-small text-neutral-600 p-3 bg-amber-50/50 rounded-lg">
+                              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                              {factor}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className="text-body-large font-bold text-neutral-900 mb-4">Mitigation Strategies</h4>
+                        <ul className="space-y-3">
+                          {result.riskAssessment.mitigationStrategies.map((strategy, index) => (
+                            <li key={index} className="flex items-start gap-3 text-body-small text-neutral-600 p-3 bg-cyber-green-50/50 rounded-lg">
+                              <CheckCircle2 className="w-5 h-5 text-cyber-green-500 mt-0.5 flex-shrink-0" />
+                              {strategy}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                {/* Implementation Risk Assessment & Mitigation */}
+                {implementationPlan.riskAssessment && implementationPlan.riskAssessment.length > 0 && (
+                  <motion.div
+                    id="risk-mitigation"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                  >
+                    <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 bg-amber-100 rounded-xl shadow-sm">
+                          <Shield className="w-6 h-6 text-amber-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-headline-3 font-bold text-neutral-900">Implementation Risk Mitigation</h3>
+                          <p className="text-body-small text-neutral-600">Specific implementation risks and detailed mitigation strategies</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        {implementationPlan.riskAssessment.map((risk, index) => (
+                          <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/20 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+                            <div className="flex items-start justify-between mb-3">
+                              <h5 className="text-body font-bold text-neutral-900">{risk.risk}</h5>
+                              <div className="flex gap-2">
+                                <span className={`text-caption font-medium px-3 py-1 rounded-full ${getRiskColor(risk.impact)}`}>
+                                  {risk.impact} Impact
+                                </span>
+                                <span className={`text-caption font-medium px-3 py-1 rounded-full ${getRiskColor(risk.probability)}`}>
+                                  {risk.probability} Probability
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-body-small text-neutral-600">
+                              <strong className="text-neural-blue-700">Mitigation:</strong> {risk.mitigation}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Claude AI Setup Guide */}
+                {implementationPlan.claudeAIGuide && (
+                  <motion.div
+                    id="ai-setup-guide"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                  >
+                    <Card className="p-6 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 bg-purple-100 rounded-xl shadow-sm">
+                          <Brain className="w-6 h-6 text-purple-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-headline-3 font-bold text-purple-900">Claude AI Setup Guide</h3>
+                          <p className="text-body-small text-purple-700">Complete guide for integrating AI into your offshore operations</p>
+                        </div>
+                      </div>
+                      
+                      {/* Setup Steps */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-800 mb-3">🚀 Getting Started with Claude AI</h5>
+                        <div className="space-y-4">
+                          {implementationPlan.claudeAIGuide.setupSteps.map((step, index) => (
+                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <h6 className="font-semibold text-gray-900 mb-2">{step.step}</h6>
+                              <p className="text-sm text-gray-600 mb-3">{step.description}</p>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div>
+                                  <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Instructions</div>
+                                  <ul className="space-y-1">
+                                    {step.instructions.map((instruction, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
+                                        <CheckCircle2 className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                        {instruction}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Pro Tips</div>
+                                  <ul className="space-y-1">
+                                    {step.tips.map((tip, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
+                                        <Lightbulb className="w-3 h-3 text-amber-500 mt-0.5 flex-shrink-0" />
+                                        {tip}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Job Description Templates */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-800 mb-3">📋 AI-Powered Job Description Templates</h5>
+                        <div className="space-y-4">
+                          {implementationPlan.claudeAIGuide.jobDescriptionTemplates.map((template, index) => (
+                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <h6 className="font-semibold text-gray-900 mb-2">{template.role}</h6>
+                              <p className="text-sm text-gray-600 mb-3">{template.template}</p>
+                              <div className="bg-gray-50 p-3 rounded border">
+                                <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Claude Prompt Template</div>
+                                <p className="text-xs text-gray-600 font-mono">{template.claudePrompt}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Training Processes */}
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-800 mb-3">🎓 AI-Enhanced Training Programs</h5>
+                        <div className="space-y-4">
+                          {implementationPlan.claudeAIGuide.trainingProcesses.map((process, index) => (
+                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <h6 className="font-semibold text-gray-900 mb-2">{process.process}</h6>
+                              <p className="text-sm text-gray-600 mb-3">{process.description}</p>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div>
+                                  <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Claude Prompts</div>
+                                  <div className="space-y-2">
+                                    {process.claudePrompts.map((prompt, idx) => (
+                                      <div key={idx} className="bg-gray-50 p-2 rounded border">
+                                        <p className="text-xs text-gray-600">{prompt}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Expected Outcomes</div>
+                                  <ul className="space-y-1">
+                                    {process.expectedOutcomes.map((outcome, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
+                                        <Target className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                                        {outcome}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Workflow Automation */}
+                      <div>
+                        <h5 className="font-medium text-gray-800 mb-3">⚡ Claude AI Workflow Automation</h5>
+                        <div className="space-y-4">
+                          {implementationPlan.claudeAIGuide.workflowAutomation.map((workflow, index) => (
+                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <h6 className="font-semibold text-gray-900 mb-2">{workflow.workflow}</h6>
+                              <p className="text-sm text-gray-600 mb-3">{workflow.description}</p>
+                              <div className="mb-3">
+                                <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Implementation Guide</div>
+                                <div className="bg-gray-50 p-3 rounded border">
+                                  <p className="text-xs text-gray-600">{workflow.claudeIntegration}</p>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">Key Benefits</div>
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                                  {workflow.benefits.map((benefit, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-600">
+                                      <Zap className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
+                                      {benefit}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Next Steps */}
+                <motion.div
+                  id="next-steps"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                  <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
+                        <Target className="w-6 h-6 text-neural-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-headline-3 font-bold text-neutral-900">Immediate Next Steps</h3>
+                        <p className="text-body-small text-neutral-600">Priority actions to begin your implementation</p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
                       {implementationPlan.nextSteps.map((step, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 text-sm font-medium rounded-full flex items-center justify-center">
+                        <div key={index} className="flex items-start gap-4 p-4 bg-gradient-to-br from-neural-blue-50 to-cyber-green-50 rounded-xl border border-neural-blue-100">
+                          <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white text-sm font-bold rounded-full flex items-center justify-center shadow-sm">
                             {index + 1}
                           </span>
-                          <p className="text-gray-700">{step}</p>
+                          <p className="text-body text-neutral-700 leading-relaxed">{step}</p>
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              )}
-            </Card>
+                  </Card>
+                </motion.div>
+              </>
+            )}
           </motion.div>
         )}
 
@@ -1663,7 +1695,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             className="space-y-8"
           >
             {/* Pitch Deck Header */}
-            <Card className="p-8 bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+            <Card id="pitch-header" className="p-8 bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
               <div className="text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
                   <Presentation className="w-4 h-4" />
@@ -1682,7 +1714,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             {/* Pitch Deck Slides */}
             <div className="grid gap-6">
               {/* Slide 1: Executive Summary */}
-              <Card className="p-6 border-l-4 border-l-blue-500">
+              <Card id="slide-1" className="p-6 border-l-4 border-l-blue-500">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
                     1
@@ -1730,7 +1762,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 2: Financial Impact */}
-              <Card className="p-6 border-l-4 border-l-green-500">
+              <Card id="slide-2" className="p-6 border-l-4 border-l-green-500">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-bold text-lg">
                     2
@@ -1759,7 +1791,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 3: Team Structure */}
-              <Card className="p-6 border-l-4 border-l-purple-500">
+              <Card id="slide-3" className="p-6 border-l-4 border-l-purple-500">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-lg">
                     3
@@ -1805,7 +1837,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 4: Implementation Timeline */}
-              <Card className="p-6 border-l-4 border-l-orange-500">
+              <Card id="slide-4" className="p-6 border-l-4 border-l-orange-500">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-lg">
                     4
@@ -1863,7 +1895,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 5: Risk Assessment */}
-              <Card className="p-6 border-l-4 border-l-amber-500">
+              <Card id="slide-5" className="p-6 border-l-4 border-l-amber-500">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center font-bold text-lg">
                     5
@@ -1903,7 +1935,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 6: Call to Action */}
-              <Card className="p-6 border-l-4 border-l-indigo-500">
+              <Card id="slide-6" className="p-6 border-l-4 border-l-indigo-500">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg">
                     6
@@ -2120,6 +2152,215 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           </div>
         </div>
       </motion.div>
+    </div> {/* Close main content area */}
+
+    {/* Floating Navigation Button */}
+    <div className="fixed bottom-20 right-4 z-50 group/tooltip">
+      <motion.button
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1, duration: 0.3 }}
+        onClick={() => setShowTableOfContents(!showTableOfContents)}
+        className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-3 rounded-xl shadow-lg hover:shadow-neural-glow transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
+        aria-label="Quick navigation"
+      >
+        <svg 
+          className="w-5 h-5 transform group-hover:-translate-y-0.5 transition-transform duration-200" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </motion.button>
+      
+      {/* Tooltip with breathing animation */}
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: 1, 
+              scale: [1, 1.05, 1],
+            }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ 
+              opacity: { duration: 0.3, delay: 1 },
+              scale: { 
+                duration: 2, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                delay: 1
+              }
+            }}
+            className="absolute bottom-full right-0 mb-2 pointer-events-none"
+          >
+            <div className="bg-gradient-to-r from-cyber-green-500 to-emerald-500 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+              Quick Navigation
+              <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-cyber-green-500"></div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+
+    {/* Navigation Popup */}
+    <AnimatePresence>
+      {showTableOfContents && (
+        <>
+          {/* Invisible overlay to close popup when clicking outside */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowTableOfContents(false)}
+          />
+          
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed bottom-32 right-4 w-80 bg-white/95 backdrop-blur-lg border border-neural-blue-200 rounded-2xl shadow-2xl z-50"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4">
+              {/* Tab Header */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-neural-blue-200">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-neural-blue-100 rounded-lg shadow-sm">
+                    <svg 
+                      className="w-5 h-5 text-neural-blue-600" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900">
+                      {activeTab === 'overview' && 'Overview & Analysis'}
+                      {activeTab === 'implementation' && 'Implementation Plan'}
+                      {activeTab === 'pitch' && 'Pitch Deck'}
+                    </h3>
+                    <p className="text-xs text-neutral-600">{getTableOfContents().length} sections</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowTableOfContents(false)}
+                  className="p-1 hover:bg-neural-blue-100 rounded-lg transition-colors duration-300"
+                >
+                  <ChevronDown className="w-5 h-5 text-neutral-500" />
+                </button>
+              </div>
+
+              {/* Tab Switcher */}
+              <div className="mb-4">
+                <div className="bg-neural-blue-50 rounded-lg p-1">
+                  <div className="grid grid-cols-3 gap-1">
+                    <button
+                      onClick={() => {
+                        setActiveTab('overview');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`flex items-center justify-center gap-1 py-2 px-2 rounded-md text-xs font-medium transition-all duration-300 ${
+                        activeTab === 'overview'
+                          ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-sm'
+                          : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-100'
+                      }`}
+                    >
+                      <BarChart3 className="w-3 h-3" />
+                      <span>Overview</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setActiveTab('implementation');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`flex items-center justify-center gap-1 py-2 px-2 rounded-md text-xs font-medium transition-all duration-300 ${
+                        activeTab === 'implementation'
+                          ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-sm'
+                          : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-100'
+                      }`}
+                    >
+                      <ClipboardList className="w-3 h-3" />
+                      <span>Plan</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setActiveTab('pitch');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`flex items-center justify-center gap-1 py-2 px-2 rounded-md text-xs font-medium transition-all duration-300 ${
+                        activeTab === 'pitch'
+                          ? 'bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white shadow-sm'
+                          : 'text-neural-blue-600 hover:text-neural-blue-800 hover:bg-neural-blue-100'
+                      }`}
+                    >
+                      <Presentation className="w-3 h-3" />
+                      <span>Pitch</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {getTableOfContents().map((section, index) => (
+                  <motion.button
+                    key={section.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.03, duration: 0.2 }}
+                    onClick={() => scrollToSection(section.id)}
+                    className="w-full flex items-center gap-3 p-3 text-left bg-white/70 hover:bg-neural-blue-50 border border-neural-blue-100 hover:border-neural-blue-300 rounded-lg transition-all duration-300 hover:shadow-sm group"
+                  >
+                    <div className="p-1.5 bg-neural-blue-100 group-hover:bg-neural-blue-200 rounded-md transition-colors duration-300 flex-shrink-0">
+                      {React.cloneElement(section.icon, { className: "w-4 h-4" })}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-neutral-900 truncate group-hover:text-neural-blue-700 transition-colors duration-300">
+                        {section.title}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-neutral-500">Section {index + 1}</span>
+                        <ArrowRight className="w-3 h-3 text-neural-blue-400 group-hover:text-neural-blue-600 transition-all duration-300 group-hover:translate-x-0.5" />
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+                
+                {/* Start New Calculation Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: getTableOfContents().length * 0.03 + 0.1, duration: 0.3 }}
+                  className="pt-3 mt-3 border-t border-gray-200"
+                >
+                                     <button
+                     onClick={() => {
+                       setShowTableOfContents(false);
+                       onRestart();
+                     }}
+                     className="w-full flex items-center gap-3 p-3 text-left bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 hover:from-neural-blue-600 hover:to-quantum-purple-600 text-white rounded-lg transition-all duration-300 hover:shadow-neural-glow group"
+                   >
+                    <div className="p-1.5 bg-white/20 rounded-md transition-colors duration-300 flex-shrink-0">
+                      <RefreshCw className="w-4 h-4" />
+                    </div>
+                                         <div className="flex-1 min-w-0">
+                       <h4 className="text-sm font-medium text-white flex items-center gap-2">
+                         Start New Calculation
+                         <ArrowRight className="w-3 h-3 text-white/80 transition-all duration-300 group-hover:translate-x-0.5" />
+                       </h4>
+                     </div>
+                  </button>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  </div>
   );
-} 
+}

@@ -298,7 +298,9 @@ export function OffshoreCalculator({
     if (formData.currentStep < 5) {
       updateFormData({ currentStep: (formData.currentStep + 1) as CalculatorStep });
       // Scroll to top of the page to show the new step
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     }
   };
 
@@ -306,7 +308,9 @@ export function OffshoreCalculator({
     if (formData.currentStep > 1) {
       updateFormData({ currentStep: (formData.currentStep - 1) as CalculatorStep });
       // Scroll to top of the page to show the new step
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     }
   };
 
@@ -337,6 +341,10 @@ export function OffshoreCalculator({
       
       // Advance to step 5 (results) after calculation is complete
       updateFormData({ currentStep: 5 });
+      // Scroll to top to show the step indicator and results
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
       analytics.trackEvent('calculation_complete', { 
         result
       });
@@ -358,6 +366,10 @@ export function OffshoreCalculator({
       lastUpdatedAt: new Date()
     });
     setCalculationResult(null);
+    // Scroll to top to show step 1 and step indicator
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
     analytics.trackEvent('calculator_restart');
     exitIntentContext.reset();
   };
@@ -509,31 +521,12 @@ export function OffshoreCalculator({
         initial="hidden"
         animate="visible"
         className="relative z-10"
-      >
-        {/* Calculator Header */}
-        <div className="mb-8 px-8 py-12 text-center">
-          {/* ScaleMate Badge */}
-          <div className="flex justify-center mb-8">
-            <Link href="/" className="transition-transform hover:scale-105">
-              <Card>
-                <>
-                  <div className="h-12 w-48 bg-gradient-neural-primary rounded-xl flex items-center justify-center relative overflow-hidden cursor-pointer">
-                    <span className="text-white font-display font-bold text-xl relative z-10">ScaleMate</span>
-                  </div>
-                </>
-              </Card>
-            </Link>
-          </div>
-          
-          <div className="mb-6">
-            <h1 className="text-display-3 gradient-text-neural font-display leading-tight text-center">
-              Offshore Scaling Calculator
-            </h1>
-          </div>
-          
-          <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
-            {getStepDescription(formData.currentStep)}
-          </p>
+              >
+        {/* Calculator Title */}
+        <div className="mb-8 text-center">
+          <h1 className="text-display-3 gradient-text-neural font-display leading-tight">
+            Offshore Scaling Calculator
+          </h1>
         </div>
 
         {/* Step Indicator */}
