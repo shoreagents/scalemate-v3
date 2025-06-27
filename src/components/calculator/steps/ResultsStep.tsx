@@ -88,11 +88,9 @@ function ResultCard({ icon, title, value, subtitle, color, delay = 0 }: ResultCa
 interface RoleBreakdownProps {
   breakdown: Record<RoleId, any>;
   formData: FormData;
-  isExpanded: boolean;
-  onToggle: () => void;
 }
 
-function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakdownProps) {
+function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
   const breakdownArray = Object.values(breakdown);
 
   // Helper function to get experience distribution for a role
@@ -129,36 +127,19 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
       transition={{ delay: 0.7, duration: 0.5 }}
     >
       <Card className="p-4 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-        <div 
-          className="flex items-center justify-between cursor-pointer group"
-          onClick={onToggle}
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 lg:p-3 bg-neural-blue-100 rounded-xl shadow-sm group-hover:bg-neural-blue-200 transition-colors duration-300">
-              <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Complete Team Overview & Role Breakdown</h3>
-              <p className="text-sm lg:text-base text-neutral-600 hidden sm:block">Team composition and detailed savings analysis for each role</p>
-              <p className="text-xs text-neutral-600 sm:hidden">Tap to expand details</p>
-            </div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 lg:p-3 bg-neural-blue-100 rounded-xl shadow-sm">
+            <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center text-sm text-neutral-500">
-              <span className="mr-2">{breakdownArray.length} roles</span>
-            </div>
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-            ) : (
-              <ChevronDown className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-400 group-hover:text-neural-blue-600 transition-colors duration-300" />
-            )}
+          <div>
+            <h3 className="text-lg lg:text-xl font-bold text-neutral-900">Complete Team Overview & Role Breakdown</h3>
+            <p className="text-sm lg:text-base text-neutral-600">Team composition and detailed savings analysis for each role</p>
           </div>
         </div>
 
-        {/* Team Overview - Always Visible */}
+        {/* Team Overview */}
         {totalMembers > 0 && (
-          <div className="mt-6 p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
-            {/* Header */}
+          <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm mb-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Users className="w-5 h-5 text-blue-600" />
@@ -171,9 +152,7 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
               </div>
             </div>
 
-            {/* Simplified Team Composition */}
             <div className="space-y-4">
-              {/* Entry Level */}
               {totalEntry > 0 && (
                 <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -194,7 +173,6 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                 </div>
               )}
 
-              {/* Mid Level */}
               {totalModerate > 0 && (
                 <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -215,7 +193,6 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                 </div>
               )}
 
-              {/* Senior Level */}
               {totalExperienced > 0 && (
                 <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -236,7 +213,6 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                 </div>
               )}
 
-              {/* Visual Summary Bar */}
               <div className="pt-2">
                 <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
                   <span>Team Composition</span>
@@ -270,199 +246,183 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
           </div>
         )}
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-6 space-y-4">
-                {breakdownArray.map((role, index) => {
-                  const roleData = ROLES[role.roleId as RoleId];
-                  if (!roleData) return null;
-                  return (
-                    <motion.div
-                      key={role.roleId}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1, duration: 0.3 }}
-                      className="p-4 lg:p-5 border border-neural-blue-100 bg-white/60 backdrop-blur-sm rounded-xl hover:border-neural-blue-300 hover:shadow-lg transition-all duration-300 group"
-                    >
-                      {/* Mobile-first header */}
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 lg:p-3 rounded-xl shadow-sm ${roleData.color.replace('bg-', 'bg-').replace('-600', '-100')} group-hover:scale-105 transition-transform duration-300`}>
-                            <span className="text-lg lg:text-xl">{roleData.icon}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-base lg:text-lg font-bold text-neutral-900 truncate">{role.roleName}</h4>
-                            <p className="text-sm text-neutral-600">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
-                          </div>
-                        </div>
-                        <div className="text-right sm:text-left lg:text-right">
-                          <p className="text-lg lg:text-xl font-bold text-cyber-green-600">
-                            ${role.savings.toLocaleString()}
-                          </p>
-                          <p className="text-sm text-neutral-600">
-                            {role.savingsPercentage.toFixed(1)}% savings/year
-                          </p>
-                        </div>
-                      </div>
+        {/* Role Breakdown Details */}
+        <div className="space-y-4">
+          {breakdownArray.map((role, index) => {
+            const roleData = ROLES[role.roleId as RoleId];
+            if (!roleData) return null;
+            return (
+              <motion.div
+                key={role.roleId}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+                className="p-4 lg:p-5 border border-neural-blue-100 bg-white/60 backdrop-blur-sm rounded-xl hover:border-neural-blue-300 hover:shadow-lg transition-all duration-300 group"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 lg:p-3 rounded-xl shadow-sm ${roleData.color.replace('bg-', 'bg-').replace('-600', '-100')} group-hover:scale-105 transition-transform duration-300`}>
+                      <span className="text-lg lg:text-xl">{roleData.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base lg:text-lg font-bold text-neutral-900 truncate">{role.roleName}</h4>
+                      <p className="text-sm text-neutral-600">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <div className="text-right sm:text-left lg:text-right">
+                    <p className="text-lg lg:text-xl font-bold text-cyber-green-600">
+                      ${role.savings.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-neutral-600">
+                      {role.savingsPercentage.toFixed(1)}% savings/year
+                    </p>
+                  </div>
+                </div>
 
-                      {/* Enhanced Experience Distribution Display */}
-                      {(() => {
-                        const experienceDistribution = getExperienceDistribution(role.roleId);
-                        return (
-                          <div className="space-y-4">
-                            {/* Enhanced Cost Breakdown */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                        <div className="p-3 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <p className="text-red-700 font-medium text-xs">Current Cost</p>
-                          </div>
-                          <p className="font-bold text-red-800 text-base">${role.australianCost.toLocaleString()}</p>
-                          <p className="text-xs text-red-600 mt-1">Australian workforce</p>
-                        </div>
-                        <div className="p-3 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
-                            <p className="text-cyber-green-700 font-medium text-xs">Offshore Cost</p>
-                          </div>
-                          <p className="font-bold text-cyber-green-800 text-base">${role.philippineCost.toLocaleString()}</p>
-                          <p className="text-xs text-cyber-green-600 mt-1">Philippine workforce</p>
-                        </div>
-                        <div className="p-3 bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
-                            <p className="text-neural-blue-700 font-medium text-xs">Core Tasks</p>
-                          </div>
-                          <p className="font-bold text-neural-blue-800 text-base">{role.selectedTasksCount}</p>
-                          <p className="text-xs text-neural-blue-600 mt-1">Standard tasks</p>
-                        </div>
-                        <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                            <p className="text-amber-700 font-medium text-xs">Implementation</p>
-                          </div>
-                          <p className="font-bold text-amber-800 text-base">{role.estimatedImplementationTime}</p>
-                          <p className="text-xs text-amber-600 mt-1">days to deploy</p>
-                        </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                    <div className="p-3 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <p className="text-red-700 font-medium text-xs">Current Cost</p>
                       </div>
+                      <p className="font-bold text-red-800 text-base">${role.australianCost.toLocaleString()}</p>
+                      <p className="text-xs text-red-600 mt-1">Australian workforce</p>
+                    </div>
+                    <div className="p-3 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
+                        <p className="text-cyber-green-700 font-medium text-xs">Offshore Cost</p>
+                      </div>
+                      <p className="font-bold text-cyber-green-800 text-base">${role.philippineCost.toLocaleString()}</p>
+                      <p className="text-xs text-cyber-green-600 mt-1">Philippine workforce</p>
+                    </div>
+                    <div className="p-3 bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
+                        <p className="text-neural-blue-700 font-medium text-xs">Core Tasks</p>
+                      </div>
+                      <p className="font-bold text-neural-blue-800 text-base">{role.selectedTasksCount}</p>
+                      <p className="text-xs text-neural-blue-600 mt-1">Standard tasks</p>
+                    </div>
+                    <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg hover:shadow-md transition-shadow duration-300">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                        <p className="text-amber-700 font-medium text-xs">Implementation</p>
+                      </div>
+                      <p className="font-bold text-amber-800 text-base">{role.estimatedImplementationTime}</p>
+                      <p className="text-xs text-amber-600 mt-1">days to deploy</p>
+                    </div>
+                  </div>
 
-                            {/* Enhanced Multi-Level Experience Breakdown */}
-                            {experienceDistribution && experienceDistribution.totalAssigned > 0 && (
-                              <div className="p-4 bg-gradient-to-r from-neural-blue-50/30 to-quantum-purple-50/30 rounded-xl border border-neural-blue-100">
-                                <h5 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                                  <Users className="w-4 h-4" />
-                                  Team Composition ({experienceDistribution.totalAssigned} members)
-                                </h5>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                  {experienceDistribution.entry > 0 && (
-                                    <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
-                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('entry')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
-                                        <span className="text-base sm:text-lg font-bold">{experienceDistribution.entry}</span>
-                                      </div>
-                                      <div className="flex-1 sm:flex-none">
-                                        <div className="text-sm sm:text-xs font-medium text-neutral-700">Entry Level</div>
-                                        <div className="text-xs text-neutral-500">Fresh talent</div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {experienceDistribution.moderate > 0 && (
-                                    <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
-                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('moderate')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
-                                        <span className="text-base sm:text-lg font-bold">{experienceDistribution.moderate}</span>
-                                      </div>
-                                      <div className="flex-1 sm:flex-none">
-                                        <div className="text-sm sm:text-xs font-medium text-neutral-700">Mid-Level</div>
-                                        <div className="text-xs text-neutral-500">Experienced</div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {experienceDistribution.experienced > 0 && (
-                                    <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
-                                      <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('experienced')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
-                                        <span className="text-base sm:text-lg font-bold">{experienceDistribution.experienced}</span>
-                                      </div>
-                                      <div className="flex-1 sm:flex-none">
-                                        <div className="text-sm sm:text-xs font-medium text-neutral-700">Senior Level</div>
-                                        <div className="text-xs text-neutral-500">Leadership</div>
-                                      </div>
-                                    </div>
-                                  )}
+                  {(() => {
+                    const experienceDistribution = getExperienceDistribution(role.roleId);
+                    if (experienceDistribution && experienceDistribution.totalAssigned > 0) {
+                      return (
+                        <div className="p-4 bg-gradient-to-r from-neural-blue-50/30 to-quantum-purple-50/30 rounded-xl border border-neural-blue-100">
+                          <h5 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Team Composition ({experienceDistribution.totalAssigned} members)
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {experienceDistribution.entry > 0 && (
+                              <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
+                                <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('entry')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
+                                  <span className="text-base sm:text-lg font-bold">{experienceDistribution.entry}</span>
                                 </div>
-                                
-                                {/* Experience Distribution Bar */}
-                                <div className="mt-3">
-                                  <div className="flex rounded-full overflow-hidden h-3 bg-neutral-200">
-                                    {experienceDistribution.entry > 0 && (
-                                      <div 
-                                        className="bg-green-500 transition-all duration-500"
-                                        style={{ width: `${(experienceDistribution.entry / experienceDistribution.totalAssigned) * 100}%` }}
-                                        title={`${experienceDistribution.entry} Entry Level (${Math.round((experienceDistribution.entry / experienceDistribution.totalAssigned) * 100)}%)`}
-                                      />
-                                    )}
-                                    {experienceDistribution.moderate > 0 && (
-                                      <div 
-                                        className="bg-blue-500 transition-all duration-500"
-                                        style={{ width: `${(experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100}%` }}
-                                        title={`${experienceDistribution.moderate} Mid-Level (${Math.round((experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100)}%)`}
-                                      />
-                                    )}
-                                    {experienceDistribution.experienced > 0 && (
-                                      <div 
-                                        className="bg-purple-500 transition-all duration-500"
-                                        style={{ width: `${(experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100}%` }}
-                                        title={`${experienceDistribution.experienced} Senior Level (${Math.round((experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100)}%)`}
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="flex justify-between text-xs text-neutral-500 mt-1">
-                                    <span>Entry</span>
-                                    <span>Mid</span>
-                                    <span>Senior</span>
-                                  </div>
+                                <div className="flex-1 sm:flex-none">
+                                  <div className="text-sm sm:text-xs font-medium text-neutral-700">Entry Level</div>
+                                  <div className="text-xs text-neutral-500">Fresh talent</div>
+                                </div>
+                              </div>
+                            )}
+                            {experienceDistribution.moderate > 0 && (
+                              <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
+                                <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('moderate')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
+                                  <span className="text-base sm:text-lg font-bold">{experienceDistribution.moderate}</span>
+                                </div>
+                                <div className="flex-1 sm:flex-none">
+                                  <div className="text-sm sm:text-xs font-medium text-neutral-700">Mid-Level</div>
+                                  <div className="text-xs text-neutral-500">Experienced</div>
+                                </div>
+                              </div>
+                            )}
+                            {experienceDistribution.experienced > 0 && (
+                              <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
+                                <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('experienced')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
+                                  <span className="text-base sm:text-lg font-bold">{experienceDistribution.experienced}</span>
+                                </div>
+                                <div className="flex-1 sm:flex-none">
+                                  <div className="text-sm sm:text-xs font-medium text-neutral-700">Senior Level</div>
+                                  <div className="text-xs text-neutral-500">Leadership</div>
                                 </div>
                               </div>
                             )}
                           </div>
-                        );
-                      })()}
-
-                      {role.riskFactors && role.riskFactors.length > 0 && (
-                        <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl shadow-sm">
-                          <div className="flex items-center gap-2 mb-3">
-                            <AlertTriangle className="w-5 h-5 text-amber-600" />
-                            <span className="text-body-small font-medium text-amber-800">Risk Considerations</span>
+                          
+                          <div className="mt-3">
+                            <div className="flex rounded-full overflow-hidden h-3 bg-neutral-200">
+                              {experienceDistribution.entry > 0 && (
+                                <div 
+                                  className="bg-green-500 transition-all duration-500"
+                                  style={{ width: `${(experienceDistribution.entry / experienceDistribution.totalAssigned) * 100}%` }}
+                                  title={`${experienceDistribution.entry} Entry Level (${Math.round((experienceDistribution.entry / experienceDistribution.totalAssigned) * 100)}%)`}
+                                />
+                              )}
+                              {experienceDistribution.moderate > 0 && (
+                                <div 
+                                  className="bg-blue-500 transition-all duration-500"
+                                  style={{ width: `${(experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100}%` }}
+                                  title={`${experienceDistribution.moderate} Mid-Level (${Math.round((experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100)}%)`}
+                                />
+                              )}
+                              {experienceDistribution.experienced > 0 && (
+                                <div 
+                                  className="bg-purple-500 transition-all duration-500"
+                                  style={{ width: `${(experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100}%` }}
+                                  title={`${experienceDistribution.experienced} Senior Level (${Math.round((experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100)}%)`}
+                                />
+                              )}
+                            </div>
+                            <div className="flex justify-between text-xs text-neutral-500 mt-1">
+                              <span>Entry</span>
+                              <span>Mid</span>
+                              <span>Senior</span>
+                            </div>
                           </div>
-                          <ul className="text-caption text-amber-700 space-y-2">
-                            {role.riskFactors.map((factor: string, idx: number) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="w-1 h-1 bg-amber-600 rounded-full mt-2 flex-shrink-0"></span>
-                                <span>{factor}</span>
-                              </li>
-                            ))}
-                          </ul>
                         </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+
+                {role.riskFactors && role.riskFactors.length > 0 && (
+                  <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      <span className="text-body-small font-medium text-amber-800">Risk Considerations</span>
+                    </div>
+                    <ul className="text-caption text-amber-700 space-y-2">
+                      {role.riskFactors.map((factor: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="w-1 h-1 bg-amber-600 rounded-full mt-2 flex-shrink-0"></span>
+                          <span>{factor}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
       </Card>
     </motion.div>
   );
 }
 
 export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
-  const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
   const [showImplementationPlan, setShowImplementationPlan] = useState(false);
   const [showAIPlan, setShowAIPlan] = useState(false);
   const [showTableOfContents, setShowTableOfContents] = useState(false);
@@ -1245,15 +1205,13 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         </Card>
       </motion.div>
 
-      {/* Role Breakdown */}
-      <div id="role-breakdown">
-        <RoleBreakdown 
-          breakdown={result.breakdown}
-          formData={formData}
-          isExpanded={isBreakdownExpanded}
-          onToggle={() => setIsBreakdownExpanded(!isBreakdownExpanded)}
-        />
-      </div>
+              {/* Role Breakdown */}
+        <div id="role-breakdown">
+          <RoleBreakdown 
+            breakdown={result.breakdown}
+            formData={formData}
+          />
+        </div>
 
 
 
