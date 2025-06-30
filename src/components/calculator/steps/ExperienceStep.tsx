@@ -505,7 +505,6 @@ export function ExperienceStep({
                             <div className="text-sm font-bold text-green-600">
                               {userLocation?.currencySymbol || '$'}{totalRoleSavings.toLocaleString()}
                             </div>
-                            <div className="text-xs text-neutral-600">Annual savings</div>
                           </div>
                         </div>
                       );
