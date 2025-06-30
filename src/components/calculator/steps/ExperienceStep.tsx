@@ -709,9 +709,9 @@ export function ExperienceStep({
                       return (
                         <div key={role.id} className="bg-white/70 p-3 rounded-lg">
                           <div className="mb-2">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex flex-col items-center gap-2 mb-1">
                               <span className="text-lg">{role.icon}</span>
-                              <div className="font-medium text-sm text-neutral-900">{role.title}</div>
+                              <div className="font-medium text-sm text-neutral-900 text-center">{role.title}</div>
                             </div>
                             <div className="text-xs text-neutral-600 text-center">
                               {role.distribution.entry > 0 && `${role.distribution.entry} Entry Level`}
