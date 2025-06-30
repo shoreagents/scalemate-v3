@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
-import { ROLES } from '@/utils/rolesData';
-import { ROLE_TASKS, ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
+import { ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/rolesData';
 import { Button } from '@/components/ui/Button';
 import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, X, Sparkles } from 'lucide-react';
 
@@ -23,16 +22,10 @@ export function TaskSelectionStep({
 }: TaskSelectionStepProps) {
   // Helper function to get role data from all sources
   const getRoleData = (roleId: RoleId) => {
-    // Get tasks from ROLE_TASKS
-    const tasks = ROLE_TASKS[roleId] || [];
-    
-    // First check ROLES
+    // First check ROLES (now includes tasks)
     if (roleId in ROLES) {
       const enhancedRole = ROLES[roleId as keyof typeof ROLES];
-      return {
-        ...enhancedRole,
-        tasks
-      };
+      return enhancedRole;
     }
     
     // Then check ADDITIONAL_PROPERTY_ROLES
@@ -43,16 +36,8 @@ export function TaskSelectionStep({
         title: additionalRole?.title || `${roleId} Role`,
         icon: additionalRole?.icon || '📋',
         description: additionalRole?.description || 'Custom property management role',
-        tasks, // Use tasks from ROLE_TASKS
+        tasks: [], // Additional roles don't have predefined tasks
         category: additionalRole?.category || 'custom'
-      };
-    }
-    
-    // Finally check ROLES (legacy)
-    if (ROLES[roleId as keyof typeof ROLES]) {
-      return {
-        ...ROLES[roleId as keyof typeof ROLES],
-        tasks
       };
     }
     
@@ -62,7 +47,7 @@ export function TaskSelectionStep({
       title: `${roleId} Role`,
       icon: '📋',
       description: 'Custom role',
-      tasks,
+      tasks: [],
       category: 'custom'
     };
   };
@@ -77,10 +62,10 @@ export function TaskSelectionStep({
     leasingCoordinator: false,
     marketingSpecialist: false,
   });
-  const [customTaskInputs, setCustomTaskInputs] = useState<Record<RoleId, { name: string; description: string }>>({
-    assistantPropertyManager: { name: '', description: '' },
-    leasingCoordinator: { name: '', description: '' },
-    marketingSpecialist: { name: '', description: '' },
+  const [customTaskInputs, setCustomTaskInputs] = useState<Record<RoleId, { name: string; description: string; complexity: TaskComplexity }>>({
+    assistantPropertyManager: { name: '', description: '', complexity: 'medium' },
+    leasingCoordinator: { name: '', description: '', complexity: 'medium' },
+    marketingSpecialist: { name: '', description: '', complexity: 'medium' },
   });
 
   const activeRoles = Object.entries(selectedRoles)
@@ -111,7 +96,7 @@ export function TaskSelectionStep({
       id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: input.name.trim(),
       description: input.description.trim(),
-      estimatedComplexity: 'medium',
+      estimatedComplexity: input.complexity,
       createdAt: new Date(),
     };
 
@@ -125,7 +110,7 @@ export function TaskSelectionStep({
     // Reset input
     setCustomTaskInputs(prev => ({
       ...prev,
-      [roleId]: { name: '', description: '' }
+      [roleId]: { name: '', description: '', complexity: 'medium' }
     }));
     setShowAddCustom(prev => ({ ...prev, [roleId]: false }));
   };
@@ -138,21 +123,22 @@ export function TaskSelectionStep({
     onChange(selectedTasks, updatedCustomTasks);
   };
 
-  const updateCustomTaskInput = (roleId: RoleId, field: 'name' | 'description', value: string) => {
+  const updateCustomTaskInput = (roleId: RoleId, field: 'name' | 'description' | 'complexity', value: string | TaskComplexity) => {
     setCustomTaskInputs(prev => ({
       ...prev,
       [roleId]: {
         ...prev[roleId],
         name: prev[roleId]?.name || '',
         description: prev[roleId]?.description || '',
+        complexity: prev[roleId]?.complexity || 'medium',
         [field]: value
       }
     }));
   };
 
   const getSelectedTasksCount = (roleId: RoleId) => {
-    const roleTasks = ROLE_TASKS[roleId];
-    const standardTasks = roleTasks ? roleTasks.filter(task => 
+    const role = getRoleData(roleId);
+    const standardTasks = role.tasks ? role.tasks.filter(task => 
       selectedTasks[`${roleId}-${task.id}`]
     ).length : 0;
     const customTasksCount = customTasks[roleId]?.length || 0;
@@ -171,6 +157,31 @@ export function TaskSelectionStep({
       case 'analysis': return '🔍';
       case 'coordination': return '🤝';
       default: return '⚡';
+    }
+  };
+
+  const getComplexityBadge = (complexity: TaskComplexity) => {
+    switch (complexity) {
+      case 'low':
+        return (
+          <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center">
+            Easy Task
+          </span>
+        );
+      case 'medium':
+        return (
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full flex items-center">
+            Standard Task
+          </span>
+        );
+      case 'high':
+        return (
+          <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full flex items-center">
+            Complex Task
+          </span>
+        );
+      default:
+        return null;
     }
   };
 
@@ -197,12 +208,47 @@ export function TaskSelectionStep({
         <p className="text-body-large text-neutral-600">
           Choose which tasks you&apos;d like to offshore for each role. You can also add custom tasks.
         </p>
-        {getTotalSelectedTasks() > 0 && (
-          <div className="mt-4 inline-flex items-center px-4 py-2 bg-neural-blue-50 text-neural-blue-700 rounded-lg">
-            <Sparkles className="w-4 h-4 mr-2" />
-            {getTotalSelectedTasks()} tasks selected across {activeRoles.length} role{activeRoles.length > 1 ? 's' : ''}
+        
+        {/* Task Complexity Guide */}
+        <div className="mt-6 mb-4 p-6 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden">
+          {/* Moving glow effects */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          
+          <div className="relative z-10">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-bold text-neural-blue-900 ">
+                Task Complexity Guide
+              </h3>
+              <p className="text-sm text-gray-800">
+                Each task is labeled with its complexity level to help you understand requirements
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="inline-flex px-3 py-2 bg-green-100 text-green-700 font-semibold rounded-full items-center mb-2">
+                  Easy Task
+                </div>
+                <p className="text-xs text-gray-600">Simple, routine work requiring basic skills</p>
+              </div>
+              <div>
+                <div className="inline-flex px-3 py-2 bg-yellow-100 text-yellow-700 font-semibold rounded-full items-center mb-2">
+                  Standard Task
+                </div>
+                <p className="text-xs text-gray-600">Moderate skill required with some experience</p>
+              </div>
+              <div>
+                <div className="inline-flex px-3 py-2 bg-red-100 text-red-700 font-semibold rounded-full items-center mb-2">
+                  Complex Task
+                </div>
+                <p className="text-xs text-gray-600">Advanced expertise and specialized knowledge needed</p>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+
       </div>
 
       {/* Role Task Lists */}
@@ -278,6 +324,7 @@ export function TaskSelectionStep({
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 space-y-2">
+                                  <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-3">
                                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                                       isSelected 
@@ -287,6 +334,8 @@ export function TaskSelectionStep({
                                       {isSelected && <Check className="w-3 h-3 text-white" />}
                                     </div>
                                     <h4 className="font-medium text-gray-900">{task.name}</h4>
+                                    </div>
+                                    {getComplexityBadge(task.complexity)}
                                   </div>
                                   
                                   <div className="ml-8">
@@ -310,8 +359,9 @@ export function TaskSelectionStep({
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <div className="mb-2">
+                                  <div className="mb-2 flex items-center justify-between">
                                     <h4 className="font-medium text-gray-900">{task.name}</h4>
+                                    {getComplexityBadge(task.estimatedComplexity)}
                                   </div>
                                   <p className="text-sm text-gray-700">{task.description}</p>
                                 </div>
@@ -356,6 +406,23 @@ export function TaskSelectionStep({
                                   className="w-full px-4 py-3 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white resize-none"
                                 />
                               </div>
+                                                              <div>
+                                  <label className="block text-sm font-medium text-neural-blue-700 mb-2">
+                                    Task Complexity Level
+                                  </label>
+                                  <select
+                                    value={customTaskInputs[roleId]?.complexity || 'medium'}
+                                    onChange={(e) => updateCustomTaskInput(roleId, 'complexity', e.target.value as TaskComplexity)}
+                                    className="w-full px-4 py-3 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white"
+                                  >
+                                    <option value="low">🟢 Easy Task - Simple, routine work</option>
+                                    <option value="medium">🟡 Standard Task - Moderate skill required</option>
+                                    <option value="high">🔴 Complex Task - Advanced expertise needed</option>
+                                  </select>
+                                  <p className="mt-1 text-xs text-neural-blue-600">
+                                    Complexity affects time estimates and pricing calculations
+                                  </p>
+                              </div>
                             </div>
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
@@ -377,21 +444,22 @@ export function TaskSelectionStep({
                             </div>
                           </div>
                         ) : (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                          <button
                             onClick={() => setShowAddCustom(prev => ({ ...prev, [roleId]: true }))}
-                            className="w-full p-4 border-2 border-dashed border-neural-blue-200 hover:border-neural-blue-300 bg-gradient-to-r from-neural-blue-25 to-quantum-purple-25 hover:from-neural-blue-50 hover:to-quantum-purple-50 rounded-xl transition-all duration-200 group"
+                            className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
                           >
-                            <div className="flex items-center justify-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-cyber-green-100 group-hover:bg-cyber-green-200 flex items-center justify-center transition-colors">
-                                <Plus className="w-4 h-4 text-cyber-green-600" />
+                            <div className="flex items-center justify-between">
+                              <div className="text-left">
+                                <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
+                                  Need something specific?
+                                </h3>
+                                <p className="text-sm text-neural-blue-600">
+                                  Add custom tasks tailored to your {role.title} role requirements
+                                </p>
                               </div>
-                              <span className="font-medium text-neural-blue-700 group-hover:text-neural-blue-800">
-                                Add Custom Task for {role.title}
-                              </span>
+                              <Plus className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
                             </div>
-                          </motion.button>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -416,25 +484,25 @@ export function TaskSelectionStep({
           
           <div className="relative z-10">
             <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
+            <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
                 Selection Summary
               </h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div>
+                <div className="text-sm text-gray-600 font-bold">Total Tasks</div>
                 <div className="text-2xl font-bold text-neural-blue-600">{getTotalSelectedTasks()}</div>
-                <div className="text-sm text-neural-blue-600">Total Tasks</div>
               </div>
               <div>
+                <div className="text-sm text-gray-600 font-bold">Active Roles</div>
                 <div className="text-2xl font-bold text-quantum-purple-600">{activeRoles.length}</div>
-                <div className="text-sm text-neural-blue-600">Active Roles</div>
               </div>
               <div>
+              <div className="text-sm text-gray-600 font-bold">Custom Tasks</div>
                 <div className="text-2xl font-bold text-cyber-green-600">
                   {Object.values(customTasks).reduce((sum, tasks) => sum + tasks.length, 0)}
                 </div>
-                <div className="text-sm text-neural-blue-600">Custom Tasks</div>
               </div>
             </div>
           </div>

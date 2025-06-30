@@ -1,10 +1,18 @@
 // Roles Data Service - Dynamic location-based roles and salary data
-import { MultiCountryRoleSalaryData, RoleCategory, CountrySalaryData } from '@/types';
+import { 
+  MultiCountryRoleSalaryData, 
+  RoleCategory, 
+  CountrySalaryData,
+  RoleId,
+  Task,
+  TaskComplexity,
+  EnhancedRole
+} from '@/types';
 import { LocationData, ManualLocation } from '@/types/location';
 import { getDirectExchangeRate, getCurrencyByCountry } from './currency';
 
 // Enhanced multi-country salary data with detailed breakdowns - Updated with 2025 market rates
-export const ROLES_SALARY_COMPARISON: Readonly<Record<string, MultiCountryRoleSalaryData>> = {
+const SALARY_DATA = {
   assistantPropertyManager: {
     Australia: {
       entry: { base: 50000, total: 65000, benefits: 10000, taxes: 15000 },
@@ -118,6 +126,130 @@ export const ROLES_SALARY_COMPARISON: Readonly<Record<string, MultiCountryRoleSa
   }
 } as const;
 
+// Additional searchable property management roles (predefined but not in original 3)
+export const ADDITIONAL_PROPERTY_ROLES: Readonly<Record<string, Partial<EnhancedRole>>> = {
+  maintenanceCoordinator: {
+    title: 'Maintenance Coordinator',
+    icon: '🔧',
+    description: 'Coordinates maintenance requests, vendor management, and property upkeep schedules.',
+    category: 'maintenance'
+  },
+  propertyAccountant: {
+    title: 'Property Accountant',
+    icon: '💰',
+    description: 'Manages financial records, rent collection, budgeting, and financial reporting.',
+    category: 'finance'
+  },
+  tenantRelationsSpecialist: {
+    title: 'Tenant Relations Specialist',
+    icon: '🤝',
+    description: 'Handles tenant communications, resolves conflicts, and manages resident satisfaction.',
+    category: 'property-management'
+  },
+  propertyInspector: {
+    title: 'Property Inspector',
+    icon: '🔍',
+    description: 'Conducts property inspections, move-in/move-out assessments, and compliance checks.',
+    category: 'property-management'
+  },
+  leasingAgent: {
+    title: 'Leasing Agent',
+    icon: '🏠',
+    description: 'Shows properties, processes applications, and converts prospects into tenants.',
+    category: 'leasing'
+  }
+} as const;
+
+// Task definitions for each role
+const TASKS_DATA = {
+  assistantPropertyManager: [
+    {
+      id: 'apm-tenant-screening',
+      name: 'Tenant Application Screening',
+      tooltip: 'Automate reference checks, income verification, and risk scoring for faster tenant approvals.',
+      complexity: 'medium'
+    },
+    {
+      id: 'apm-maintenance-coordination',
+      name: 'Maintenance Coordination',
+      tooltip: 'AI matches maintenance requests with best-fit contractors and optimizes scheduling.',
+      complexity: 'medium'
+    },
+    {
+      id: 'apm-lease-renewals',
+      name: 'Lease Renewal Processing',
+      tooltip: 'Automatically calculate rent increases, generate renewal documents, and track responses.',
+      complexity: 'low'
+    },
+    {
+      id: 'apm-compliance-tracking',
+      name: 'Compliance Documentation',
+      tooltip: 'Track regulatory requirements, automate compliance reporting, and flag potential issues.',
+      complexity: 'high'
+    }
+  ],
+  leasingCoordinator: [
+    {
+      id: 'lc-inquiry-management',
+      name: 'Inquiry Response Management',
+      tooltip: 'Automatically respond to common inquiries with personalized, AI-generated responses.',
+      complexity: 'low'
+    },
+    {
+      id: 'lc-property-tours',
+      name: 'Virtual Tour Coordination',
+      tooltip: 'Schedule virtual tours, send automated follow-ups, and track prospect engagement.',
+      complexity: 'medium'
+    },
+    {
+      id: 'lc-application-processing',
+      name: 'Application Processing',
+      tooltip: 'Streamline application reviews, automate document collection, and speed up approvals.',
+      complexity: 'medium'
+    },
+    {
+      id: 'lc-lease-preparation',
+      name: 'Lease Document Preparation',
+      tooltip: 'Generate customized lease agreements, automate clause selection, and ensure compliance.',
+      complexity: 'high'
+    }
+  ],
+  marketingSpecialist: [
+    {
+      id: 'ms-content-creation',
+      name: 'Marketing Content Creation',
+      tooltip: 'Generate property listings, social media content, and marketing materials automatically.',
+      complexity: 'medium'
+    },
+    {
+      id: 'ms-lead-generation',
+      name: 'Lead Generation Campaigns',
+      tooltip: 'Optimize ad targeting, automate lead nurturing, and track conversion rates.',
+      complexity: 'high'
+    },
+    {
+      id: 'ms-market-analysis',
+      name: 'Market Analysis & Reporting',
+      tooltip: 'Analyze rental trends, competitor pricing, and generate market insights automatically.',
+      complexity: 'high'
+    },
+    {
+      id: 'ms-social-media',
+      name: 'Social Media Management',
+      tooltip: 'Schedule posts, respond to comments, and track engagement across all platforms.',
+      complexity: 'low'
+    }
+  ]
+} as const;
+
+// Task complexity multipliers
+export const TASK_COMPLEXITY_MULTIPLIERS: Readonly<Record<TaskComplexity | 'custom', number>> = {
+  low: 1,
+  medium: 1.5,
+  high: 2,
+  custom: 1
+} as const;
+
 // Simplified enhanced property management roles for Step 2 implementation
 export const ROLES = {
   assistantPropertyManager: {
@@ -128,10 +260,8 @@ export const ROLES = {
     category: 'property-management' as RoleCategory,
     type: 'predefined' as const,
     color: 'brand-primary',
-    salaryData: ROLES_SALARY_COMPARISON.assistantPropertyManager,
-    requiredSkills: ['Property Management', 'Tenant Relations', 'Administrative Skills', 'Communication'],
-    optionalSkills: ['Maintenance Coordination', 'Compliance Knowledge', 'Basic Accounting'],
-    searchKeywords: ['property', 'manager', 'tenant', 'administration', 'operations', 'maintenance', 'compliance']
+    salaryData: SALARY_DATA.assistantPropertyManager,
+    tasks: TASKS_DATA.assistantPropertyManager
   },
   leasingCoordinator: {
     id: 'leasingCoordinator',
@@ -141,10 +271,8 @@ export const ROLES = {
     category: 'leasing' as RoleCategory,
     type: 'predefined' as const,
     color: 'brand-secondary',
-    salaryData: ROLES_SALARY_COMPARISON.leasingCoordinator,
-    requiredSkills: ['Sales Skills', 'Customer Service', 'Application Processing', 'Market Knowledge'],
-    optionalSkills: ['Marketing Skills', 'CRM Software', 'Negotiation Skills'],
-    searchKeywords: ['leasing', 'coordinator', 'sales', 'applications', 'prospects', 'tours', 'inquiries']
+    salaryData: SALARY_DATA.leasingCoordinator,
+    tasks: TASKS_DATA.leasingCoordinator
   },
   marketingSpecialist: {
     id: 'marketingSpecialist',
@@ -154,12 +282,16 @@ export const ROLES = {
     category: 'marketing' as RoleCategory,
     type: 'predefined' as const,
     color: 'brand-accent',
-    salaryData: ROLES_SALARY_COMPARISON.marketingSpecialist,
-    requiredSkills: ['Digital Marketing', 'Content Creation', 'Analytics', 'Social Media'],
-    optionalSkills: ['Graphic Design', 'SEO/SEM', 'Video Production', 'Data Analysis'],
-    searchKeywords: ['marketing', 'specialist', 'digital', 'social media', 'content', 'campaigns', 'analytics']
+    salaryData: SALARY_DATA.marketingSpecialist,
+    tasks: TASKS_DATA.marketingSpecialist
   }
 } as const;
+
+// Backward compatibility: Export tasks in the old format for existing code
+export const ROLE_TASKS: Readonly<Record<RoleId, readonly Task[]>> = TASKS_DATA;
+
+// Backward compatibility: Export salary data in the old format for existing code
+export const ROLES_SALARY_COMPARISON: Readonly<Record<string, MultiCountryRoleSalaryData>> = SALARY_DATA;
 
 // Cache interfaces and constants
 interface RolesCacheEntry {
@@ -269,7 +401,7 @@ const combinedCache = typeof window !== 'undefined' ? loadCombinedCacheFromStora
  */
 function hasStaticDataForCountry(countryName: string): boolean {
   // Check if the country exists in any of the role's salary data
-  const assistantManagerData = ROLES_SALARY_COMPARISON.assistantPropertyManager;
+  const assistantManagerData = SALARY_DATA.assistantPropertyManager;
   if (!assistantManagerData) return false;
   
   // Check if the country exists as a key in the salary data
@@ -278,13 +410,14 @@ function hasStaticDataForCountry(countryName: string): boolean {
 
 /**
  * Convert salary data from USD to target currency
+ * @deprecated This function is no longer used - currency conversion is handled by the combined API
  */
-function convertSalaryDataToCurrency(
+async function convertSalaryDataToCurrency(
   salaryData: typeof ROLES_SALARY_COMPARISON,
   targetCurrency: string,
   targetCountry: string
-): typeof ROLES_SALARY_COMPARISON {
-  const multiplier = getDirectExchangeRate('USD', targetCurrency);
+): Promise<typeof ROLES_SALARY_COMPARISON> {
+  const multiplier = await getDirectExchangeRate('USD', targetCurrency);
   
   if (multiplier === 1.0) {
     // No conversion needed for USD
@@ -371,15 +504,15 @@ async function generateDynamicRoles(location: LocationData): Promise<typeof ROLE
     const dynamicRoles = {
       assistantPropertyManager: {
         ...rolesData.assistantPropertyManager,
-        salaryData: ROLES_SALARY_COMPARISON.assistantPropertyManager, // Use static salary data for now
+        salaryData: SALARY_DATA.assistantPropertyManager, // Use static salary data for now
       },
       leasingCoordinator: {
         ...rolesData.leasingCoordinator,
-        salaryData: ROLES_SALARY_COMPARISON.leasingCoordinator,
+        salaryData: SALARY_DATA.leasingCoordinator,
       },
       marketingSpecialist: {
         ...rolesData.marketingSpecialist,
-        salaryData: ROLES_SALARY_COMPARISON.marketingSpecialist,
+        salaryData: SALARY_DATA.marketingSpecialist,
       }
     } as const;
 
@@ -430,56 +563,42 @@ async function generateDynamicRolesSalaryComparison(location: LocationData): Pro
 }
 
 /**
- * Generate both roles and salary data in a single API call for optimal performance
+ * Generate both roles and salary data using the new combined API endpoint
  */
 async function generateBothData(location: LocationData): Promise<{roles: typeof ROLES, rolesSalaryComparison: typeof ROLES_SALARY_COMPARISON} | null> {
   try {
-    console.log('🤖 Generating both roles and salary data using API for:', location.countryName || location.country);
+    console.log('🤖 Generating both roles and salary data using combined API for:', location.countryName || location.country);
     
-    const response = await fetch('/api/anthropic/roles', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        location,
-        requestType: 'both'
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('❌ Failed to generate combined data:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
+    // Import the combined data function from quoteCalculatorData
+    const { generateCombinedLocationData } = await import('./quoteCalculatorData');
+    const combinedData = await generateCombinedLocationData(location);
     
-    if (!data.success || !data.roles || !data.rolesSalaryComparison) {
+    if (!combinedData.roles || !combinedData.rolesSalaryComparison) {
       console.error('❌ Invalid response from combined API');
       return null;
     }
 
     // Convert API response to proper ROLES format
-    const rolesData = data.roles;
+    const rolesData = combinedData.roles;
     const dynamicRoles = {
       assistantPropertyManager: {
         ...rolesData.assistantPropertyManager,
-        salaryData: data.rolesSalaryComparison.assistantPropertyManager,
+        salaryData: combinedData.rolesSalaryComparison.assistantPropertyManager,
       },
       leasingCoordinator: {
         ...rolesData.leasingCoordinator,
-        salaryData: data.rolesSalaryComparison.leasingCoordinator,
+        salaryData: combinedData.rolesSalaryComparison.leasingCoordinator,
       },
       marketingSpecialist: {
         ...rolesData.marketingSpecialist,
-        salaryData: data.rolesSalaryComparison.marketingSpecialist,
+        salaryData: combinedData.rolesSalaryComparison.marketingSpecialist,
       }
     } as const;
 
-    console.log('✅ Combined data generated successfully');
+    console.log('✅ Combined data generated successfully via new API');
     return {
       roles: dynamicRoles,
-      rolesSalaryComparison: data.rolesSalaryComparison as typeof ROLES_SALARY_COMPARISON
+      rolesSalaryComparison: combinedData.rolesSalaryComparison as typeof ROLES_SALARY_COMPARISON
     };
   } catch (error) {
     console.error('❌ Error generating combined data:', error);
@@ -548,15 +667,15 @@ export async function getRoles(location?: LocationData): Promise<typeof ROLES> {
       ...ROLES,
       assistantPropertyManager: {
         ...ROLES.assistantPropertyManager,
-        salaryData: ROLES_SALARY_COMPARISON.assistantPropertyManager
+        salaryData: SALARY_DATA.assistantPropertyManager
       },
       leasingCoordinator: {
         ...ROLES.leasingCoordinator,
-        salaryData: ROLES_SALARY_COMPARISON.leasingCoordinator
+        salaryData: SALARY_DATA.leasingCoordinator
       },
       marketingSpecialist: {
         ...ROLES.marketingSpecialist,
-        salaryData: ROLES_SALARY_COMPARISON.marketingSpecialist
+        salaryData: SALARY_DATA.marketingSpecialist
       }
     };
   }
@@ -567,15 +686,15 @@ export async function getRoles(location?: LocationData): Promise<typeof ROLES> {
     ...ROLES,
     assistantPropertyManager: {
       ...ROLES.assistantPropertyManager,
-      salaryData: ROLES_SALARY_COMPARISON.assistantPropertyManager
+      salaryData: SALARY_DATA.assistantPropertyManager
     },
     leasingCoordinator: {
       ...ROLES.leasingCoordinator,
-      salaryData: ROLES_SALARY_COMPARISON.leasingCoordinator
+      salaryData: SALARY_DATA.leasingCoordinator
     },
     marketingSpecialist: {
       ...ROLES.marketingSpecialist,
-      salaryData: ROLES_SALARY_COMPARISON.marketingSpecialist
+      salaryData: SALARY_DATA.marketingSpecialist
     }
   };
 }

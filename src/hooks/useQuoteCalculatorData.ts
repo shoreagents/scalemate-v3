@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PortfolioSize, PortfolioIndicator } from '@/types';
 import { ManualLocation, LocationData } from '@/types/location';
 import { getPortfolioIndicators, getStaticPortfolioIndicators } from '@/utils/quoteCalculatorData';
-import { getRoles, getRolesSalaryComparison, getStaticRoles, getStaticRolesSalaryComparison, ROLES, ROLES_SALARY_COMPARISON } from '@/utils/rolesData';
+import { getRoles, getRolesSalaryComparison, getStaticRoles, getStaticRolesSalaryComparison, ROLES } from '@/utils/rolesData';
 import { getCurrencySymbol, getCurrencyByCountry } from '@/utils/currency';
 
 // Re-export currency utilities for backward compatibility
@@ -11,7 +11,7 @@ export { getCurrencySymbol, getCurrencyByCountry };
 interface UseQuoteCalculatorDataResult {
   portfolioIndicators: Record<PortfolioSize, PortfolioIndicator>;
   roles: typeof ROLES;
-  rolesSalaryComparison: typeof ROLES_SALARY_COMPARISON;
+  rolesSalaryComparison: Awaited<ReturnType<typeof getRolesSalaryComparison>>;
   isLoading: boolean;
   isLoadingRoles: boolean;
   error: string | null;
@@ -30,7 +30,7 @@ export function useQuoteCalculatorData(
     getStaticPortfolioIndicators()
   );
   const [roles, setRoles] = useState<typeof ROLES>(getStaticRoles());
-  const [rolesSalaryComparison, setRolesSalaryComparison] = useState<typeof ROLES_SALARY_COMPARISON>(getStaticRolesSalaryComparison());
+  const [rolesSalaryComparison, setRolesSalaryComparison] = useState(getStaticRolesSalaryComparison());
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +38,12 @@ export function useQuoteCalculatorData(
   const [isUsingDynamicData, setIsUsingDynamicData] = useState(false);
   const [isUsingDynamicRoles, setIsUsingDynamicRoles] = useState(false);
 
-  // Get effective location data (manual takes priority)
-  const getEffectiveLocation = useCallback((): LocationData | null => {
+  // Cache to prevent duplicate API calls for same location
+  const processedLocationRef = useRef<string | null>(null);
+  const processedRolesLocationRef = useRef<string | null>(null);
+
+  // Get effective location data (manual takes priority) - memoized to prevent recreations
+  const effectiveLocation = useMemo((): LocationData | null => {
     if (manualLocation?.country) {
       // Convert manual location to LocationData format
       return {
@@ -53,9 +57,19 @@ export function useQuoteCalculatorData(
     return locationData || null;
   }, [locationData, manualLocation]);
 
+  // Create location cache key
+  const locationCacheKey = useMemo(() => {
+    if (!effectiveLocation) return null;
+    return `${effectiveLocation.country}-${effectiveLocation.countryName}-${effectiveLocation.currency}`;
+  }, [effectiveLocation]);
+
   // Load portfolio indicators based on location
   const loadPortfolioIndicators = useCallback(async () => {
-    const location = getEffectiveLocation();
+    // Check if we already processed this location
+    if (locationCacheKey && processedLocationRef.current === locationCacheKey) {
+      console.log('📋 Skipping portfolio indicators - already processed for:', locationCacheKey);
+      return;
+    }
     
     // Always show loading state, even for static data
     setIsLoading(true);
@@ -64,19 +78,23 @@ export function useQuoteCalculatorData(
     // Add a small delay to make loading visible
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    if (!location) {
+    if (!effectiveLocation) {
       // No location available, use static data
       setPortfolioIndicators(getStaticPortfolioIndicators());
       setIsUsingDynamicData(false);
       setIsLoading(false);
+      processedLocationRef.current = null;
       return;
     }
 
     try {
-      console.log('🔄 Loading portfolio indicators for location:', location.countryName || location.country);
+      console.log('🔄 Loading portfolio indicators for location:', effectiveLocation.countryName || effectiveLocation.country);
       
-      const indicators = await getPortfolioIndicators(location);
+      const indicators = await getPortfolioIndicators(effectiveLocation);
       setPortfolioIndicators(indicators);
+      
+      // Mark this location as processed
+      processedLocationRef.current = locationCacheKey;
       
       // Check if we got dynamic data by comparing with static data
       const staticData = getStaticPortfolioIndicators();
@@ -84,7 +102,7 @@ export function useQuoteCalculatorData(
       setIsUsingDynamicData(isDynamic);
       
       if (isDynamic) {
-        console.log('✅ Using dynamic portfolio indicators for', location.countryName || location.country);
+        console.log('✅ Using dynamic portfolio indicators for', effectiveLocation.countryName || effectiveLocation.country);
       } else {
         console.log('📋 Using static portfolio indicators (fallback)');
       }
@@ -99,11 +117,15 @@ export function useQuoteCalculatorData(
     } finally {
       setIsLoading(false);
     }
-  }, [getEffectiveLocation]);
+  }, [effectiveLocation, locationCacheKey]);
 
   // Load roles data based on location
   const loadRolesData = useCallback(async () => {
-    const location = getEffectiveLocation();
+    // Check if we already processed this location for roles
+    if (locationCacheKey && processedRolesLocationRef.current === locationCacheKey) {
+      console.log('📋 Skipping roles data - already processed for:', locationCacheKey);
+      return;
+    }
     
     // Always show loading state, even for static data
     setIsLoadingRoles(true);
@@ -112,7 +134,7 @@ export function useQuoteCalculatorData(
     // Add a small delay to make loading visible
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    if (!location) {
+    if (!effectiveLocation) {
       // No location available, use static data
       console.log('📋 No location data, using static roles data');
       const staticRoles = getStaticRoles();
@@ -121,26 +143,30 @@ export function useQuoteCalculatorData(
       setRolesSalaryComparison(staticSalary);
       setIsUsingDynamicRoles(false);
       setIsLoadingRoles(false);
+      processedRolesLocationRef.current = null;
       return;
     }
 
     try {
-      console.log('🔄 Loading roles data for location:', location.countryName || location.country);
+      console.log('🔄 Loading roles data for location:', effectiveLocation.countryName || effectiveLocation.country);
       
       // Load both roles and salary data
       const [rolesData, salaryData] = await Promise.all([
-        getRoles(location),
-        getRolesSalaryComparison(location)
+        getRoles(effectiveLocation),
+        getRolesSalaryComparison(effectiveLocation)
       ]);
       
       console.log('📊 Loaded roles data:', {
         rolesData,
         salaryData,
-        location
+        location: effectiveLocation
       });
       
       setRoles(rolesData);
       setRolesSalaryComparison(salaryData);
+      
+      // Mark this location as processed for roles
+      processedRolesLocationRef.current = locationCacheKey;
       
       // Check if we got dynamic data by comparing with static data
       const staticRoles = getStaticRoles();
@@ -152,7 +178,7 @@ export function useQuoteCalculatorData(
       setIsUsingDynamicRoles(isDynamic);
       
       if (isDynamic) {
-        console.log('✅ Using dynamic roles data for', location.countryName || location.country);
+        console.log('✅ Using dynamic roles data for', effectiveLocation.countryName || effectiveLocation.country);
       } else {
         console.log('📋 Using static roles data (fallback)');
       }
@@ -171,26 +197,26 @@ export function useQuoteCalculatorData(
     } finally {
       setIsLoadingRoles(false);
     }
-  }, [getEffectiveLocation]);
+  }, [effectiveLocation, locationCacheKey]);
 
-  // Refresh indicators manually
+  // Load indicators when location cache key changes (prevents duplicate calls)
+  useEffect(() => {
+    loadPortfolioIndicators();
+  }, [locationCacheKey]);
+
+  // Load roles when location cache key changes (prevents duplicate calls)
+  useEffect(() => {
+    loadRolesData();
+  }, [locationCacheKey]);
+
+  // Refresh indicators manually - stable reference
   const refreshIndicators = useCallback(async () => {
     await loadPortfolioIndicators();
   }, [loadPortfolioIndicators]);
 
-  // Refresh roles manually
+  // Refresh roles manually - stable reference
   const refreshRoles = useCallback(async () => {
     await loadRolesData();
-  }, [loadRolesData]);
-
-  // Load indicators when location changes
-  useEffect(() => {
-    loadPortfolioIndicators();
-  }, [loadPortfolioIndicators]);
-
-  // Load roles when location changes
-  useEffect(() => {
-    loadRolesData();
   }, [loadRolesData]);
 
   return {

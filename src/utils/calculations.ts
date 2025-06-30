@@ -11,10 +11,7 @@ import {
   PortfolioIndicator,
   LocationData
 } from '@/types';
-import { 
-  TASK_COMPLEXITY_MULTIPLIERS
-} from './dataQuoteCalculator';
-import { ROLES, ROLES_SALARY_COMPARISON } from './rolesData';
+import { ROLES, TASK_COMPLEXITY_MULTIPLIERS } from './rolesData';
 import { getCurrencyMultiplier, getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol } from './currency';
 import { ManualLocation } from '@/types/location';
 
@@ -42,7 +39,12 @@ const getSalaryData = (
   dynamicSalaryData?: Readonly<Record<string, LocalMultiCountryRoleSalaryData>>
 ) => {
   // Use dynamic data if available, otherwise fall back to static data
-  const salaryDataSource: Record<string, LocalMultiCountryRoleSalaryData> = dynamicSalaryData || (ROLES_SALARY_COMPARISON as unknown as Record<string, LocalMultiCountryRoleSalaryData>);
+  // Create salary data from ROLES structure for backward compatibility
+  const staticSalaryData: Record<string, LocalMultiCountryRoleSalaryData> = {};
+  Object.entries(ROLES).forEach(([roleId, role]) => {
+    staticSalaryData[roleId] = role.salaryData as unknown as LocalMultiCountryRoleSalaryData;
+  });
+  const salaryDataSource: Record<string, LocalMultiCountryRoleSalaryData> = dynamicSalaryData || staticSalaryData;
   const multiCountryData = salaryDataSource[roleId];
   
   if (!multiCountryData) {
@@ -165,10 +167,10 @@ export const calculateSavings = async (
           const localSalary = roleSalaryData.local[level];
           const philippineSalary = roleSalaryData.philippine[level];
           
-          australianCost += localSalary.total * memberCount;
+          australianCost += localSalary.base * memberCount;
           
           // Convert Philippine salary from PHP to user's local currency using live API
-          const phpToUsd = philippineSalary.total / await getBestExchangeRateMultiplier('PHP');
+          const phpToUsd = philippineSalary.base / await getBestExchangeRateMultiplier('PHP');
           const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
           philippineCost += usdToLocal * memberCount;
           
@@ -192,10 +194,10 @@ export const calculateSavings = async (
       const localSalary = roleSalaryData.local[experienceLevel];
       const philippineSalary = roleSalaryData.philippine[experienceLevel];
       
-      australianCost = localSalary.total * teamSize;
+      australianCost = localSalary.base * teamSize;
       
       // Convert Philippine salary from PHP to user's local currency using live API
-      const phpToUsd = philippineSalary.total / await getBestExchangeRateMultiplier('PHP');
+      const phpToUsd = philippineSalary.base / await getBestExchangeRateMultiplier('PHP');
       const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
       philippineCost = usdToLocal * teamSize;
     }
@@ -719,22 +721,22 @@ export const calculateDisplaySavings = (
   
   // Calculate savings using converted amounts
   const safeConversionRate = conversionRate ?? 0;
-  const entrySavings = localData.entry.total - (philippineData.entry.total * safeConversionRate);
-  const moderateSavings = localData.moderate.total - (philippineData.moderate.total * safeConversionRate);
-  const experiencedSavings = localData.experienced.total - (philippineData.experienced.total * safeConversionRate);
+      const entrySavings = localData.entry.base - (philippineData.entry.base * safeConversionRate);
+    const moderateSavings = localData.moderate.base - (philippineData.moderate.base * safeConversionRate);
+    const experiencedSavings = localData.experienced.base - (philippineData.experienced.base * safeConversionRate);
   
   const entryTotal = entrySavings * teamSize;
   const moderateTotal = moderateSavings * teamSize;
   const experiencedTotal = experiencedSavings * teamSize;
   const averageTotal = (entryTotal + moderateTotal + experiencedTotal) / 3;
   const displayAmount = savingsView === 'monthly' 
-    ? Math.round(averageTotal / 12)
-    : Math.round(averageTotal);
+            ? Math.round((averageTotal / 12) * 100000000) / 100000000
+        : Math.round(averageTotal * 100000000) / 100000000;
   
   // Calculate percentage
   let percentage = '';
-  const entryPercentage = (entrySavings / localData.entry.total) * 100;
-  const experiencedPercentage = (experiencedSavings / localData.experienced.total) * 100;
+      const entryPercentage = (entrySavings / localData.entry.base) * 100;
+    const experiencedPercentage = (experiencedSavings / localData.experienced.base) * 100;
   const averagePercentage = (entryPercentage + experiencedPercentage) / 2;
   percentage = `${averagePercentage.toFixed(1)}% savings`;
   
@@ -788,17 +790,17 @@ export const calculateIndividualRoleSavingsSync = (
   
   // Calculate savings using converted amounts
   const safeConversionRate = conversionRate ?? 0;
-  const entry = localData.entry.total - (philippineData.entry.total * safeConversionRate);
-  const moderate = localData.moderate.total - (philippineData.moderate.total * safeConversionRate);
-  const experienced = localData.experienced.total - (philippineData.experienced.total * safeConversionRate);
+      const entry = localData.entry.base - (philippineData.entry.base * safeConversionRate);
+    const moderate = localData.moderate.base - (philippineData.moderate.base * safeConversionRate);
+    const experienced = localData.experienced.base - (philippineData.experienced.base * safeConversionRate);
   
   const average = (entry + moderate + experienced) / 3;
   
   return {
-    entry: Math.round(entry),
-    moderate: Math.round(moderate),
-    experienced: Math.round(experienced),
-    range: `${getCurrencySymbol(effectiveCurrency)}${Math.round(average).toLocaleString()}`
+    entry: Math.round(entry * 100000000) / 100000000,
+    moderate: Math.round(moderate * 100000000) / 100000000,
+    experienced: Math.round(experienced * 100000000) / 100000000,
+    range: `${getCurrencySymbol(effectiveCurrency)}${Math.round(average * 100000000) / 100000000}`
   };
 };
 
@@ -845,15 +847,15 @@ export const calculateAllRoleRatesAndSummary = async (
         
         if (localData && philippineData) {
           // Local average multiplied by team size
-          const entryLocal = localData.entry.total * currentTeamSize;
-          const moderateLocal = localData.moderate.total * currentTeamSize;
-          const experiencedLocal = localData.experienced.total * currentTeamSize;
+                const entryLocal = localData.entry.base * currentTeamSize;
+      const moderateLocal = localData.moderate.base * currentTeamSize;
+      const experiencedLocal = localData.experienced.base * currentTeamSize;
           const avgLocal = (entryLocal + moderateLocal + experiencedLocal) / 3;
           
           // PH converted average multiplied by team size
-          const entryPH = philippineData.entry.total * directRate * currentTeamSize;
-          const moderatePH = philippineData.moderate.total * directRate * currentTeamSize;
-          const experiencedPH = philippineData.experienced.total * directRate * currentTeamSize;
+                const entryPH = philippineData.entry.base * directRate * currentTeamSize;
+      const moderatePH = philippineData.moderate.base * directRate * currentTeamSize;
+      const experiencedPH = philippineData.experienced.base * directRate * currentTeamSize;
           const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
           
           // Apply monthly/annual conversion
@@ -890,13 +892,13 @@ export const calculateAllRoleRatesAndSummary = async (
         const roleSalaryData = rolesSalaryComparison?.[role?.id];
         const philippineData = roleSalaryData?.Philippines;
         if (philippineData) {
-          const entryPH = philippineData.entry.total * size;
-          const moderatePH = philippineData.moderate.total * size;
-          const experiencedPH = philippineData.experienced.total * size;
+                  const entryPH = philippineData.entry.base * size;
+        const moderatePH = philippineData.moderate.base * size;
+        const experiencedPH = philippineData.experienced.base * size;
           const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
           const displayRate = savingsView === 'monthly' 
-            ? Math.round(avgPH / 12)
-            : Math.round(avgPH);
+            ? Math.round((avgPH / 12) * 100000000) / 100000000
+            : Math.round(avgPH * 100000000) / 100000000;
           totalPhilippinesCostPHP += displayRate;
         }
       });
@@ -950,7 +952,7 @@ export const calculateIndividualRoleSavings = async (
     const targetCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
     
     if (role.type === 'predefined' && role.id && rolesSalaryComparison) {
-      const roleSalaryData = rolesSalaryComparison[role.id as keyof typeof ROLES_SALARY_COMPARISON];
+      const roleSalaryData = rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison];
       if (!roleSalaryData) {
         return {
           entry: 0,
@@ -974,20 +976,20 @@ export const calculateIndividualRoleSavings = async (
         const directRate = await getDirectExchangeRate('PHP', targetCurrency);
         
         // Convert Philippine salaries to target currency
-        const convertedEntryPH = philippineSalaryData.entry.total * directRate;
-        const convertedModeratePH = philippineSalaryData.moderate.total * directRate;
-        const convertedExperiencedPH = philippineSalaryData.experienced.total * directRate;
+            const convertedEntryPH = philippineSalaryData.entry.base * directRate;
+    const convertedModeratePH = philippineSalaryData.moderate.base * directRate;
+    const convertedExperiencedPH = philippineSalaryData.experienced.base * directRate;
         
         // Calculate savings using converted amounts
-        const entrySavings = localSalaryData.entry.total - convertedEntryPH;
-        const moderateSavings = localSalaryData.moderate.total - convertedModeratePH;
-        const experiencedSavings = localSalaryData.experienced.total - convertedExperiencedPH;
+            const entrySavings = localSalaryData.entry.base - convertedEntryPH;
+    const moderateSavings = localSalaryData.moderate.base - convertedModeratePH;
+    const experiencedSavings = localSalaryData.experienced.base - convertedExperiencedPH;
         
         return {
           entry: entrySavings,
           moderate: moderateSavings,
           experienced: experiencedSavings,
-          range: `$${Math.round((entrySavings + moderateSavings + experiencedSavings) / 3).toLocaleString()}`
+          range: `$${Math.round(((entrySavings + moderateSavings + experiencedSavings) / 3) * 100000000) / 100000000}`
         };
       }
     }
@@ -1053,22 +1055,22 @@ export const calculateRoleCosts = (
     
     if (localSalaryData && philippineSalaryData) {
       // Calculate local cost
-      const entryRate = localSalaryData.entry.total * teamSize;
-      const moderateRate = localSalaryData.moderate.total * teamSize;
-      const experiencedRate = localSalaryData.experienced.total * teamSize;
+          const entryRate = localSalaryData.entry.base * teamSize;
+    const moderateRate = localSalaryData.moderate.base * teamSize;
+    const experiencedRate = localSalaryData.experienced.base * teamSize;
       const averageRate = (entryRate + moderateRate + experiencedRate) / 3;
       const displayRate = savingsView === 'monthly' 
-        ? Math.round(averageRate / 12)
-        : Math.round(averageRate);
+        ? Math.round((averageRate / 12) * 100000000) / 100000000
+        : Math.round(averageRate * 100000000) / 100000000;
       
       // Calculate Philippine cost
-      const phEntryRate = philippineSalaryData.entry.total * teamSize;
-      const phModerateRate = philippineSalaryData.moderate.total * teamSize;
-      const phExperiencedRate = philippineSalaryData.experienced.total * teamSize;
+              const phEntryRate = philippineSalaryData.entry.base * teamSize;
+        const phModerateRate = philippineSalaryData.moderate.base * teamSize;
+        const phExperiencedRate = philippineSalaryData.experienced.base * teamSize;
       const phAverageRate = (phEntryRate + phModerateRate + phExperiencedRate) / 3;
       const phDisplayRate = savingsView === 'monthly' 
-        ? Math.round(phAverageRate / 12)
-        : Math.round(phAverageRate);
+        ? Math.round((phAverageRate / 12) * 100000000) / 100000000
+        : Math.round(phAverageRate * 100000000) / 100000000;
       
       return {
         localCost: `$${displayRate.toLocaleString()}`,
@@ -1084,16 +1086,16 @@ export const calculateRoleCosts = (
     const experiencedEstimate = role.estimatedSalary.local * 1.2 * teamSize;
     const averageEstimate = (entryEstimate + moderateEstimate + experiencedEstimate) / 3;
     const displayRate = savingsView === 'monthly' 
-      ? Math.round(averageEstimate / 12)
-      : Math.round(averageEstimate);
+      ? Math.round((averageEstimate / 12) * 100000000) / 100000000
+      : Math.round(averageEstimate * 100000000) / 100000000;
     
     const phEntryEstimate = role.estimatedSalary.philippine * 0.8 * teamSize;
     const phModerateEstimate = role.estimatedSalary.philippine * teamSize;
     const phExperiencedEstimate = role.estimatedSalary.philippine * 1.2 * teamSize;
     const phAverageEstimate = (phEntryEstimate + phModerateEstimate + phExperiencedEstimate) / 3;
     const phDisplayRate = savingsView === 'monthly' 
-      ? Math.round(phAverageEstimate / 12)
-      : Math.round(phAverageEstimate);
+      ? Math.round((phAverageEstimate / 12) * 100000000) / 100000000
+      : Math.round(phAverageEstimate * 100000000) / 100000000;
     
     return {
       localCost: `$${displayRate.toLocaleString()}`,
@@ -1158,17 +1160,17 @@ export const calculatePhpConversionDisplay = async (
     }
     
     // Calculate the PHP amount for this role
-    const entryRate = philippineSalaryData.entry.total * teamSize;
-    const moderateRate = philippineSalaryData.moderate.total * teamSize;
-    const experiencedRate = philippineSalaryData.experienced.total * teamSize;
+    const entryRate = philippineSalaryData.entry.base * teamSize;
+    const moderateRate = philippineSalaryData.moderate.base * teamSize;
+    const experiencedRate = philippineSalaryData.experienced.base * teamSize;
     const averageRate = (entryRate + moderateRate + experiencedRate) / 3;
     const displayRate = savingsView === 'monthly' 
-      ? Math.round(averageRate / 12)
-      : Math.round(averageRate);
+      ? Math.round((averageRate / 12) * 100000000) / 100000000
+      : Math.round(averageRate * 100000000) / 100000000;
     
     // Get direct exchange rate
     const directRate = await getDirectExchangeRate('PHP', targetCurrency);
-    const convertedAmount = Math.round(displayRate * directRate);
+    const convertedAmount = Math.round((displayRate * directRate) * 100000000) / 100000000;
     
     return `≈ ${getCurrencySymbol(targetCurrency)}${convertedAmount.toLocaleString()} ${targetCurrency}`;
   } catch (error) {
