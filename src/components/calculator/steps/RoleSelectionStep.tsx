@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CustomRole } from '@/types/calculator';
 import { LocationData, ManualLocation } from '@/types/location';
@@ -40,6 +40,30 @@ interface RoleSelectionStepProps {
     customRoles: Record<string, CustomRole>,
     userLocation?: LocationData
   ) => void;
+  
+  // Data passed from parent to avoid duplicate API calls
+  roles: Record<string, any>;
+  rolesSalaryComparison: any;
+  isLoadingRoles: boolean;
+  rolesError: string | null;
+  isUsingDynamicRoles: boolean;
+}
+
+interface RoleData {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  type?: string;
+  category?: string;
+  tasks?: any[];
+  searchKeywords?: string[];
+  createdAt?: Date;
+  complexity?: string;
+  estimatedSalary?: any;
+  requiredSkills?: string[];
+  optionalSkills?: string[];
+  aiGenerated?: boolean;
 }
 
 interface RoleSearchFilters {
@@ -62,16 +86,27 @@ export function RoleSelectionStep({
   teamSize, 
   userLocation,
   manualLocation,
-  onChange 
-}: RoleSelectionStepProps) {
-  // Load dynamic data based on location
-  const { 
+  onChange,
+  
+  // Data from parent
     roles, 
     rolesSalaryComparison, 
     isLoadingRoles, 
     rolesError, 
     isUsingDynamicRoles 
-  } = useQuoteCalculatorData(userLocation, manualLocation);
+}: RoleSelectionStepProps) {
+  // All dynamic data now passed as props from parent to avoid duplicate API calls
+  
+  // Create stable location cache key to prevent infinite re-renders
+  const locationCacheKey = useMemo(() => {
+    const country = manualLocation?.country || userLocation?.country || 'US';
+    const currency = manualLocation?.currency || userLocation?.currency || 'USD';
+    return `${country}-${currency}`;
+  }, [manualLocation?.country, manualLocation?.currency, userLocation?.country, userLocation?.currency]);
+
+  // Create stable location objects to prevent infinite re-renders in async functions
+  const stableUserLocation = useMemo(() => userLocation, [userLocation?.country, userLocation?.currency]);
+  const stableManualLocation = useMemo(() => manualLocation, [manualLocation?.country, manualLocation?.currency]);
 
   // Currency handling function - same pattern as PortfolioStep
   // Note: Manual location takes priority over auto-detected location
@@ -110,15 +145,15 @@ export function RoleSelectionStep({
 
   // All available roles (predefined + additional + custom) - Limited to first 3
   const allRoles = useMemo(() => {
-    const predefinedRoles = roles ? Object.values(roles).slice(0, 3) : []; // Only first 3 roles
-    const customRolesList = Object.values(customRoles || {});
+    const predefinedRoles = roles ? Object.values(roles).slice(0, 3) as RoleData[] : []; // Only first 3 roles
+    const customRolesList = Object.values(customRoles || {}) as RoleData[];
     
     return [...predefinedRoles, ...customRolesList];
   }, [roles, customRoles]);
 
   // Remove the local getSavingsForRole function and replace with centralized version
   const getRoleSavings = async (role: any) => {
-    return await calculateIndividualRoleSavings(role, userLocation, manualLocation, rolesSalaryComparison);
+    return await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, rolesSalaryComparison);
   };
 
   // Add state for role savings
@@ -132,7 +167,7 @@ export function RoleSelectionStep({
       for (const role of allRoles) {
         if (role.id) {
           try {
-            const savings = await calculateIndividualRoleSavings(role, userLocation, manualLocation, rolesSalaryComparison);
+            const savings = await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, rolesSalaryComparison);
             newSavings[role.id] = savings;
           } catch (error) {
             console.error('Error calculating savings for role:', role.id, error);
@@ -140,7 +175,7 @@ export function RoleSelectionStep({
               entry: 0,
               moderate: 0,
               experienced: 0,
-              range: `${getEffectiveCurrencySymbol(userLocation, manualLocation)}0`
+              range: `${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}0`
             };
           }
         }
@@ -150,7 +185,7 @@ export function RoleSelectionStep({
     };
 
     updateRoleSavings();
-  }, [allRoles, teamSize, userLocation, manualLocation, rolesSalaryComparison]);
+  }, [allRoles, teamSize, locationCacheKey, rolesSalaryComparison]);
 
   // Helper function to get cached savings for a role
   const getCachedRoleSavings = (role: any) => {
@@ -158,13 +193,13 @@ export function RoleSelectionStep({
       entry: 0,
       moderate: 0,
       experienced: 0,
-      range: `${getEffectiveCurrencySymbol(userLocation, manualLocation)}0`
+      range: `${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}0`
     };
   };
 
   // Update total savings calculation to use centralized function
   const getTotalSavings = () => {
-    return calculateTotalSavings(selectedRoles, teamSize, allRoles, userLocation, manualLocation, rolesSalaryComparison);
+    return calculateTotalSavings(selectedRoles, teamSize, allRoles, stableUserLocation, stableManualLocation, rolesSalaryComparison);
   };
 
   // Update sorting logic to use cached savings
@@ -201,7 +236,7 @@ export function RoleSelectionStep({
           return bSavings.experienced - aSavings.experienced;
         case 'recent':
           if (a.type === 'custom' && b.type === 'custom') {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            return new Date(b.createdAt || new Date()).getTime() - new Date(a.createdAt || new Date()).getTime();
           }
           return a.type === 'custom' ? -1 : 1;
         default:
@@ -262,7 +297,7 @@ export function RoleSelectionStep({
       optionalSkills: [],
       estimatedSalary: {
         local: customRoleForm.estimatedSalary,
-        philippine: Math.round(customRoleForm.estimatedSalary * 0.3) // Rough 70% savings estimate
+        philippine: Math.round(customRoleForm.estimatedSalary * 0.3 * 100) / 100 // Rough 70% savings estimate, rounded to 2 decimal places
       },
       complexity: 'medium',
       createdAt: new Date(),
@@ -300,7 +335,7 @@ export function RoleSelectionStep({
   useEffect(() => {
     const updatePhpConversions = async () => {
       const newConversions: Record<string, string> = {};
-      const targetCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+      const targetCurrency = stableManualLocation?.currency || stableUserLocation?.currency || 'USD';
       
       for (const role of allRoles) {
         if (role.id) {
@@ -325,7 +360,7 @@ export function RoleSelectionStep({
     };
 
     updatePhpConversions();
-  }, [allRoles, teamSize, searchFilters.savingsView, manualLocation, userLocation, rolesSalaryComparison]);
+  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, rolesSalaryComparison]);
 
   // Update summary Philippines cost conversion
   useEffect(() => {
@@ -335,12 +370,12 @@ export function RoleSelectionStep({
           allRoles,
           selectedRoles,
           teamSize,
-          userLocation,
-          manualLocation,
+          stableUserLocation,
+          stableManualLocation,
           rolesSalaryComparison,
           searchFilters.savingsView
         );
-        const convertedCost = `≈ ${getEffectiveCurrencySymbol(userLocation, manualLocation)}${summary.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${manualLocation?.currency || userLocation?.currency || 'USD'}`;
+        const convertedCost = `≈ ${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}${summary.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${stableManualLocation?.currency || stableUserLocation?.currency || 'USD'}`;
         setSummaryPhilippinesCostConverted(convertedCost);
       } catch (error) {
         console.error('Error updating summary Philippines cost:', error);
@@ -349,7 +384,7 @@ export function RoleSelectionStep({
     };
 
     updateSummaryPhilippinesCost();
-  }, [selectedRoles, teamSize, allRoles, searchFilters.savingsView, manualLocation, userLocation, rolesSalaryComparison]);
+  }, [selectedRoles, teamSize, allRoles, searchFilters.savingsView, locationCacheKey, rolesSalaryComparison]);
 
   const [roleDisplaySavings, setRoleDisplaySavings] = useState<Record<string, { displayAmount: number; percentage: string }>>({});
 
@@ -365,8 +400,8 @@ export function RoleSelectionStep({
               role,
               currentTeamSize,
               searchFilters.savingsView,
-              userLocation,
-              manualLocation,
+              stableUserLocation,
+              stableManualLocation,
               rolesSalaryComparison
             );
             newDisplaySavings[role.id] = displayData;
@@ -378,7 +413,7 @@ export function RoleSelectionStep({
       setRoleDisplaySavings(newDisplaySavings);
     };
     updateRoleDisplaySavings();
-  }, [allRoles, teamSize, searchFilters.savingsView, userLocation, manualLocation, rolesSalaryComparison]);
+  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, rolesSalaryComparison]);
 
   // State for role rates and summary
   const [roleRates, setRoleRates] = useState<Record<string, { local: number; phConverted: number }>>({});
@@ -405,8 +440,8 @@ export function RoleSelectionStep({
           allRoles,
           selectedRoles,
           teamSize,
-          userLocation,
-          manualLocation,
+          stableUserLocation,
+          stableManualLocation,
           rolesSalaryComparison,
           searchFilters.savingsView
         );
@@ -425,10 +460,10 @@ export function RoleSelectionStep({
       }
     };
     updateRoleRatesAndSummary();
-  }, [allRoles, selectedRoles, teamSize, userLocation, manualLocation, rolesSalaryComparison, searchFilters.savingsView]);
+  }, [allRoles, selectedRoles, teamSize, locationCacheKey, rolesSalaryComparison, searchFilters.savingsView]);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div>
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
@@ -691,9 +726,9 @@ export function RoleSelectionStep({
                 </div>
 
                 {/* Enhanced Savings Preview with Location Comparison */}
-                {userLocation && (
+                {(userLocation || manualLocation) && (
                   <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
-                    <div className="text-center mb-3">
+                    <div className="text-center mb-4">
                       <span className="text-sm font-semibold text-green-800">
                         {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost Comparison
                         {isSelected && (
@@ -706,11 +741,18 @@ export function RoleSelectionStep({
 
                     {/* Location vs Philippines Comparison */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-green-700 font-medium">Local Rate:</span>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-green-900">
-                            {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.local.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <div className="space-y-1">
+                        <div className="text-center mb-4">
+                          <span className="text-sm text-green-600 font-medium">Estimated Base Salary</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-green-700 font-medium">
+                            {manualLocation?.country || userLocation?.country || 'United States'} Rate:
+                          </span>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-green-900">
+                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.local.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -722,14 +764,14 @@ export function RoleSelectionStep({
                               const roleSalaryData = rolesSalaryComparison?.[role.id];
                               const philippineData = roleSalaryData?.Philippines;
                               if (philippineData) {
-                                const entryPH = philippineData.entry.total * currentTeamSize;
-                                const moderatePH = philippineData.moderate.total * currentTeamSize;
-                                const experiencedPH = philippineData.experienced.total * currentTeamSize;
+                                const entryPH = philippineData.entry.base * currentTeamSize;
+                                const moderatePH = philippineData.moderate.base * currentTeamSize;
+                                const experiencedPH = philippineData.experienced.base * currentTeamSize;
                                 const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
-                                  ? Math.round(avgPH / 12)
-                                  : Math.round(avgPH);
-                                return displayRate.toLocaleString();
+                                  ? Math.round(avgPH / 12 * 100) / 100
+                                  : Math.round(avgPH * 100) / 100;
+                                return displayRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                               }
                               return '0';
                             })()}
@@ -748,11 +790,11 @@ export function RoleSelectionStep({
                           <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{(roleRates[role.id]?.local - roleRates[role.id]?.phConverted).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{((roleRates[role.id]?.local || 0) - (roleRates[role.id]?.phConverted || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className="text-xs text-green-600">
-                              {roleRates[role.id]?.local > 0
-                                ? `${(((roleRates[role.id]?.local - roleRates[role.id]?.phConverted) / roleRates[role.id]?.local) * 100).toFixed(1)}% Savings`
+                              {(roleRates[role.id]?.local || 0) > 0
+                                ? `${((((roleRates[role.id]?.local || 0) - (roleRates[role.id]?.phConverted || 0)) / (roleRates[role.id]?.local || 1)) * 100).toFixed(1)}% Savings`
                                 : '0.0% savings'}
                             </div>
                           </div>
@@ -764,18 +806,7 @@ export function RoleSelectionStep({
 
                 {/* Team Size Selector */}
                 {isSelected && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, y: -10 }}
-                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -10 }}
-                    transition={{ 
-                      duration: 0.3, 
-                      ease: "easeOut",
-                      height: { duration: 0.3 },
-                      opacity: { duration: 0.2 }
-                    }}
-                    className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden"
-                  >
+                  <div className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
                       <div className="flex items-center gap-3">
@@ -812,7 +843,7 @@ export function RoleSelectionStep({
                         </button>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -858,7 +889,7 @@ export function RoleSelectionStep({
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-center">
               <div className="lg:col-span-3">
-                <div className="text-sm text-neural-blue-600 font-bold mb-2">Selected Roles</div>
+                <div className="text-sm text-gray-600 font-bold mb-2">Selected Roles</div>
                 {/* Selected Roles Badge */}
                 <div className="flex flex-wrap gap-1 justify-center mb-4">
                   {Object.entries(selectedRoles)
@@ -893,7 +924,7 @@ export function RoleSelectionStep({
                 return (
                   <>
                     <div>
-                      <div className="text-sm text-neural-blue-600 font-bold mb-2">
+                      <div className="text-sm text-gray-600 font-bold mb-2">
                         {manualLocation?.country || userLocation?.country || 'United States'} {displayPeriod} Cost
                       </div>
                       <div className="text-xl font-bold text-red-600">
@@ -902,25 +933,25 @@ export function RoleSelectionStep({
                     </div>
                     
                     <div>
-                      <div className="text-sm text-neural-blue-600 font-bold mb-2">
+                      <div className="text-sm text-gray-600 font-bold mb-2">
                         Philippines {displayPeriod} Cost
                       </div>
-                      <div className="text-xl font-bold text-slate-700">
-                        ₱{summaryData.totalPhilippinesCostPHP.toLocaleString()}
+                      <div className="text-xl font-bold text-blue-600">
+                        ₱{summaryData.totalPhilippinesCostPHP.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
-                      <div className="text-xs text-slate-600 mt-1">
+                      <div className="text-xs text-blue-500 mt-1">
                         ≈ {currencySymbol}{summaryData.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {manualLocation?.currency || userLocation?.currency || 'USD'}
                       </div>
                     </div>
                     
                     <div>
-                      <div className="text-sm text-neural-blue-600 font-bold mb-2">
+                      <div className="text-sm text-gray-600 font-bold mb-2">
                         Total {displayPeriod} Savings
                       </div>
-                      <div className="text-xl font-bold text-cyber-green-600">
+                      <div className="text-xl font-bold text-green-600">
                         {currencySymbol}{summaryData.totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
-                      <div className="text-xs text-green-600 mt-1">
+                      <div className="text-xs text-green-500 mt-1">
                         {summaryData.percentage.toFixed(1)}% Savings
                       </div>
                     </div>

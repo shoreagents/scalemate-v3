@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId } from '@/types';
+import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel } from '@/types';
 import { ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
 import { getCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
@@ -38,6 +38,53 @@ interface OffshoreCalculatorProps {
   onComplete?: (results: CalculationResult) => void;
   onStepChange?: (step: CalculatorStep) => void;
 }
+
+// Helper functions moved outside component to prevent recreation on every render
+const getCurrencyFromCountry = (country: string): string => {
+  return getCurrencyByCountry(country);
+};
+
+const getCurrencySymbolFromCountry = (country: string): string => {
+  const currency = getCurrencyFromCountry(country);
+  return getCurrencySymbol(currency);
+};
+
+// Location cache using localStorage for persistence across renders
+const CACHE_KEY = 'scalemate_location_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getCachedLocation = (): IPLocationData | null => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    
+    const { data, timestamp } = JSON.parse(cached);
+    const now = Date.now();
+    
+    if ((now - timestamp) < CACHE_DURATION) {
+      console.log('🔄 Using cached location data');
+      return data;
+    } else {
+      // Cache expired, remove it
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+  } catch {
+    return null;
+  }
+};
+
+const setCachedLocation = (data: IPLocationData): void => {
+  try {
+    const cacheData = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+  } catch {
+    // localStorage might be disabled, ignore
+  }
+};
 
 export function OffshoreCalculator({ 
   className = '', 
@@ -97,17 +144,6 @@ export function OffshoreCalculator({
   const [locationData, setLocationData] = useState<IPLocationData | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
-  
-  // Helper function to get currency from country
-  const getCurrencyFromCountry = (country: string): string => {
-    return getCurrencyByCountry(country);
-  };
-
-  // Helper function to get currency symbol from country
-  const getCurrencySymbolFromCountry = (country: string): string => {
-    const currency = getCurrencyFromCountry(country);
-    return getCurrencySymbol(currency);
-  };
 
   // Manual location override state
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -120,16 +156,41 @@ export function OffshoreCalculator({
   // Use global exit intent context
   const exitIntentContext = useExitIntentContext();
 
+  // Compute effective location for the hook (stable reference)
+  const computedLocationForHook = useMemo(() => {
+    if (locationData) {
+      const translatedCountry = getCountryFromCode(locationData.country_code);
+      const countryName = translatedCountry || locationData.country_name || 'United States';
+      
+      // Create LocationData from IP data
+      return {
+        country: countryName,
+        countryName: locationData.country_name || 'United States',
+        currency: locationData.currency || 'USD',
+        currencySymbol: getCurrencySymbolFromCountry(locationData.country_name || 'United States'),
+        detected: true
+      };
+    }
+    return null;
+  }, [
+    locationData?.country_code, 
+    locationData?.country_name, 
+    locationData?.currency
+  ]); // Only depend on key fields, not entire object
+
   // Load dynamic salary data based on current location
   const { 
+    portfolioIndicators,
+    roles,
     rolesSalaryComparison, 
     isLoadingRoles, 
     rolesError,
-    isLoading: isLoadingPortfolio
-  } = useQuoteCalculatorData(formData.userLocation, manualLocation);
+    isLoading: isLoadingPortfolio,
+    isUsingDynamicRoles
+  } = useQuoteCalculatorData(computedLocationForHook, manualLocation);
 
   // Get effective location (manual override or auto-detected)
-  const getEffectiveLocation = () => {
+  const getEffectiveLocation = useCallback(() => {
     if (manualLocation) {
       return {
         country_name: manualLocation.country,
@@ -139,10 +200,10 @@ export function OffshoreCalculator({
       };
     }
     return locationData;
-  };
+  }, [manualLocation, locationData]);
 
   // Handle location edit save
-  const saveLocationEdit = () => {
+  const saveLocationEdit = useCallback(() => {
     if (tempLocation.country) {
       const newManualLocation = { 
         country: tempLocation.country,
@@ -151,13 +212,9 @@ export function OffshoreCalculator({
       setManualLocation(newManualLocation);
       setIsEditingLocation(false);
       
-      // Update formData.userLocation to reflect manual selection
-      const effectiveLocation = getEffectiveLocationForManual(newManualLocation);
-      updateFormData({ userLocation: effectiveLocation });
-      
       console.log('📍 Location manually overridden:', { country: tempLocation.country });
     }
-  };
+  }, [tempLocation.country]);
 
   // Helper to get effective location data for manual selection
   const getEffectiveLocationForManual = (manual: ManualLocation): LocationData => {
@@ -165,7 +222,7 @@ export function OffshoreCalculator({
   };
 
   // Handle location edit cancel
-  const cancelLocationEdit = () => {
+  const cancelLocationEdit = useCallback(() => {
     const currentLocation = getEffectiveLocation();
     const country = manualLocation?.country || currentLocation?.country_name || '';
     setTempLocation({
@@ -173,10 +230,10 @@ export function OffshoreCalculator({
       currency: getCurrencyFromCountry(country)
     });
     setIsEditingLocation(false);
-  };
+  }, [getEffectiveLocation, manualLocation?.country]);
 
   // Start editing location
-  const startLocationEdit = () => {
+  const startLocationEdit = useCallback(() => {
     const currentLocation = getEffectiveLocation();
     const country = manualLocation?.country || currentLocation?.country_name || '';
     setTempLocation({
@@ -184,58 +241,45 @@ export function OffshoreCalculator({
       currency: getCurrencyFromCountry(country)
     });
     setIsEditingLocation(true);
-  };
+  }, [getEffectiveLocation, manualLocation?.country]);
 
   // Reset to auto-detected location
-  const resetToAutoLocation = () => {
+  const resetToAutoLocation = useCallback(() => {
     setManualLocation(null);
     setIsEditingLocation(false);
-    
-    // Update formData.userLocation to use auto-detected location
-    if (locationData) {
-      const translatedCountry = getCountryFromCode(locationData.country_code);
-      const countryName = translatedCountry || locationData.country_name || 'United States';
-      
-      // Create LocationData without validation - use original country as-is
-      const locationDataResult: LocationData = {
-        country: countryName,
-        countryName: locationData.country_name || 'United States', // Always preserve original
-        currency: locationData.currency || 'USD',
-        currencySymbol: getCurrencySymbolFromCountry(locationData.country_name || 'United States'),
-        detected: true
-      };
-      
-      updateFormData({ userLocation: locationDataResult });
-      console.log('📍 Auto-detected location set to formData:', {
-        original: locationData.country_name,
-        translated: countryName,
-        final: locationDataResult.country
-      });
-    } else {
-      // If no location data at all, use US as fallback
-      const usLocationData: LocationData = {
-        country: 'United States',
-        countryName: 'United States',
-        currency: 'USD',
-        currencySymbol: '$',
-        detected: true
-      };
-      updateFormData({ userLocation: usLocationData });
-      console.log('📍 Using US fallback location');
-    }
-  };
+    console.log('📍 Reset to auto-detected location');
+  }, []);
 
-  // Fetch location data using ipapi
+  // Fetch location data using ipapi (side-effect free with proper cleanup)
   useEffect(() => {
+    let isCancelled = false;
+    
     const fetchLocation = async () => {
+      // Check cache first - this makes the effect idempotent
+      const cachedData = getCachedLocation();
+      if (cachedData) {
+        if (!isCancelled) {
+          setLocationData(cachedData);
+          setIsLoadingLocation(false);
+          console.log('📍 Using cached location:', cachedData.country_name);
+        }
+        return;
+      }
+      
+      // Only fetch if we don't have cached data and we haven't been cancelled
+      if (isCancelled) return;
+      
       console.log('🔄 Starting location fetch...');
       try {
+        if (!isCancelled) {
         setIsLoadingLocation(true);
         setLocationError(null);
-        console.log('🔄 Location loading state set to true');
+        }
         
         // Add a small delay to make skeleton visible
         await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (isCancelled) return;
         
         const response = await fetch('https://ipapi.co/json/');
         if (!response.ok) {
@@ -243,55 +287,58 @@ export function OffshoreCalculator({
         }
         
         const data: IPLocationData = await response.json();
+        
+        if (isCancelled) return;
+          
+        // Cache the data for future renders
+        setCachedLocation(data);
+        
         setLocationData(data);
-        console.log('🔄 Location data received:', data);
-        
-        // Automatically set formData.userLocation when location is first detected
-        if (data.country_code && !manualLocation) {
-          const translatedCountry = getCountryFromCode(data.country_code);
-          const countryName = translatedCountry || data.country_name;
-          
-          // Create LocationData without validation - use original country as-is
-          const locationDataResult: LocationData = {
-            country: countryName,
-            countryName: data.country_name, // Always preserve original
-            currency: data.currency,
-            currencySymbol: getCurrencySymbolFromCountry(data.country_name),
-            detected: true
-          };
-          
-          updateFormData({ userLocation: locationDataResult });
-          console.log('📍 Auto-detected location set to formData:', {
-            original: data.country_name,
-            translated: countryName,
-            final: locationDataResult.country
-          });
-        }
-        
-        console.log('📍 Location detected:', data);
+        console.log('📍 Location detected:', data.country_name);
       } catch (error) {
+        if (isCancelled) return;
+        
         console.error('Failed to fetch location:', error);
         setLocationError('Unable to detect location');
         analytics.trackEvent('error', { type: 'location_error', error: error?.toString() });
-        
-        // Set default US location when location detection fails
-        const usLocationData: LocationData = {
-          country: 'United States',
-          countryName: 'United States',
-          currency: 'USD',
-          currencySymbol: '$',
-          detected: false
-        };
-        updateFormData({ userLocation: usLocationData });
-        console.log('📍 Location failed - using US fallback');
       } finally {
-        console.log('🔄 Setting location loading to false');
+        if (!isCancelled) {
         setIsLoadingLocation(false);
+        }
       }
     };
 
     fetchLocation();
-  }, []);
+    
+    // Cleanup function to cancel the request if component unmounts
+    return () => {
+      isCancelled = true;
+    };
+  }, []); // Empty dependency array - only run on mount
+
+  // Update formData.userLocation when auto-detected locationData changes
+  useEffect(() => {
+    if (locationData && !manualLocation) {
+      const translatedCountry = getCountryFromCode(locationData.country_code);
+      const countryName = translatedCountry || locationData.country_name || 'United States';
+      
+      const autoDetectedLocation = {
+        country: countryName,
+        countryName: locationData.country_name || 'United States',
+        currency: locationData.currency || 'USD',
+        currencySymbol: getCurrencySymbolFromCountry(countryName),
+        detected: true
+      };
+
+      // Only update if it's different from current userLocation
+      if (!formData.userLocation || 
+          formData.userLocation.country !== autoDetectedLocation.country ||
+          formData.userLocation.currency !== autoDetectedLocation.currency) {
+        console.log('📍 Updating formData.userLocation with auto-detected location:', autoDetectedLocation.country);
+        updateFormData({ userLocation: autoDetectedLocation });
+      }
+    }
+  }, [locationData, manualLocation, formData.userLocation]);
 
   // Animation variants
   // const containerVariants = {
@@ -691,14 +738,46 @@ export function OffshoreCalculator({
     }
   };
 
-  const renderStep = () => {
-    // Debug logging to understand loading states
-    console.log('🔍 renderStep debug:', {
-      isLoadingLocation,
-      isLoadingPortfolio,
-      currentStep: formData.currentStep,
-      shouldShowSkeleton: (isLoadingLocation || isLoadingPortfolio) && formData.currentStep === 1
+  // Memoized onChange handler for PortfolioStep
+  const handlePortfolioChange = useCallback((portfolioSize: string, manualData?: any, portfolioIndicators?: any) => {
+    updateFormData({ 
+      portfolioSize, 
+      ...(manualData !== undefined && { manualPortfolioData: manualData }),
+      ...(portfolioIndicators !== undefined && { portfolioIndicators })
     });
+  }, []);
+
+  // Memoized onChange handler for RoleSelectionStep
+  const handleRoleSelectionChange = useCallback((selectedRoles: any, teamSize: any, customRoles: any, userLocation?: any) => {
+    updateFormData({ 
+      selectedRoles, 
+      teamSize, 
+      customRoles: customRoles || {},
+      ...(userLocation !== undefined && { userLocation })
+    });
+  }, []);
+
+  // Memoized onChange handler for TaskSelectionStep
+  const handleTaskSelectionChange = useCallback((selectedTasks: any, customTasks: any) => {
+    updateFormData({ selectedTasks, customTasks });
+  }, []);
+
+  // Memoized onChange handlers for ExperienceStep
+  const handleExperienceChange = useCallback((experienceLevel: ExperienceLevel | '') => {
+    updateFormData({ experienceLevel });
+  }, []);
+
+  const handleRoleExperienceChange = useCallback((roleExperienceLevels: any) => {
+    updateFormData({ roleExperienceLevels });
+  }, []);
+
+  const handleRoleExperienceDistributionChange = useCallback((roleExperienceDistribution: any) => {
+    updateFormData({ roleExperienceDistribution });
+  }, []);
+
+  const renderStep = () => {
+    // Debug logging (can be removed in production)
+    // console.log('🔍 renderStep debug:', { isLoadingLocation, isLoadingPortfolio, currentStep: formData.currentStep });
     
     switch (formData.currentStep) {
       case 1:
@@ -718,12 +797,10 @@ export function OffshoreCalculator({
             onLocationReset={resetToAutoLocation}
             onTempLocationChange={setTempLocation}
             getEffectiveLocation={getEffectiveLocation}
-            onChange={(portfolioSize, manualData, portfolioIndicators) => updateFormData({ 
-              portfolioSize, 
-              ...(manualData !== undefined && { manualPortfolioData: manualData }),
-              ...(portfolioIndicators !== undefined && { portfolioIndicators })
-            })}
+            onChange={handlePortfolioChange}
             showPortfolioGridSkeleton={(isLoadingLocation || isLoadingPortfolio) && formData.currentStep === 1}
+            portfolioIndicators={portfolioIndicators}
+            isLoadingIndicators={isLoadingPortfolio}
           />
         );
       case 2:
@@ -734,12 +811,12 @@ export function OffshoreCalculator({
             teamSize={formData.teamSize}
             {...(formData.userLocation && { userLocation: formData.userLocation })}
             {...(manualLocation && { manualLocation })}
-            onChange={(selectedRoles, teamSize, customRoles, userLocation) => updateFormData({ 
-              selectedRoles, 
-              teamSize, 
-              customRoles: customRoles || {},
-              ...(userLocation !== undefined && { userLocation })
-            })}
+            onChange={handleRoleSelectionChange}
+            roles={roles}
+            rolesSalaryComparison={rolesSalaryComparison}
+            isLoadingRoles={isLoadingRoles}
+            rolesError={rolesError}
+            isUsingDynamicRoles={isUsingDynamicRoles}
           />
         );
       case 3:
@@ -748,7 +825,7 @@ export function OffshoreCalculator({
             selectedRoles={formData.selectedRoles}
             selectedTasks={formData.selectedTasks}
             customTasks={formData.customTasks}
-            onChange={(selectedTasks, customTasks) => updateFormData({ selectedTasks, customTasks })}
+            onChange={handleTaskSelectionChange}
           />
         );
       case 4:
@@ -761,9 +838,10 @@ export function OffshoreCalculator({
             roleExperienceLevels={formData.roleExperienceLevels || {}}
             roleExperienceDistribution={formData.roleExperienceDistribution || {}}
             {...(formData.userLocation && { userLocation: formData.userLocation })}
-            onChange={(experienceLevel) => updateFormData({ experienceLevel })}
-            onRoleExperienceChange={(roleExperienceLevels) => updateFormData({ roleExperienceLevels })}
-            onRoleExperienceDistributionChange={(roleExperienceDistribution) => updateFormData({ roleExperienceDistribution })}
+            {...(manualLocation && { manualLocation })}
+            onChange={handleExperienceChange}
+            onRoleExperienceChange={handleRoleExperienceChange}
+            onRoleExperienceDistributionChange={handleRoleExperienceDistributionChange}
             onCalculate={calculateSavingsAsync}
             isCalculating={isCalculating}
           />

@@ -15,6 +15,20 @@ interface ExchangeRateCache {
 const EXCHANGE_RATE_CACHE_KEY = 'scalemate-exchange-rates';
 const EXCHANGE_RATE_CACHE_DURATION = 1000 * 60 * 60 * 24; // 24 hours
 
+// Exchange rate precision configuration
+const EXCHANGE_RATE_DECIMAL_PLACES = 4; // Round to 4 decimal places (0.01764 → 0.0177)
+                                         // 4 decimal places provides good precision for accurate calculations
+                                         // Examples: PHP to USD ≈ 0.0180, EUR to USD ≈ 1.0850
+
+/**
+ * Round exchange rate to consistent decimal places for precise calculations
+ * Examples: 0.01764 → 0.0177, 1.23456789 → 1.2346
+ */
+function roundExchangeRate(rate: number): number {
+  const multiplier = Math.pow(10, EXCHANGE_RATE_DECIMAL_PLACES);
+  return Math.round(rate * multiplier) / multiplier;
+}
+
 // Load cached exchange rates from localStorage
 function loadExchangeRateCache(): ExchangeRateCache | null {
   try {
@@ -137,11 +151,11 @@ export async function getLiveExchangeRateMultiplier(targetCurrency: string, base
     // First check cache
     const cached = loadExchangeRateCache();
     if (cached && cached.baseCurrency === base) {
-      const cachedRate = cached.rates[target.toLowerCase()];
-      if (cachedRate) {
-        console.log(`📊 Using cached exchange rate: ${base} → ${target}`);
-        return cachedRate;
-      }
+              const cachedRate = cached.rates[target.toLowerCase()];
+        if (cachedRate) {
+          console.log(`📊 Using cached exchange rate: ${base} → ${target} = ${cachedRate}`);
+          return cachedRate;
+        }
     }
     
     // Fetch live rates
@@ -176,13 +190,37 @@ export function clearExchangeRateCache(): void {
   }
 }
 
+// Direct exchange rate cache
+const directRateCache = new Map<string, { rate: number; timestamp: number }>();
+const directRatePromises = new Map<string, Promise<number>>();
+const DIRECT_RATE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Get direct exchange rate between two currencies
  * This avoids using USD as an intermediary for more accurate conversions
- * NOW: Uses only live API - no static fallback
+ * NOW: Uses only live API with caching
  */
 export async function getDirectExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+  const cacheKey = `${fromCurrency}-${toCurrency}`;
+  const cached = directRateCache.get(cacheKey);
+  
+  // Return cached rate if it's still valid
+  if (cached && (Date.now() - cached.timestamp) < DIRECT_RATE_CACHE_DURATION) {
+    console.log('💾 Using cached direct rate:', fromCurrency, 'to', toCurrency, '=', cached.rate);
+    return cached.rate;
+  }
+  
+  // Check if there's already a pending request for this currency pair
+  const existingPromise = directRatePromises.get(cacheKey);
+  if (existingPromise) {
+    console.log('⏳ Waiting for existing request:', fromCurrency, 'to', toCurrency);
+    return existingPromise;
+  }
+  
   console.log('🔄 Attempting direct conversion from', fromCurrency, 'to', toCurrency);
+  
+  // Create a promise for this request and store it
+  const apiPromise = (async (): Promise<number> => {
   const apis = [
     // Primary: Free currency API (different URL structure)
     {
@@ -222,7 +260,10 @@ export async function getDirectExchangeRate(fromCurrency: string, toCurrency: st
       
       if (rate && typeof rate === 'number' && !isNaN(rate) && rate > 0) {
         console.log('✅ Got live rate:', rate);
-        return rate;
+        // Round to 8 decimal places and cache the successful rate
+        const roundedRate = Math.round(rate * 100000000) / 100000000;
+        directRateCache.set(cacheKey, { rate: roundedRate, timestamp: Date.now() });
+        return roundedRate;
       }
     } catch (error) {
       console.warn(`Failed to fetch direct rate from ${api.url}:`, error);
@@ -232,6 +273,15 @@ export async function getDirectExchangeRate(fromCurrency: string, toCurrency: st
 
   // If all APIs fail, throw error - no static fallback
   throw new Error(`All currency APIs failed for ${fromCurrency} to ${toCurrency} conversion`);
+})();
+
+// Store the promise and clean it up when done
+directRatePromises.set(cacheKey, apiPromise);
+apiPromise.finally(() => {
+  directRatePromises.delete(cacheKey);
+});
+
+return apiPromise;
 }
 
 /**

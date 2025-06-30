@@ -1,13 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExperienceLevel, CustomRole, RoleExperienceDistribution } from '@/types';
-import { LocationData } from '@/types/location';
-import { ROLES_SALARY_COMPARISON, ROLES } from '@/utils/rolesData';
-import { ADDITIONAL_PROPERTY_ROLES } from '@/utils/dataQuoteCalculator';
+import { ExperienceLevel, CustomRole, LocationData, RoleExperienceDistribution } from '@/types';
+import { ManualLocation } from '@/types/location';
+import { ROLES } from '@/utils/rolesData';
+import { ADDITIONAL_PROPERTY_ROLES } from '@/utils/rolesData';
 import { Button } from '@/components/ui/Button';
 import { Check, Users, DollarSign, Clock, Award, Target, Lightbulb, GraduationCap, ChevronDown, ChevronUp, BarChart3, Plus, Minus } from 'lucide-react';
+import { getDirectExchangeRate, getCurrencySymbol, getCurrencyByCountry } from '@/utils/currency';
 
 interface ExperienceStepProps {
   value: ExperienceLevel | ''; // Legacy single level for backward compatibility
@@ -17,6 +18,7 @@ interface ExperienceStepProps {
   roleExperienceLevels: Record<string, ExperienceLevel>; // Deprecated
   roleExperienceDistribution: Record<string, RoleExperienceDistribution>;
   userLocation?: LocationData;
+  manualLocation?: ManualLocation | null;
   onChange: (value: ExperienceLevel) => void; // Legacy single level handler
   onRoleExperienceChange: (roleExperienceLevels: Record<string, ExperienceLevel>) => void; // Deprecated
   onRoleExperienceDistributionChange: (roleExperienceDistribution: Record<string, RoleExperienceDistribution>) => void;
@@ -25,20 +27,115 @@ interface ExperienceStepProps {
 }
 
 export function ExperienceStep({ 
-  value,
+  value, 
   selectedRoles, 
   customRoles,
   teamSize, 
   roleExperienceLevels,
   roleExperienceDistribution,
   userLocation,
+  manualLocation,
   onChange, 
   onRoleExperienceChange,
   onRoleExperienceDistributionChange,
   onCalculate, 
   isCalculating 
 }: ExperienceStepProps) {
+  const [savingsView, setSavingsView] = useState<'annual' | 'monthly'>('annual');
   
+  // Store PHP to local currency exchange rate
+  const [phpToLocalRate, setPhpToLocalRate] = useState<number>(0.018); // Fallback rate
+
+  // Currency handling function - same pattern as RoleSelectionStep
+  // Note: Manual location takes priority over auto-detected location
+  const getEffectiveCurrencySymbol = (userLocation?: LocationData, manualLocation?: ManualLocation | null) => {
+    let currency: string;
+    
+    // Manual location takes priority over auto-detected location
+    if (manualLocation?.country) {
+      currency = getCurrencyByCountry(manualLocation.country);
+    } 
+    // Fallback to auto-detected location if no manual selection
+    else if (userLocation?.currency) {
+      currency = userLocation.currency;
+    }
+    // Default fallback
+    else {
+      currency = 'USD';
+    }
+    
+    return getCurrencySymbol(currency);
+  };
+
+  // Get effective location (manual takes priority)
+  const effectiveLocation = React.useMemo(() => {
+    if (manualLocation?.country) {
+      // Convert manual location to LocationData format
+      return {
+        country: manualLocation.country,
+        countryName: manualLocation.country,
+        currency: getCurrencyByCountry(manualLocation.country),
+        currencySymbol: getCurrencySymbol(getCurrencyByCountry(manualLocation.country)),
+        detected: false
+      } as LocationData;
+    }
+    return userLocation;
+  }, [userLocation, manualLocation]);
+  
+  // Get exchange rate on mount and when location changes
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      try {
+        const targetCurrency = effectiveLocation?.currency || 'USD';
+        const rate = await getDirectExchangeRate('PHP', targetCurrency);
+        setPhpToLocalRate(rate);
+      } catch (error) {
+        console.warn('Failed to get exchange rate, using fallback:', error);
+      }
+    };
+    
+    fetchExchangeRate();
+  }, [effectiveLocation?.currency]);
+
+  // Function to get role-specific salary for display - Shows Philippines data and converted amount
+  const getRoleSalaryForLevel = (roleId: string, level: ExperienceLevel): string => {
+    const role = allRoles.find(r => r.id === roleId);
+    
+    if (role && 'salaryData' in role && role.salaryData) {
+      // Always use Philippines data for salary range display
+      const philippinesSalaryData = role.salaryData.Philippines?.[level];
+      if (philippinesSalaryData) {
+        const phpSalary = philippinesSalaryData.base;
+        
+        // Show both Philippines salary and converted amount
+        if (effectiveLocation) {
+          const convertedSalary = Math.round(phpSalary * phpToLocalRate);
+          return `₱${phpSalary.toLocaleString()} (${effectiveLocation.currencySymbol}${convertedSalary.toLocaleString()})`;
+        } else {
+          // Fallback to USD conversion if no location
+          const usdSalary = Math.round(phpSalary * phpToLocalRate);
+          return `₱${phpSalary.toLocaleString()} ($${usdSalary.toLocaleString()})`;
+        }
+      }
+    }
+    
+    // Fallback for custom roles or roles without salary data - show both currencies
+    const fallbackSalariesPHP = {
+      entry: 300000,
+      moderate: 420000,
+      experienced: 600000
+    };
+    
+    const phpAmount = fallbackSalariesPHP[level];
+    if (effectiveLocation) {
+      const convertedAmount = Math.round(phpAmount * phpToLocalRate);
+      return `₱${phpAmount.toLocaleString()} (${effectiveLocation.currencySymbol}${convertedAmount.toLocaleString()})`;
+    } else {
+      const usdAmount = Math.round(phpAmount * phpToLocalRate);
+      return `₱${phpAmount.toLocaleString()} ($${usdAmount.toLocaleString()})`;
+    }
+  };
+
   // Get all available roles (predefined + additional + custom)
   const allRoles = React.useMemo(() => {
     const predefinedRoles = Object.values(ROLES);
@@ -60,7 +157,7 @@ export function ExperienceStep({
   // Get active roles (selected roles only)
   const activeRoles = React.useMemo(() => {
     return Object.entries(selectedRoles)
-      .filter(([_, isSelected]) => isSelected)
+    .filter(([_, isSelected]) => isSelected)
       .map(([roleId]) => {
         const role = allRoles.find(r => r.id === roleId);
         const distribution = roleExperienceDistribution[roleId] || {
@@ -114,15 +211,15 @@ export function ExperienceStep({
         'Long-term growth potential'
       ],
       timeToProductivity: '2-3 months',
-      salaryRange: '$12,000 - $18,000',
+      salaryRange: '', // Now dynamically calculated per role
       bestFor: 'Standard processes, routine tasks, growing businesses',
-      color: 'text-green-700',
-      gradientFrom: 'from-green-50',
-      gradientTo: 'to-emerald-50'
+      color: 'text-gray-700',
+      gradientFrom: 'from-gray-50',
+      gradientTo: 'to-gray-200'
     },
     {
       level: 'moderate',
-      title: 'Mid-Level',
+      title: 'Mid Level',
       icon: <Target className="w-5 h-5" />,
       description: 'Professionals with 2-5 years of experience and proven skills',
       details: 'The sweet spot of experience and cost - capable of handling complex tasks with minimal supervision.',
@@ -133,7 +230,7 @@ export function ExperienceStep({
         'Balanced cost-to-value ratio'
       ],
       timeToProductivity: '4-6 weeks',
-      salaryRange: '$18,000 - $25,000',
+      salaryRange: '', // Now dynamically calculated per role
       bestFor: 'Complex processes, team leadership, established businesses',
       color: 'text-blue-700',
       gradientFrom: 'from-blue-50',
@@ -152,7 +249,7 @@ export function ExperienceStep({
         'Industry expertise and best practices'
       ],
       timeToProductivity: '1-2 weeks',
-      salaryRange: '$25,000 - $35,000',
+      salaryRange: '', // Now dynamically calculated per role
       bestFor: 'Strategic initiatives, complex projects, rapid scaling',
       color: 'text-purple-700',
       gradientFrom: 'from-purple-50',
@@ -188,12 +285,16 @@ export function ExperienceStep({
   };
 
   const getSavingsForRole = (role: any, experienceLevel: ExperienceLevel) => {
-    if (!userLocation) return 0;
+    if (!effectiveLocation) return 0;
     
     if (role.salaryData) {
-      const localSalary = role.salaryData[userLocation.country]?.[experienceLevel]?.total || 0;
-      const philippineSalary = role.salaryData.PH?.[experienceLevel]?.total || 0;
-      return localSalary - philippineSalary;
+      const localSalary = role.salaryData[effectiveLocation.country]?.[experienceLevel]?.base || 0;
+      const philippineSalaryPHP = role.salaryData.Philippines?.[experienceLevel]?.base || 0;
+      
+      // Convert Philippines salary from PHP to user's local currency for comparison
+      const philippineSalaryConverted = Math.round(philippineSalaryPHP * phpToLocalRate);
+      
+      return localSalary - philippineSalaryConverted;
     } else if (role.estimatedSalary) {
       // For custom roles, adjust based on experience level
       const multipliers = { entry: 0.8, moderate: 1.0, experienced: 1.3 };
@@ -219,6 +320,63 @@ export function ExperienceStep({
     }, 0);
   };
 
+  const getTotalLocalCost = () => {
+    if (!effectiveLocation) return 0;
+    
+    return activeRoles.reduce((total, role) => {
+      const roleData = allRoles.find(r => r.id === role.id);
+      if (!roleData) return total;
+      
+      let roleCost = 0;
+      
+      if ('salaryData' in roleData && roleData.salaryData) {
+        // Entry level cost
+        const entryLocalSalary = (roleData.salaryData as any)[effectiveLocation.country]?.entry?.base || 0;
+        roleCost += entryLocalSalary * role.distribution.entry;
+        
+        // Moderate level cost
+        const moderateLocalSalary = (roleData.salaryData as any)[effectiveLocation.country]?.moderate?.base || 0;
+        roleCost += moderateLocalSalary * role.distribution.moderate;
+        
+        // Experienced level cost
+        const experiencedLocalSalary = (roleData.salaryData as any)[effectiveLocation.country]?.experienced?.base || 0;
+        roleCost += experiencedLocalSalary * role.distribution.experienced;
+      }
+      
+      return total + roleCost;
+    }, 0);
+  };
+
+  const getTotalPhilippinesCost = () => {
+    return activeRoles.reduce((total, role) => {
+      const roleData = allRoles.find(r => r.id === role.id);
+      if (!roleData) return total;
+      
+      let roleCost = 0;
+      
+      if ('salaryData' in roleData && roleData.salaryData) {
+        // Entry level cost
+        const entryPhpSalary = roleData.salaryData.Philippines?.entry?.base || 0;
+        roleCost += entryPhpSalary * role.distribution.entry;
+        
+        // Moderate level cost
+        const moderatePhpSalary = roleData.salaryData.Philippines?.moderate?.base || 0;
+        roleCost += moderatePhpSalary * role.distribution.moderate;
+        
+        // Experienced level cost
+        const experiencedPhpSalary = roleData.salaryData.Philippines?.experienced?.base || 0;
+        roleCost += experiencedPhpSalary * role.distribution.experienced;
+      }
+      
+      return total + roleCost;
+    }, 0);
+  };
+
+  const getTotalPhilippinesCostConverted = () => {
+    const phpCost = getTotalPhilippinesCost();
+    return Math.round(phpCost * phpToLocalRate);
+  };
+
   const getCompletionPercentage = () => {
     const completeRoles = activeRoles.filter(role => role.distribution.isComplete).length;
     return activeRoles.length > 0 ? (completeRoles / activeRoles.length) * 100 : 0;
@@ -234,38 +392,52 @@ export function ExperienceStep({
           <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-headline-1 text-neutral-900">Distribute Experience Levels</h2>
+          <h2 className="text-headline-1 text-neutral-900">Experience Level</h2>
         </div>
         <p className="text-body-large text-neutral-600 mb-4">
           Assign team members to different experience levels for each role. Mix and match to optimize your team composition.
         </p>
         
-        {/* Progress Indicator */}
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between text-sm text-neutral-600 mb-2">
-            <span>Configuration Progress</span>
-            <span>{Math.round(getCompletionPercentage())}% Complete</span>
-          </div>
-          <div className="w-full bg-neutral-200 rounded-full h-2">
-            <motion.div 
-              className="bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${getCompletionPercentage()}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Role-by-Role Experience Distribution */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-semibold text-neutral-900 text-center">
+        {/* Progress and Savings View Row */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-neutral-900">
           Configure Each Role ({activeRoles.length} role{activeRoles.length !== 1 ? 's' : ''})
         </h3>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-600">View:</span>
+            <div className="flex bg-neutral-100 rounded-lg p-1">
+              <button
+                onClick={() => setSavingsView('annual')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  savingsView === 'annual'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Annual
+              </button>
+              <button
+                onClick={() => setSavingsView('monthly')}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  savingsView === 'monthly'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Monthly
+              </button>
+            </div>
+            </div>
+          </div>
+        </div>
         
+      {/* Role-by-Role Experience Distribution */}
+      <div className="space-y-6">
         {activeRoles.map((role, index) => {
           const roleData = allRoles.find(r => r.id === role.id);
           const distribution = role.distribution;
           const unassignedCount = distribution.totalRequired - distribution.totalAssigned;
-          
+
           return (
             <motion.div
               key={role.id}
@@ -291,25 +463,18 @@ export function ExperienceStep({
                     </p>
                   </div>
                 </div>
-                
-                {/* Assignment Status */}
-                <div className="text-right">
-                  <div className={`text-sm font-medium ${
-                    distribution.isComplete 
-                      ? 'text-green-600' 
-                      : unassignedCount < 0 
-                        ? 'text-red-600'
-                        : 'text-orange-600'
-                  }`}>
-                    {distribution.isComplete 
-                      ? '✓ Complete' 
-                      : unassignedCount < 0 
-                        ? `${Math.abs(unassignedCount)} over-assigned`
-                        : `${unassignedCount} unassigned`}
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {distribution.totalAssigned} of {distribution.totalRequired} assigned
-                  </div>
+
+                {/* Assigned Count Badge at Top */}
+                <div className="flex justify-end mb-2">
+                  {distribution.totalAssigned === distribution.totalRequired ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold flex items-center gap-1">
+                      <Check className="w-4 h-4" /> Completed
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm font-semibold">
+                      {distribution.totalAssigned}/{distribution.totalRequired} Assigned
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -325,157 +490,213 @@ export function ExperienceStep({
                   return (
                     <div key={option.level} className={`p-4 rounded-lg border-2 bg-gradient-to-br ${option.gradientFrom} ${option.gradientTo}`}>
                       {/* Experience Level Header */}
-                      <div className="text-center mb-4">
-                        <div className={`p-3 rounded-lg bg-white/80 ${option.color} mx-auto w-fit mb-2`}>
-                          {option.icon}
-                        </div>
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <span className={`text-xl ${option.color}`}>{option.icon}</span>
                         <h5 className={`font-bold text-lg ${option.color} mb-1`}>{option.title}</h5>
-                        <p className="text-xs text-neutral-600 leading-tight">{option.description}</p>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded text-left flex flex-col justify-center min-h-0 mb-6">
+                        <p className="text-xs text-neutral-600 leading-tight">
+                          <span className="font-bold">Description:</span> {option.description}
+                          <br />
+                          <span style={{ marginRight: '0.25rem', marginTop: '0.5rem', display: 'inline-block' }} className="font-bold">Best for:</span>{option.bestFor}
+                        </p>
                       </div>
 
                       {/* Counter Controls */}
-                      <div className="flex items-center justify-center gap-3 mb-4">
+                      <div className="flex items-center justify-center gap-3 mt-6 mb-6">
                         <button
                           onClick={() => updateRoleDistribution(role.id, option.level, currentCount - 1)}
                           disabled={!canDecrease}
-                          className="w-10 h-10 rounded-full border-2 border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+                          className="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Minus className="w-5 h-5" />
+                          <Minus className="w-4 h-4" />
                         </button>
-                        <div className="w-16 h-16 rounded-full bg-white/90 border-2 border-neutral-200 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-neutral-800">{currentCount}</span>
+                        <div className="w-8 text-center font-bold text-cyber-green-700 text-2xl">
+                          {currentCount}
                         </div>
                         <button
                           onClick={() => updateRoleDistribution(role.id, option.level, currentCount + 1)}
                           disabled={!canIncrease}
-                          className="w-10 h-10 rounded-full border-2 border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+                          className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Plus className="w-5 h-5" />
+                          <Plus className="w-4 h-4" />
                         </button>
                       </div>
 
-                      {/* Key Details */}
-                      <div className="space-y-2 mb-4">
-                        <div className="bg-white/70 p-2 rounded text-center">
-                          <div className="flex items-center justify-center text-xs text-neutral-600 mb-1">
-                            <Clock className="w-3 h-3 mr-1" />
-                            <span>{option.timeToProductivity}</span>
-                          </div>
-                          <div className="flex items-center justify-center text-xs text-neutral-600">
-                            <DollarSign className="w-3 h-3 mr-1" />
-                            <span>{option.salaryRange}</span>
-                          </div>
-                        </div>
-                        <div className="text-xs text-neutral-600 text-center px-2">
-                          <strong>Best for:</strong> {option.bestFor}
-                        </div>
-                      </div>
-
                       {/* Savings for This Level */}
-                      {userLocation && currentCount > 0 && totalSavingsForLevel > 0 && (
+                      {effectiveLocation && currentCount > 0 && (
                         <div className="bg-white/80 p-3 rounded-lg text-center border border-green-200">
-                          <div className="text-lg font-bold text-green-600 mb-1">
-                            {userLocation.currencySymbol}{totalSavingsForLevel.toLocaleString()}
+                          {/* Header */}
+                          <div className="text-center mb-4">
+                            <span className="text-sm font-semibold text-green-800">
+                              {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost Comparison
+                              <span className="block text-xs text-green-600">
+                                Calculated for {currentCount} {option.level === 'entry' ? 'Entry' : option.level === 'moderate' ? 'Mid' : 'Senior'} {currentCount === 1 ? 'Level' : 'Level'} {currentCount === 1 ? 'Member' : 'Members'}
+                              </span>
+                            </span>
                           </div>
-                          <div className="text-xs text-neutral-600">
-                            {currentCount} member{currentCount !== 1 ? 's' : ''} × {userLocation.currencySymbol}{savings.toLocaleString()}
+
+                          {/* Salary Breakdown */}
+                          <div className="space-y-2">
+                            <div className="space-y-1">
+                              <div className="text-center mb-4">
+                                <span className="text-sm text-green-600 font-medium">Estimated Base Salary</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-green-700 font-medium">
+                                  {effectiveLocation?.countryName || 'United States'} Rate:
+                                </span>
+                                <div className="text-right">
+                                  <div className="text-sm font-bold text-green-900">
+                                    {effectiveLocation.currencySymbol}
+                                    {(() => {
+                                      if (roleData && 'salaryData' in roleData && roleData.salaryData) {
+                                        const localSalary = (roleData.salaryData as any)[effectiveLocation.country]?.[option.level]?.base || 0;
+                                        const totalLocalCost = localSalary * currentCount;
+                                        return (savingsView === 'monthly' ? Math.round(totalLocalCost / 12) : totalLocalCost).toLocaleString();
+                                      }
+                                      return '0';
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-green-700 font-medium">Philippines Rate:</span>
+                              <div className="text-right">
+                                <div className="text-sm font-bold text-green-900">
+                                  ₱{(() => {
+                                    if (roleData && 'salaryData' in roleData && roleData.salaryData) {
+                                      const phpSalary = roleData.salaryData.Philippines?.[option.level]?.base || 0;
+                                      const totalPhpCost = phpSalary * currentCount;
+                                      return (savingsView === 'monthly' ? Math.round(totalPhpCost / 12) : totalPhpCost).toLocaleString();
+                                    }
+                                    return '0';
+                                  })()}
+                                </div>
+                                <div className="text-xs text-green-600">
+                                  {(() => {
+                                    if (roleData && 'salaryData' in roleData && roleData.salaryData) {
+                                      const phpSalary = roleData.salaryData.Philippines?.[option.level]?.base || 0;
+                                      const convertedSalary = Math.round(phpSalary * phpToLocalRate);
+                                      const totalConvertedCost = convertedSalary * currentCount;
+                                      return `≈ ${effectiveLocation.currencySymbol}${(savingsView === 'monthly' ? Math.round(totalConvertedCost / 12) : totalConvertedCost).toLocaleString()}`;
+                                    }
+                                    return '';
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="border-t border-green-300 pt-2 mt-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-green-600">
+                                    {effectiveLocation.currencySymbol}
+                            {savingsView === 'monthly' 
+                              ? Math.round(totalSavingsForLevel / 12).toLocaleString()
+                              : totalSavingsForLevel.toLocaleString()
+                            }
                           </div>
-                          <div className="text-xs text-green-600 font-medium">Annual savings</div>
+                                  <div className="text-xs text-green-600">
+                                    {(() => {
+                                      let localSalary = 0;
+                                      let offshoreSalary = 0;
+                                      if (roleData && 'type' in roleData && roleData.type === 'predefined' && 'salaryData' in roleData && roleData.salaryData) {
+                                        localSalary = ((roleData.salaryData as any)[effectiveLocation.country]?.[option.level]?.base || 0) * currentCount;
+                                        offshoreSalary = Math.round((roleData.salaryData.Philippines?.[option.level]?.base || 0) * phpToLocalRate) * currentCount;
+                                      } else if (roleData && 'type' in roleData && roleData.type === 'custom' && 'estimatedSalary' in roleData) {
+                                        const multipliers = { entry: 0.8, moderate: 1.0, experienced: 1.3 };
+                                        localSalary = roleData.estimatedSalary.local * multipliers[option.level] * currentCount;
+                                        offshoreSalary = roleData.estimatedSalary.philippine * multipliers[option.level] * currentCount;
+                                      }
+                                      if (localSalary > 0) {
+                                        const percent = ((localSalary - offshoreSalary) / localSalary) * 100;
+                                        return `${percent.toFixed(1)}% Savings`;
+                                      }
+                                      return '0.0% Savings';
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                          </div>
+                          </div>
                         </div>
                       )}
 
-                      {/* Empty State */}
-                      {currentCount === 0 && (
-                        <div className="bg-white/50 p-3 rounded-lg text-center border border-dashed border-neutral-300">
-                          <div className="text-sm text-neutral-500">No members assigned</div>
-                          <div className="text-xs text-neutral-400 mt-1">Click + to add</div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
-              </div>
-
-              {/* Status Message */}
-              <div className="mt-4">
-                {distribution.isComplete ? (
-                  <div className="p-3 rounded-lg text-sm bg-green-100 text-green-800 border border-green-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      <span>✅ Assignment Complete - All {distribution.totalRequired} members assigned</span>
-                    </div>
-                    <div className="text-xs text-green-600 font-medium">
-                      Can decrease, no more increases
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`p-3 rounded-lg text-sm ${
-                    unassignedCount < 0 
-                      ? 'bg-red-100 text-red-800 border border-red-200' 
-                      : 'bg-orange-100 text-orange-800 border border-orange-200'
-                  }`}>
-                    {unassignedCount < 0 
-                      ? `⚠️ Please reduce assignments by ${Math.abs(unassignedCount)} member${Math.abs(unassignedCount) !== 1 ? 's' : ''}`
-                      : `📝 Please assign ${unassignedCount} more member${unassignedCount !== 1 ? 's' : ''} to complete this role`}
-                  </div>
-                )}
               </div>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Consolidated Savings Summary */}
+      {/* Status Messages */}
       <AnimatePresence>
-        {getCompletionPercentage() > 0 && (
+        {allRolesConfigured && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="p-6 rounded-xl bg-gradient-to-r from-neural-blue-50/50 to-quantum-purple-50/50 border border-neural-blue-100/50 relative overflow-hidden"
+            className="text-center mb-6"
           >
+            <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+              <h3 className="text-lg font-bold text-green-800 mb-2">All Roles Configured</h3>
+              <p className="text-sm text-green-700">
+                Perfect! All {activeRoles.length} role{activeRoles.length !== 1 ? 's' : ''} have been fully assigned. You may still make adjustments above.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {!allRolesConfigured && activeRoles.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center mb-6"
+          >
+            <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200">
+              <h3 className="text-lg font-bold text-orange-800 mb-2">Complete All Role Assignments</h3>
+              <p className="text-sm text-orange-700">
+                Please finish assigning experience levels so we can properly calculate your savings.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Consolidated Savings Summary */}
+      <AnimatePresence>
+        {getCompletionPercentage() > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="p-6 rounded-xl bg-gradient-to-r from-neural-blue-50/50 to-quantum-purple-50/50 border border-neural-blue-100/50 relative overflow-hidden"
+        >
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
-            <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
-            
-            <div className="relative z-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          
+          <div className="relative z-10">
               <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-neural-blue-900 mb-2">
-                  Consolidated Team Summary
-                </h3>
+                <h3 className="text-lg font-bold text-neural-blue-900">
+                Selection Summary
+              </h3>
                 <p className="text-sm text-neutral-600">
                   Your complete offshore team configuration and savings breakdown
                 </p>
               </div>
               
-              {/* Summary Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-neural-blue-600">{activeRoles.length}</div>
-                  <div className="text-sm text-neutral-600">Roles</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-quantum-purple-600">{totalAssignedMembers}</div>
-                  <div className="text-sm text-neutral-600">Assigned Members</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-cyber-green-600">
-                    {userLocation?.currencySymbol || '$'}{getTotalSavings().toLocaleString()}
-                  </div>
-                  <div className="text-sm text-neutral-600">Annual Savings</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-neural-blue-600">
-                    {Math.round(getCompletionPercentage())}%
-                  </div>
-                  <div className="text-sm text-neutral-600">Complete</div>
-                </div>
-              </div>
-
-              {/* Role Breakdown */}
+              {/* Role Breakdown - move to top of summary */}
               {getCompletionPercentage() > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-neutral-900 text-center">Role Breakdown</h4>
+                <div className="space-y-3 mb-6">
+                  <h4 className="text-sm text-gray-600 font-bold mb-2 text-center">Roles Breakdown</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {activeRoles.filter(role => role.distribution.totalAssigned > 0).map((role) => {
                       const roleData = allRoles.find(r => r.id === role.id);
@@ -485,25 +706,56 @@ export function ExperienceStep({
                         totalRoleSavings += getSavingsForRole(roleData, 'moderate') * role.distribution.moderate;
                         totalRoleSavings += getSavingsForRole(roleData, 'experienced') * role.distribution.experienced;
                       }
-                      
                       return (
                         <div key={role.id} className="bg-white/70 p-3 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg">{role.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm text-neutral-900 truncate">{role.title}</div>
-                              <div className="text-xs text-neutral-600">
-                                {role.distribution.entry > 0 && `${role.distribution.entry} Entry`}
-                                {role.distribution.entry > 0 && (role.distribution.moderate > 0 || role.distribution.experienced > 0) && ', '}
-                                {role.distribution.moderate > 0 && `${role.distribution.moderate} Mid`}
-                                {role.distribution.moderate > 0 && role.distribution.experienced > 0 && ', '}
-                                {role.distribution.experienced > 0 && `${role.distribution.experienced} Senior`}
-                              </div>
+                          <div className="mb-2">
+                            <div className="flex flex-col items-center gap-2 mb-1">
+                              <span className="text-lg">{role.icon}</span>
+                              <div className="font-medium text-sm text-neutral-900 text-center">{role.title}</div>
+                            </div>
+                            <div className="text-xs text-neutral-600 text-center">
+                              {role.distribution.entry > 0 && `${role.distribution.entry} Entry Level`}
+                              {role.distribution.entry > 0 && (role.distribution.moderate > 0 || role.distribution.experienced > 0) && ' | '}
+                              {role.distribution.moderate > 0 && `${role.distribution.moderate} Mid Level`}
+                              {role.distribution.moderate > 0 && role.distribution.experienced > 0 && ' | '}
+                              {role.distribution.experienced > 0 && `${role.distribution.experienced} Senior Level`}
                             </div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-sm font-bold text-green-600">
-                              {userLocation?.currencySymbol || '$'}{totalRoleSavings.toLocaleString()}
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mb-2">
+                            <div className="text-gray-600 text-left">Local Rate{effectiveLocation && effectiveLocation.countryName ? ` (${effectiveLocation.countryName})` : ''}:</div>
+                            <div className="text-green-900 text-right font-bold">
+                              {effectiveLocation ? (effectiveLocation.currencySymbol || '$') : '$'}
+                              {(() => {
+                                let local = 0;
+                                if (roleData && 'salaryData' in roleData && roleData.salaryData && effectiveLocation) {
+                                  local += ((roleData.salaryData as any)[effectiveLocation.country]?.entry?.base || 0) * role.distribution.entry;
+                                  local += ((roleData.salaryData as any)[effectiveLocation.country]?.moderate?.base || 0) * role.distribution.moderate;
+                                  local += ((roleData.salaryData as any)[effectiveLocation.country]?.experienced?.base || 0) * role.distribution.experienced;
+                                }
+                                return local.toLocaleString();
+                              })()}
+                            </div>
+                            <div className="text-gray-600 text-left">Philippines Rate:</div>
+                            <div className="text-blue-900 text-right font-bold">
+                              ₱
+                              {(() => {
+                                let php = 0;
+                                if (roleData && 'salaryData' in roleData && roleData.salaryData) {
+                                  php += (roleData.salaryData.Philippines?.entry?.base || 0) * role.distribution.entry;
+                                  php += (roleData.salaryData.Philippines?.moderate?.base || 0) * role.distribution.moderate;
+                                  php += (roleData.salaryData.Philippines?.experienced?.base || 0) * role.distribution.experienced;
+                                }
+                                return php.toLocaleString();
+                              })()}
+                            </div>
+                            <div className="text-gray-600 text-left">Annual Savings:</div>
+                            <div className="text-green-600 text-right font-bold">
+                              {effectiveLocation ? (effectiveLocation.currencySymbol || '$') : '$'}
+                              {savingsView === 'monthly' 
+                                ? Math.round(totalRoleSavings / 12).toLocaleString()
+                                : totalRoleSavings.toLocaleString()
+                              }
+                              <span className="block text-xs text-neutral-600 font-normal">{savingsView === 'monthly' ? 'Monthly' : 'Annual'} savings</span>
                             </div>
                           </div>
                         </div>
@@ -512,79 +764,57 @@ export function ExperienceStep({
                   </div>
                 </div>
               )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Completion Status & Calculate Button */}
-      <AnimatePresence>
-        {allRolesConfigured && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="text-center"
-          >
-            {/* All Complete Indicator */}
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                  <Check className="w-5 h-5 text-white" />
+              {/* Summary Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 font-bold">
+                    {effectiveLocation?.countryName || 'United States'} {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost
+                  </div>
+                  <div className="text-xl font-bold text-red-600">
+                    {effectiveLocation?.currencySymbol || '$'}
+                    {savingsView === 'monthly' 
+                      ? Math.round(getTotalLocalCost() / 12).toLocaleString()
+                      : getTotalLocalCost().toLocaleString()
+                    }
+          </div>
                 </div>
-                <h3 className="text-lg font-bold text-green-800">All Roles Configured!</h3>
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 font-bold">
+                    Philippines {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost
+                  </div>
+                  <div className="text-xl font-bold text-blue-600">
+                    ₱{savingsView === 'monthly' 
+                      ? Math.round(getTotalPhilippinesCost() / 12).toLocaleString()
+                      : getTotalPhilippinesCost().toLocaleString()
+                    }
+                  </div>
+                  <div className="text-xs text-blue-500 mt-1">
+                    ≈ {effectiveLocation?.currencySymbol || '$'}
+                    {savingsView === 'monthly' 
+                      ? Math.round(getTotalPhilippinesCostConverted() / 12).toLocaleString()
+                      : getTotalPhilippinesCostConverted().toLocaleString()
+                    } {effectiveLocation?.currency || 'USD'}
+                  </div>
               </div>
-              <p className="text-sm text-green-700">
-                Perfect! All {activeRoles.length} role{activeRoles.length !== 1 ? 's' : ''} have been completely assigned. 
-                You can still make adjustments above, or proceed to calculate your savings.
-              </p>
+                <div className="text-center">
+                  <div className="text-sm text-gray-600 font-bold">
+                    Total {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Savings
+                  </div>
+                <div className="text-2xl font-bold text-cyber-green-600">
+                    {effectiveLocation?.currencySymbol || '$'}
+                    {savingsView === 'monthly' 
+                      ? Math.round(getTotalSavings() / 12).toLocaleString()
+                      : getTotalSavings().toLocaleString()
+                    }
             </div>
-
-            <Button
-              onClick={onCalculate}
-              disabled={isCalculating}
-              className="w-full sm:w-auto px-8 py-4 text-lg shadow-lg"
-              size="lg"
-            >
-              {isCalculating ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Calculating...
-                </>
-              ) : (
-                'Calculate My Detailed Savings'
-              )}
-            </Button>
-            <p className="text-sm text-neutral-500 mt-2">
-              Get your personalized offshore scaling report with detailed experience-level analysis
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Incomplete Roles Indicator */}
-      <AnimatePresence>
-        {!allRolesConfigured && activeRoles.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="text-center"
-          >
-            <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-bold text-orange-800">Complete All Role Assignments</h3>
               </div>
-              <p className="text-sm text-orange-700">
-                Please finish assigning team members to all experience levels before proceeding to calculate your savings.
-              </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 } 

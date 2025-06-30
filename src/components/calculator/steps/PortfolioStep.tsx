@@ -1,13 +1,13 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
 import { ManualLocation, IPLocationData } from '@/types/location';
 
 import { useQuoteCalculatorData, getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 import { Building, TrendingUp, Users, Edit3, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, Globe } from 'lucide-react';
-import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
+import { LocationSelector } from '@/components/common/LocationSelector';
 import { Button } from '@/components/ui/Button';
 
 interface PortfolioStepProps {
@@ -28,6 +28,10 @@ interface PortfolioStepProps {
   getEffectiveLocation?: () => IPLocationData | { country_name: string; country: string; currency: string; currencySymbol: string; } | null | undefined;
   onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => void;
   showPortfolioGridSkeleton?: boolean;
+  
+  // Data passed from parent to avoid duplicate API calls
+  portfolioIndicators: Record<PortfolioSize, PortfolioIndicator>;
+  isLoadingIndicators?: boolean;
 }
 
 export function PortfolioStep({ 
@@ -47,8 +51,16 @@ export function PortfolioStep({
   onTempLocationChange,
   getEffectiveLocation,
   onChange,
-  showPortfolioGridSkeleton = false
+  showPortfolioGridSkeleton = false,
+  
+  // Data from parent
+  portfolioIndicators,
+  isLoadingIndicators = false
 }: PortfolioStepProps) {
+  
+  // Debug logging (can be removed in production)
+  // console.log('🔄 PortfolioStep render:', { isEditingLocation, manualLocation: manualLocation?.country || 'none' });
+
   const [showPreciseInput, setShowPreciseInput] = useState(value === 'manual');
   const [manualInput, setManualInput] = useState<ManualPortfolioData>(
     manualData || {
@@ -57,8 +69,9 @@ export function PortfolioStep({
     }
   );
 
-  // Transform IPLocationData to LocationData
-  const transformedLocationData = locationData ? {
+  // Transform IPLocationData to LocationData with useMemo to prevent recreation
+  const transformedLocationData = useMemo(() => {
+    const result = locationData ? {
     country: locationData.country_code,
     countryName: locationData.country_name,
     currency: locationData.currency,
@@ -66,11 +79,24 @@ export function PortfolioStep({
     detected: true
   } : locationData;
 
-  // Use dynamic portfolio indicators based on location
-  const { 
-    portfolioIndicators, 
-    isLoading: isLoadingIndicators
-  } = useQuoteCalculatorData(transformedLocationData, manualLocation);
+    // console.log('🔍 PortfolioStep transformedLocationData MEMO:', result?.countryName || 'none');
+    
+    return result;
+  }, [locationData?.country_code, locationData?.country_name, locationData?.currency]);
+  
+  // Tracking effects (can be removed in production)
+  // useEffect(() => { console.log('🔄 transformedLocationData changed:', transformedLocationData?.countryName || 'none'); }, [transformedLocationData]);
+  // useEffect(() => { console.log('🔄 manualLocation changed:', manualLocation?.country || 'none'); }, [manualLocation]);
+
+  // Memoized callback for location changes to prevent infinite loops
+  const handleLocationChange = useCallback((location: { country: string }) => {
+    onTempLocationChange?.({
+      country: location.country,
+      currency: getCurrencyByCountry(location.country)
+    });
+  }, [onTempLocationChange]);
+
+  // Portfolio indicators now passed as props from parent to avoid duplicate API calls
 
   const portfolioOptions = Object.entries(portfolioIndicators)
     .filter(([size]) => size !== 'manual')
@@ -80,10 +106,9 @@ export function PortfolioStep({
     ...data
   }));
 
-  // Update form data with portfolio indicators when they change
-  useEffect(() => {
-    onChange(value, manualData, portfolioIndicators);
-  }, [portfolioIndicators]); // Only trigger when portfolio indicators change
+  // Note: Removed useEffect that called onChange when portfolioIndicators changed
+  // This was causing infinite re-renders because the parent already has access to portfolioIndicators
+  // via the useQuoteCalculatorData hook and doesn't need them passed back via onChange
 
   const handlePresetSelection = (portfolioSize: PortfolioSize) => {
     setShowPreciseInput(false);
@@ -208,23 +233,30 @@ export function PortfolioStep({
         </div>
         
         {/* Location Section with Background */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-6 max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-6 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
+          
+          <div className="relative z-10">
           <div className="text-center mb-4">
-            <h3 className="text-xl font-bold text-neutral-900 mb-2">
+              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
               Where is your property management business primarily located?
             </h3>
-            <p className="text-neutral-600">
+              <p className="text-sm text-gray-800">
               We'll use this to show you accurate cost comparisons and savings calculations in your local currency.
             </p>
           </div>
           
-          {/* Horizontal Location Row */}
           <div className="flex items-center justify-center gap-4 flex-wrap">
             {/* Location Display or Error/Loading */}
             {getEffectiveLocation?.() ? (
               <>
                 {/* Location Display */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-blue-200 shadow-sm">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neural-blue-200 shadow-sm">
                   <span className="text-lg">🌏</span>
                   <span className="font-medium text-neutral-900">
                     {getEffectiveLocation?.()?.country_name}
@@ -234,7 +266,7 @@ export function PortfolioStep({
                 {/* Change Button */}
                 <button
                   onClick={onLocationEditStart}
-                  className="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-lg hover:bg-blue-100 bg-white shadow-sm"
+                    className="px-4 py-2 text-neural-blue-600 hover:text-neural-blue-700 transition-colors font-medium flex items-center gap-2 border border-neural-blue-300 rounded-lg hover:bg-neural-blue-100 bg-white shadow-sm"
                 >
                   <Edit3 className="w-4 h-4" />
                   Change Location
@@ -254,7 +286,7 @@ export function PortfolioStep({
                 {/* Error or Loading State */}
                 <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
                   {isLoadingLocation ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-neural-blue-500 border-t-transparent"></div>
                   ) : null}
                   {isLoadingLocation ? (
                     <span className="text-neutral-700 font-medium">
@@ -282,14 +314,9 @@ export function PortfolioStep({
           {isEditingLocation && (
             <div className="mt-6">
               <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
-                <EnhancedLocationSelector
+                <LocationSelector
                   initialLocation={tempLocation || { country: '', currency: getCurrencyByCountry('') }}
-                  onLocationChange={(location: { country: string }) => {
-                    onTempLocationChange?.({
-                      country: location.country,
-                      currency: getCurrencyByCountry(location.country)
-                    });
-                  }}
+                    onLocationChange={handleLocationChange}
                   onCancel={onLocationEditCancel || (() => {})}
                   onSave={onLocationEditSave || (() => {})}
                   showPreview={false}
@@ -298,10 +325,13 @@ export function PortfolioStep({
             </div>
           )}
         </div>
+        </motion.div>
         
-        <p className="text-body-large text-neutral-600">
+        <div className="text-center mt-8 mb-6">
+          <p className="text-body-large text-neutral-600 max-w-2xl mx-auto leading-relaxed">
           Select a range or provide exact details for more accurate recommendations and savings calculations.
         </p>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -438,7 +468,6 @@ export function PortfolioStep({
               </div>
             )}
             {/* Need More Precision Card */}
-             <div className="max-w-2xl mx-auto">
                              <button
                  onClick={handleShowPreciseInput}
                  className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
@@ -455,7 +484,6 @@ export function PortfolioStep({
                    <ArrowRight className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
                  </div>
               </button>
-            </div>
           </div>
         ) : (
           <motion.div

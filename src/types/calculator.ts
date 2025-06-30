@@ -181,12 +181,12 @@ export interface RoleSalaryData {
 export interface Task {
   readonly id: string;
   readonly name: string;
-  readonly aiAdvantage: string;
-  readonly timeSaved: string;
+  readonly aiAdvantage?: string;
+  readonly timeSaved?: string;
   readonly tooltip: string;
   readonly complexity: TaskComplexity;
-  readonly category: 'administrative' | 'communication' | 'marketing' | 'analysis' | 'coordination';
-  readonly skillLevel: 1 | 2 | 3 | 4 | 5; // 1-5 skill level required
+  readonly category?: 'administrative' | 'communication' | 'marketing' | 'analysis' | 'coordination';
+  readonly skillLevel?: 1 | 2 | 3 | 4 | 5; // 1-5 skill level required
 }
 
 // Role definition

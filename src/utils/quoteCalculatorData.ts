@@ -406,6 +406,73 @@ const PORTFOLIO_INFO: Readonly<Record<string, Record<PortfolioSize, PortfolioInd
       averageRevenue: { min: 0, max: 15000000 },
     implementationComplexity: 'simple'
     }
+  },
+  Philippines: {
+    '500-999': {
+      min: 500,
+      max: 999,
+      tier: 'growing',
+      description: 'Perfect for testing offshore teams',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 8000000, max: 15000000 }, // PHP values - 2025 market-adjusted
+      implementationComplexity: 'simple'
+    },
+    '1000-1999': {
+      min: 1000,
+      max: 1999,
+      tier: 'large',
+      description: 'Ideal for full team implementation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 2,
+        leasingCoordinator: 2,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 15000000, max: 35000000 },
+      implementationComplexity: 'moderate'
+    },
+    '2000-4999': {
+      min: 2000,
+      max: 4999,
+      tier: 'major',
+      description: 'Multiple teams across departments',
+      recommendedTeamSize: {
+        assistantPropertyManager: 3,
+        leasingCoordinator: 2,
+        marketingSpecialist: 2
+      },
+      averageRevenue: { min: 35000000, max: 80000000 },
+      implementationComplexity: 'complex'
+    },
+    '5000+': {
+      min: 5000,
+      max: 99999,
+      tier: 'enterprise',
+      description: 'Full offshore operation',
+      recommendedTeamSize: {
+        assistantPropertyManager: 5,
+        leasingCoordinator: 3,
+        marketingSpecialist: 3
+      },
+      averageRevenue: { min: 80000000, max: 200000000 },
+      implementationComplexity: 'enterprise'
+    },
+    'manual': {
+      min: 0,
+      max: 99999,
+      tier: 'growing',
+      description: 'Custom portfolio size with precise inputs',
+      recommendedTeamSize: {
+        assistantPropertyManager: 1,
+        leasingCoordinator: 1,
+        marketingSpecialist: 1
+      },
+      averageRevenue: { min: 0, max: 200000000 },
+      implementationComplexity: 'simple'
+    }
   }
 } as const;
 
@@ -492,45 +559,61 @@ function normalizeCacheKey(location: LocationData): string {
 
 
 /**
- * Generate location-specific portfolio indicators using Anthropic API
+ * Generate location-specific data using combined Anthropic API
+ * Returns both portfolio indicators and roles/salary data
  */
-async function generateDynamicPortfolioIndicators(location: LocationData): Promise<Record<PortfolioSize, PortfolioIndicator> | null> {
+async function generateCombinedLocationData(location: LocationData): Promise<{
+  portfolioIndicators: Record<PortfolioSize, PortfolioIndicator> | null;
+  roles: any | null;
+  rolesSalaryComparison: any | null;
+}> {
   try {
-    console.log('🚀 Calling /api/anthropic/quote-calculator with location:', location);
+    console.log('🚀 Calling combined API for location:', location);
     
-    const response = await fetch('/api/anthropic/quote-calculator', {
+    const response = await fetch('/api/anthropic', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         location,
-        portfolioSizes: [] // Claude will generate dynamic ranges
+        portfolioSizes: ['small', 'medium', 'large']
       }),
     });
 
-    console.log('📡 API response status:', response.status);
+    console.log('📡 Combined API response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ API response error:', response.status, errorText);
-      throw new Error(`API response not ok: ${response.status} - ${errorText}`);
+      console.error('❌ Combined API response error:', response.status, errorText);
+      throw new Error(`Combined API response not ok: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('✅ API response data received:', Object.keys(data));
+    console.log('✅ Combined API response data received:', Object.keys(data));
     
-    if (data.portfolioIndicators) {
-      console.log('🎯 Portfolio indicators found in response');
-      return data.portfolioIndicators;
-    } else {
-      console.error('❌ No portfolioIndicators in response:', data);
-      return null;
-    }
+    return {
+      portfolioIndicators: data.portfolioIndicators || null,
+      roles: data.roles || null,
+      rolesSalaryComparison: data.rolesSalaryComparison || null
+    };
   } catch (error) {
-    console.error('💥 Failed to generate dynamic portfolio indicators:', error);
-    return null;
+    console.error('💥 Failed to generate combined location data:', error);
+    return {
+      portfolioIndicators: null,
+      roles: null,
+      rolesSalaryComparison: null
+    };
   }
+}
+
+/**
+ * Generate location-specific portfolio indicators using combined API
+ * @deprecated Use generateCombinedLocationData for better efficiency
+ */
+async function generateDynamicPortfolioIndicators(location: LocationData): Promise<Record<PortfolioSize, PortfolioIndicator> | null> {
+  const combinedData = await generateCombinedLocationData(location);
+  return combinedData.portfolioIndicators;
 }
 
 /**
@@ -663,6 +746,11 @@ export async function getPortfolioIndicators(location?: LocationData): Promise<R
 export function getStaticPortfolioIndicators(): Record<PortfolioSize, PortfolioIndicator> {
   return DEFAULT_PORTFOLIO_INFO;
 }
+
+/**
+ * Export the combined data generation function for use by other utilities
+ */
+export { generateCombinedLocationData };
 
 export async function getPortfolioDataInCurrency(
   targetCurrency: string
