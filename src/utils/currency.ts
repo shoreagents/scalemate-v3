@@ -872,4 +872,60 @@ export function getCurrencyMultiplier(currency: string): number {
   };
   
   return multipliers[currency] || 1.0;
+}
+
+/**
+ * Get currency for display purposes - defaults to USD for unsupported countries
+ * This ensures consistent display currency for countries without salary data
+ */
+export function getDisplayCurrencyByCountry(countryName: string): string {
+  // List of supported countries with salary data
+  const supportedCountries = [
+    'Australia',
+    'Canada',
+    'United Kingdom',
+    'New Zealand',
+    'Singapore',
+    'Philippines',
+    'United States'
+  ];
+  
+  // If country is supported, use its actual currency
+  if (supportedCountries.includes(countryName)) {
+    return getCurrencyByCountry(countryName);
+  }
+  
+  // For unsupported countries, default to USD
+  return 'USD';
+}
+
+/**
+ * Get currency for display purposes - only falls back to USD when API fails
+ * When API is working, uses actual country currency
+ */
+export function getDisplayCurrencyByCountryWithAPIFallback(countryName: string, isAPIFailed: boolean = false): string {
+  // List of supported countries with salary data
+  const supportedCountries = [
+    'Australia',
+    'Canada',
+    'United Kingdom',
+    'New Zealand',
+    'Singapore',
+    'Philippines',
+    'United States'
+  ];
+  
+  // If country is supported, use its actual currency
+  if (supportedCountries.includes(countryName)) {
+    return getCurrencyByCountry(countryName);
+  }
+  
+  // For unsupported countries:
+  // - If API is working: use actual country currency
+  // - If API failed: fall back to USD
+  if (isAPIFailed) {
+    return 'USD';
+  } else {
+    return getCurrencyByCountry(countryName);
+  }
 } 

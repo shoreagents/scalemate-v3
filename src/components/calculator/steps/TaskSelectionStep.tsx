@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleId, CustomTask, TaskComplexity } from '@/types';
-import { ROLES, ADDITIONAL_PROPERTY_ROLES } from '@/utils/rolesData';
+import { ROLES } from '@/utils/rolesData';
 import { Button } from '@/components/ui/Button';
-import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, X, Sparkles } from 'lucide-react';
+import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, X, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TaskSelectionStepProps {
   selectedRoles: Record<RoleId, boolean>;
@@ -26,19 +26,6 @@ export function TaskSelectionStep({
     if (roleId in ROLES) {
       const enhancedRole = ROLES[roleId as keyof typeof ROLES];
       return enhancedRole;
-    }
-    
-    // Then check ADDITIONAL_PROPERTY_ROLES
-    if (roleId in ADDITIONAL_PROPERTY_ROLES) {
-      const additionalRole = ADDITIONAL_PROPERTY_ROLES[roleId as keyof typeof ADDITIONAL_PROPERTY_ROLES];
-      return {
-        id: roleId,
-        title: additionalRole?.title || `${roleId} Role`,
-        icon: additionalRole?.icon || '📋',
-        description: additionalRole?.description || 'Custom property management role',
-        tasks: [], // Additional roles don't have predefined tasks
-        category: additionalRole?.category || 'custom'
-      };
     }
     
     // Fallback for unknown roles
@@ -67,6 +54,15 @@ export function TaskSelectionStep({
     leasingCoordinator: { name: '', description: '', complexity: 'medium' },
     marketingSpecialist: { name: '', description: '', complexity: 'medium' },
   });
+
+  // Pagination state for each role
+  const [taskPage, setTaskPage] = useState<Record<RoleId, number>>({
+    assistantPropertyManager: 0,
+    leasingCoordinator: 0,
+    marketingSpecialist: 0,
+  });
+
+  const TASKS_PER_PAGE = 5;
 
   const activeRoles = Object.entries(selectedRoles)
     .filter(([, isSelected]) => isSelected)
@@ -185,6 +181,36 @@ export function TaskSelectionStep({
     }
   };
 
+  // Pagination functions
+  const getPaginatedTasks = (roleId: RoleId) => {
+    const role = getRoleData(roleId);
+    const currentPage = taskPage[roleId] || 0;
+    const startIndex = currentPage * TASKS_PER_PAGE;
+    const endIndex = startIndex + TASKS_PER_PAGE;
+    
+    return role.tasks ? role.tasks.slice(startIndex, endIndex) : [];
+  };
+
+  const getTotalPages = (roleId: RoleId) => {
+    const role = getRoleData(roleId);
+    return role.tasks ? Math.ceil(role.tasks.length / TASKS_PER_PAGE) : 0;
+  };
+
+  const goToNextPage = (roleId: RoleId) => {
+    const totalPages = getTotalPages(roleId);
+    const currentPage = taskPage[roleId] || 0;
+    if (currentPage < totalPages - 1) {
+      setTaskPage(prev => ({ ...prev, [roleId]: currentPage + 1 }));
+    }
+  };
+
+  const goToPreviousPage = (roleId: RoleId) => {
+    const currentPage = taskPage[roleId] || 0;
+    if (currentPage > 0) {
+      setTaskPage(prev => ({ ...prev, [roleId]: currentPage - 1 }));
+    }
+  };
+
   if (activeRoles.length === 0) {
     return (
       <div className="text-center py-12">
@@ -200,10 +226,7 @@ export function TaskSelectionStep({
       {/* Header */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
-          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
-            <CheckSquare className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-headline-1 text-neutral-900">Select Tasks to Offshore</h2>
+          <h2 className="text-headline-1 text-neutral-900">Task Selection</h2>
         </div>
         <p className="text-body-large text-neutral-600">
           Choose which tasks you&apos;d like to offshore for each role. You can also add custom tasks.
@@ -274,15 +297,12 @@ export function TaskSelectionStep({
                   <span className="text-2xl">{role.icon}</span>
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-900">{role.title}</h3>
-                    <p className="text-sm text-gray-600">
-                      {selectedCount} of {role.tasks.length + (customTasks[roleId]?.length || 0)} tasks selected
-                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   {selectedCount > 0 && (
                     <span className="px-2 py-1 bg-neural-blue-100 text-neural-blue-700 text-xs font-medium rounded-full">
-                      {selectedCount} selected
+                      {selectedCount} Selected Tasks
                     </span>
                   )}
                   {isExpanded ? (
@@ -300,22 +320,21 @@ export function TaskSelectionStep({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
                     className="border-t border-gray-200"
                   >
                     <div className="p-6 space-y-4">
                       {/* Standard Tasks */}
                       <div className="space-y-3">
-                        {role.tasks.map((task) => {
+                        {getPaginatedTasks(roleId).map((task) => {
                           const taskKey = `${roleId}-${task.id}`;
                           const isSelected = selectedTasks[taskKey];
 
                           return (
                             <motion.div
                               key={task.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className={`p-4 border rounded-lg cursor-pointer ${
                                 isSelected 
                                   ? 'border-neural-blue-500 bg-neural-blue-50 ring-2 ring-neural-blue-100 shadow-lg' 
                                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -348,6 +367,42 @@ export function TaskSelectionStep({
                         })}
                       </div>
 
+                      {/* Pagination Navigation */}
+                      {getTotalPages(roleId) > 1 && (
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                              Page {(taskPage[roleId] || 0) + 1} of {getTotalPages(roleId)}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              ({role.tasks?.length || 0} total tasks)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToPreviousPage(roleId);
+                              }}
+                              disabled={(taskPage[roleId] || 0) === 0}
+                              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToNextPage(roleId);
+                              }}
+                              disabled={(taskPage[roleId] || 0) >= getTotalPages(roleId) - 1}
+                              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Custom Tasks */}
                       {customTasks[roleId] && customTasks[roleId].length > 0 && (
                         <div className="space-y-3">
@@ -366,8 +421,11 @@ export function TaskSelectionStep({
                                   <p className="text-sm text-gray-700">{task.description}</p>
                                 </div>
                                 <button
-                                  onClick={() => handleRemoveCustomTask(roleId, task.id)}
-                                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveCustomTask(roleId, task.id);
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-red-500"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
@@ -415,26 +473,29 @@ export function TaskSelectionStep({
                                     onChange={(e) => updateCustomTaskInput(roleId, 'complexity', e.target.value as TaskComplexity)}
                                     className="w-full px-4 py-3 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white"
                                   >
-                                    <option value="low">🟢 Easy Task - Simple, routine work</option>
-                                    <option value="medium">🟡 Standard Task - Moderate skill required</option>
-                                    <option value="high">🔴 Complex Task - Advanced expertise needed</option>
+                                    <option value="low">Easy</option>
+                                    <option value="medium">Standard</option>
+                                    <option value="high">Complex</option>
                                   </select>
-                                  <p className="mt-1 text-xs text-neural-blue-600">
-                                    Complexity affects time estimates and pricing calculations
-                                  </p>
                               </div>
                             </div>
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <Button
                                   variant="ghost"
-                                  onClick={() => setShowAddCustom(prev => ({ ...prev, [roleId]: false }))}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowAddCustom(prev => ({ ...prev, [roleId]: false }));
+                                  }}
                                   className="px-4 py-2"
                                 >
                                   Cancel
                                 </Button>
                                 <Button
-                                  onClick={() => handleAddCustomTask(roleId)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddCustomTask(roleId);
+                                  }}
                                   disabled={!customTaskInputs[roleId]?.name.trim() || !customTaskInputs[roleId]?.description.trim()}
                                   className="px-6 py-2 bg-cyber-green-500 hover:bg-cyber-green-600 text-white"
                                 >
@@ -445,8 +506,11 @@ export function TaskSelectionStep({
                           </div>
                         ) : (
                           <button
-                            onClick={() => setShowAddCustom(prev => ({ ...prev, [roleId]: true }))}
-                            className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowAddCustom(prev => ({ ...prev, [roleId]: true }));
+                            }}
+                            className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 group"
                           >
                             <div className="flex items-center justify-between">
                               <div className="text-left">
@@ -457,7 +521,7 @@ export function TaskSelectionStep({
                                   Add custom tasks tailored to your {role.title} role requirements
                                 </p>
                               </div>
-                              <Plus className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
+                              <Plus className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1" />
                             </div>
                           </button>
                         )}

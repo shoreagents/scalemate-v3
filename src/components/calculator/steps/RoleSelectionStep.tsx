@@ -8,7 +8,8 @@ import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { ROLES } from '@/utils/rolesData';
 import { 
   getCurrencySymbol, 
-  getCurrencyByCountry,
+  getDisplayCurrencyByCountry,
+  getDisplayCurrencyByCountryWithAPIFallback,
   getDirectExchangeRate
 } from '@/utils/currency';
 import { 
@@ -116,7 +117,7 @@ export function RoleSelectionStep({
     
     // Manual location takes priority over auto-detected location
     if (manualLocation?.country) {
-      currency = getCurrencyByCountry(manualLocation.country);
+      currency = getDisplayCurrencyByCountryWithAPIFallback(manualLocation.country, !isUsingDynamicRoles);
     } 
     // Fallback to auto-detected location if no manual selection
     else if (userLocation?.currency) {
@@ -128,6 +129,66 @@ export function RoleSelectionStep({
     }
     
     return getCurrencySymbol(currency);
+  };
+
+  // Helper function to get display country name - only shows "United States" when API fails
+  const getDisplayCountryName = (userLocation?: LocationData, manualLocation?: ManualLocation | null) => {
+    const country = manualLocation?.country || userLocation?.country;
+    
+    // List of supported countries with salary data
+    const supportedCountries = [
+      'Australia',
+      'Canada',
+      'United Kingdom',
+      'New Zealand',
+      'Singapore',
+      'Philippines',
+      'United States'
+    ];
+    
+    // If country is supported, use its actual name
+    if (country && supportedCountries.includes(country)) {
+      return country;
+    }
+    
+    // For unsupported countries:
+    // - If API is working: use actual country name
+    // - If API failed: show "United States" since we use USA data
+    if (!isUsingDynamicRoles) {
+      return 'United States';
+    } else {
+      return country || 'United States';
+    }
+  };
+
+  // Helper function to get display country name - shows "United States" for unsupported countries
+  const getDisplayCountryNameWithAPIFallback = (userLocation?: LocationData, manualLocation?: ManualLocation | null, isAPIFailed: boolean = false) => {
+    const country = manualLocation?.country || userLocation?.country;
+    
+    // List of supported countries with salary data
+    const supportedCountries = [
+      'Australia',
+      'Canada',
+      'United Kingdom',
+      'New Zealand',
+      'Singapore',
+      'Philippines',
+      'United States'
+    ];
+    
+    // If country is supported, use its actual name
+    if (country && supportedCountries.includes(country)) {
+      return country;
+    }
+    
+    // For unsupported countries:
+    // - If API is working: use actual country name
+    // - If API failed: show "United States" since we use USA data
+    if (isAPIFailed) {
+      return 'United States';
+    } else {
+      return country || 'United States';
+    }
   };
 
   const [searchFilters, setSearchFilters] = useState<RoleSearchFilters>({
@@ -375,7 +436,7 @@ export function RoleSelectionStep({
           rolesSalaryComparison,
           searchFilters.savingsView
         );
-        const convertedCost = `≈ ${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}${summary.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${stableManualLocation?.currency || stableUserLocation?.currency || 'USD'}`;
+        const convertedCost = `≈ ${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}${summary.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${stableManualLocation?.currency || stableUserLocation?.currency || 'USD'}`;
         setSummaryPhilippinesCostConverted(convertedCost);
       } catch (error) {
         console.error('Error updating summary Philippines cost:', error);
@@ -466,12 +527,9 @@ export function RoleSelectionStep({
     <div>
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-16 h-16 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
-            <Users className="w-8 h-8 text-white" />
-          </div>
+        <div className="flex items-center justify-center gap-3 mb-2">
           <h2 className="text-headline-1 text-neutral-900">
-            Which roles do you want to offshore?
+            Role Selection
           </h2>
         </div>
         <p className="text-body-large text-neutral-600">
@@ -733,7 +791,7 @@ export function RoleSelectionStep({
                         {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost Comparison
                         {isSelected && (
                           <span className="block text-xs text-green-600">
-                            Calculated for {currentTeamSize} team {currentTeamSize === 1 ? 'member' : 'members'}
+                            for {currentTeamSize} Team {currentTeamSize === 1 ? 'Member' : 'Members'}
                           </span>
                         )}
                       </span>
@@ -742,16 +800,13 @@ export function RoleSelectionStep({
                     {/* Location vs Philippines Comparison */}
                     <div className="space-y-2">
                       <div className="space-y-1">
-                        <div className="text-center mb-4">
-                          <span className="text-sm text-green-600 font-medium">Estimated Base Salary</span>
-                        </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-green-700 font-medium">
-                            {manualLocation?.country || userLocation?.country || 'United States'} Rate:
+                            {getDisplayCountryName(userLocation, manualLocation)} Rate:
                           </span>
                           <div className="text-right">
-                            <div className="text-sm font-bold text-green-900">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.local.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <div className="text-lg font-bold text-green-900">
+                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.local.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </div>
                           </div>
                         </div>
@@ -771,7 +826,7 @@ export function RoleSelectionStep({
                                 const displayRate = searchFilters.savingsView === 'monthly' 
                                   ? Math.round(avgPH / 12 * 100) / 100
                                   : Math.round(avgPH * 100) / 100;
-                                return displayRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                return displayRate.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                               }
                               return '0';
                             })()}
@@ -779,7 +834,7 @@ export function RoleSelectionStep({
                           <div className="text-xs text-green-600">
                             {roleRates[role.id]?.phConverted && (
                               <span>
-                                ≈ {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.phConverted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ≈ {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.phConverted.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                               </span>
                             )}
                           </div>
@@ -790,7 +845,7 @@ export function RoleSelectionStep({
                           <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{((roleRates[role.id]?.local || 0) - (roleRates[role.id]?.phConverted || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{((roleRates[role.id]?.local || 0) - (roleRates[role.id]?.phConverted || 0)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </div>
                             <div className="text-xs text-green-600">
                               {(roleRates[role.id]?.local || 0) > 0
@@ -805,46 +860,53 @@ export function RoleSelectionStep({
                 )}
 
                 {/* Team Size Selector */}
-                {isSelected && (
-                  <div className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTeamSizeChange(role.id, -1);
-                          }}
-                          className={`
-                            w-8 h-8 rounded-full flex items-center justify-center transition-colors
-                            ${currentTeamSize > 0 
-                              ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                              : 'bg-neutral-100 text-neutral-400'
-                            }
-                          `}
-                          disabled={currentTeamSize <= 0}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        
-                        <span className="w-8 text-center font-bold text-cyber-green-700">
-                          {currentTeamSize}
-                        </span>
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTeamSizeChange(role.id, 1);
-                          }}
-                          className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors"
-                          disabled={currentTeamSize >= 10}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTeamSizeChange(role.id, -1);
+                            }}
+                            className={`
+                              w-8 h-8 rounded-full flex items-center justify-center transition-colors
+                              ${currentTeamSize > 0 
+                                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                                : 'bg-neutral-100 text-neutral-400'
+                              }
+                            `}
+                            disabled={currentTeamSize <= 0}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          
+                          <span className="w-8 text-center font-bold text-cyber-green-700">
+                            {currentTeamSize}
+                          </span>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTeamSizeChange(role.id, 1);
+                            }}
+                            className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors"
+                            disabled={currentTeamSize >= 10}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           );
@@ -883,13 +945,16 @@ export function RoleSelectionStep({
           <div className="relative z-10">
             <div className="text-center mb-4">
               <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
-                Selection Summary
+                Total Summary
               </h3>
+              <p className="text-sm text-neutral-600">
+                Your complete offshore team configuration and savings breakdown.
+              </p>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-center">
               <div className="lg:col-span-3">
-                <div className="text-sm text-gray-600 font-bold mb-2">Selected Roles</div>
+                <div className="text-sm text-gray-600 font-bold mb-2">Selected Roles & Team Size</div>
                 {/* Selected Roles Badge */}
                 <div className="flex flex-wrap gap-1 justify-center mb-4">
                   {Object.entries(selectedRoles)
@@ -925,10 +990,10 @@ export function RoleSelectionStep({
                   <>
                     <div>
                       <div className="text-sm text-gray-600 font-bold mb-2">
-                        {manualLocation?.country || userLocation?.country || 'United States'} {displayPeriod} Cost
+                        {getDisplayCountryName(userLocation, manualLocation)} {displayPeriod} Cost
                       </div>
                       <div className="text-xl font-bold text-red-600">
-                        {currencySymbol}{summaryData.totalLocalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {currencySymbol}{summaryData.totalLocalCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
                     </div>
                     
@@ -937,21 +1002,21 @@ export function RoleSelectionStep({
                         Philippines {displayPeriod} Cost
                       </div>
                       <div className="text-xl font-bold text-blue-600">
-                        ₱{summaryData.totalPhilippinesCostPHP.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₱{summaryData.totalPhilippinesCostPHP.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
-                      <div className="text-xs text-blue-500 mt-1">
-                        ≈ {currencySymbol}{summaryData.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {manualLocation?.currency || userLocation?.currency || 'USD'}
+                      <div className="text-xs text-blue-500">
+                        ≈ {currencySymbol}{summaryData.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} {manualLocation?.currency || userLocation?.currency || 'USD'}
                       </div>
                     </div>
                     
                     <div>
                       <div className="text-sm text-gray-600 font-bold mb-2">
-                        Total {displayPeriod} Savings
+                         {displayPeriod} Savings
                       </div>
                       <div className="text-xl font-bold text-green-600">
-                        {currencySymbol}{summaryData.totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {currencySymbol}{summaryData.totalSavings.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
-                      <div className="text-xs text-green-500 mt-1">
+                      <div className="text-xs text-green-500">
                         {summaryData.percentage.toFixed(1)}% Savings
                       </div>
                     </div>

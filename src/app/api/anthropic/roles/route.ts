@@ -1,50 +1,159 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrencySymbol } from '@/utils/currency';
-import { ROLES } from '@/utils/rolesData';
+import { 
+  ROLES, 
+  EXPERIENCE_LEVELS_DATA,
+  getStaticRoles,
+  getStaticRolesSalaryComparison,
+  getRoleSalaryForCountry,
+  getRoleSalaryWithUSAFallback
+} from '@/utils/rolesData';
+import { LocationData } from '@/types/location';
 
 // Type for the request body
 interface RolesRequest {
-  location: {
-    country: string;
-    countryName?: string;
-    region?: string;
-    city?: string;
-    currency?: string;
-  };
-  requestType?: 'both';
+  location: LocationData;
+  requestType?: 'roles' | 'salary' | 'all';
 }
 
-// Helper function to dynamically generate role information for prompts
-function generateRoleInfoForPrompt(userCountry?: string) {
-  const roleEntries = Object.entries(ROLES);
-  
-  // Generate role list for prompt
+// Simple in-memory cache (for demonstration; use Redis for production)
+const aiCache = new Map();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+
+// Helper to build cache key
+function buildCacheKey(location: LocationData, requestType: string) {
+  return `${location.country || ''}|${location.countryName || ''}|${location.currency || ''}|${requestType}`;
+}
+
+// Helper function to generate AI prompt based on rolesData.ts structure
+function generateAIPrompt(location: LocationData, requestType: 'roles' | 'salary' | 'all') {
+  const currentDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
+  const countryName = location.countryName || location.country;
+  const currency = location.currency || 'USD';
+  const currencySymbol = getCurrencySymbol(currency);
+
+  // Get static data as reference from rolesData.ts
+  const staticRoles = getStaticRoles();
+  const staticSalary = getStaticRolesSalaryComparison();
+
+  // Generate role list for prompt based on ROLES structure (only the 3 main roles)
+  const roleEntries = Object.entries(staticRoles);
   const roleList = roleEntries.map(([id, role]) => `${role.title} (${id})`).join('\n   - ');
-  
-  // Generate JSON template dynamically
+
+  // Generate JSON template based on ROLES structure from rolesData.ts
   const jsonTemplate = roleEntries.map(([id, role]) => {
     return `    "${id}": {
-      "id": "${id}",
-      "title": "${role.title}",
-      "icon": "${role.icon}",
-      "description": "[Description relevant to {countryName} market]",
-      "category": "${role.category}",
-      "type": "predefined",
-      "color": "${role.color}",
-      "requiredSkills": ["[skill1]", "[skill2]", "[skill3]", "[skill4]"],
-      "optionalSkills": ["[skill1]", "[skill2]", "[skill3]"],
-      "searchKeywords": ["[keyword1]", "[keyword2]", "[keyword3]", "[keyword4]", "[keyword5]", "[keyword6]", "[keyword7]"]
+      "icon": "[${countryName}-specific emoji icon]",
+      "description": "[Enhanced description for ${countryName} market]",
+      "tasks": [
+        {
+          "id": "[${countryName}-specific-task-1]",
+          "name": "[${countryName}-specific task name 1]",
+          "tooltip": "[${countryName}-specific task description 1]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-2]",
+          "name": "[${countryName}-specific task name 2]",
+          "tooltip": "[${countryName}-specific task description 2]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-3]",
+          "name": "[${countryName}-specific task name 3]",
+          "tooltip": "[${countryName}-specific task description 3]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-4]",
+          "name": "[${countryName}-specific task name 4]",
+          "tooltip": "[${countryName}-specific task description 4]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-5]",
+          "name": "[${countryName}-specific task name 5]",
+          "tooltip": "[${countryName}-specific task description 5]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-6]",
+          "name": "[${countryName}-specific task name 6]",
+          "tooltip": "[${countryName}-specific task description 6]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-7]",
+          "name": "[${countryName}-specific task name 7]",
+          "tooltip": "[${countryName}-specific task description 7]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-8]",
+          "name": "[${countryName}-specific task name 8]",
+          "tooltip": "[${countryName}-specific task description 8]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-9]",
+          "name": "[${countryName}-specific task name 9]",
+          "tooltip": "[${countryName}-specific task description 9]",
+          "complexity": "[low/medium/high]"
+        },
+        {
+          "id": "[${countryName}-specific-task-10]",
+          "name": "[${countryName}-specific task name 10]",
+          "tooltip": "[${countryName}-specific task description 10]",
+          "complexity": "[low/medium/high]"
+        }
+      ],
+      "experienceLevels": [
+        {
+          "level": "entry",
+          "title": "[${countryName} Entry Level Title]",
+          "description": "[${countryName}-specific entry level description]",
+          "bestFor": "[${countryName}-specific entry level best for]"
+        },
+        {
+          "level": "moderate",
+          "title": "[${countryName} Mid Level Title]",
+          "description": "[${countryName}-specific mid level description]",
+          "bestFor": "[${countryName}-specific mid level best for]"
+        },
+        {
+          "level": "experienced",
+          "title": "[${countryName} Senior Level Title]",
+          "description": "[${countryName}-specific senior level description]",
+          "bestFor": "[${countryName}-specific senior level best for]"
+        }
+      ],
+      "salary": {
+        "${countryName}": {
+          "entry": { "base": [${countryName} entry base salary], "total": [${countryName} entry total], "benefits": [${countryName} entry benefits], "taxes": [${countryName} entry taxes] },
+          "moderate": { "base": [${countryName} moderate base salary], "total": [${countryName} moderate total], "benefits": [${countryName} moderate benefits], "taxes": [${countryName} moderate taxes] },
+          "experienced": { "base": [${countryName} experienced base salary], "total": [${countryName} experienced total], "benefits": [${countryName} experienced benefits], "taxes": [${countryName} experienced taxes] }
+        },
+        "Philippines": {
+          "entry": { "base": [Philippines entry base salary], "total": [Philippines entry total], "benefits": [Philippines entry benefits], "taxes": [Philippines entry taxes] },
+          "moderate": { "base": [Philippines moderate base salary], "total": [Philippines moderate total], "benefits": [Philippines moderate benefits], "taxes": [Philippines moderate taxes] },
+          "experienced": { "base": [Philippines experienced base salary], "total": [Philippines experienced total], "benefits": [Philippines experienced benefits], "taxes": [Philippines experienced taxes] }
+        }
+      }
     }`;
   }).join(',\n');
-  
-  // Generate salary template dynamically for user's country + Philippines
+
+  // Generate salary template based on SALARY_DATA structure from rolesData.ts
   const salaryTemplate = roleEntries.map(([id]) => {
-    const countryKey = userCountry || 'United States'; // Use country name directly
     return `    "${id}": {
-      "${countryKey}": {
-        "entry": { "base": 50000, "total": 65000, "benefits": 10000, "taxes": 15000 },
-        "moderate": { "base": 65000, "total": 84500, "benefits": 13000, "taxes": 19500 },
-        "experienced": { "base": 85000, "total": 110500, "benefits": 17000, "taxes": 25500 }
+      "${countryName}": {
+        "entry": { "base": [${countryName} entry base salary], "total": [${countryName} entry total], "benefits": [${countryName} entry benefits], "taxes": [${countryName} entry taxes] },
+        "moderate": { "base": [${countryName} moderate base salary], "total": [${countryName} moderate total], "benefits": [${countryName} moderate benefits], "taxes": [${countryName} moderate taxes] },
+        "experienced": { "base": [${countryName} experienced base salary], "total": [${countryName} experienced total], "benefits": [${countryName} experienced benefits], "taxes": [${countryName} experienced taxes] }
       },
       "Philippines": { 
         "entry": { "base": 300000, "total": 390000, "benefits": 60000, "taxes": 90000 },
@@ -53,22 +162,105 @@ function generateRoleInfoForPrompt(userCountry?: string) {
       }
     }`;
   }).join(',\n');
-  
+
+  let prompt: string;
+
+  if (requestType === 'all') {
+    prompt = `You are a property management industry expert specializing in ${countryName}. Generate comprehensive data for the ${countryName} market as of ${currentDate}.
+
+CONTEXT:
+- Country: ${countryName}
+- Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
+- Target: Property management companies considering offshore teams
+
+EXISTING ROLES TO ENHANCE:
+${roleList}
+
+TASK: Generate ALL data types - enhanced role definitions and location-specific salary data for ${countryName}.
+
+REQUIREMENTS:
+1. ROLE DEFINITIONS: Enhance descriptions, skills, and keywords for ${countryName} market
+2. SALARY DATA: Generate current ${currentDate} market rates for ${countryName} vs Philippines
+3. Keep role titles EXACTLY as specified - do NOT modify titles
+4. Use realistic ${countryName} market rates in ${currency}
+5. Keep Philippines rates as specified (PHP)
+
+Respond with ONLY a valid JSON object in this exact format:
+{
+  "roles": {
+${jsonTemplate}
+  },
+  "rolesSalaryComparison": {
+${salaryTemplate}
+  }
+}`;
+  } else if (requestType === 'roles') {
+    prompt = `You are a property management industry expert specializing in ${countryName}. Enhance the existing role definitions for the ${countryName} market as of ${currentDate}.
+
+CONTEXT:
+- Country: ${countryName}
+- Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
+
+EXISTING ROLES TO ENHANCE:
+${roleList}
+
+TASK: Generate enhanced role definitions for ${countryName}.
+
+REQUIREMENTS:
+1. Enhance descriptions for ${countryName} market context
+2. Generate ${countryName}-specific required and optional skills
+3. Create ${countryName}-relevant search keywords
+4. Keep role titles EXACTLY as specified - do NOT modify titles
+
+Respond with ONLY a valid JSON object in this exact format:
+{
+  "roles": {
+${jsonTemplate}
+  }
+}`;
+  } else { // salary
+    prompt = `You are a property management industry expert specializing in ${countryName}. Generate location-specific salary data for ${countryName} as of ${currentDate}.
+
+CONTEXT:
+- Country: ${countryName}
+- Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
+
+EXISTING ROLES:
+${roleList}
+
+TASK: Generate current ${countryName} salary data vs Philippines comparison.
+
+REQUIREMENTS:
+1. Generate current ${currentDate} market rates for ${countryName} in ${currency}
+2. Include entry, moderate, experienced levels for each role
+3. Provide base, total, benefits, taxes breakdown
+4. Keep Philippines rates as specified (PHP)
+5. Use realistic ${countryName} market rates
+
+Respond with ONLY a valid JSON object in this exact format:
+{
+  "rolesSalaryComparison": {
+${salaryTemplate}
+  }
+}`;
+  }
+
   return {
+    prompt,
+    roleEntries,
     roleList,
     jsonTemplate,
-    salaryTemplate,
-    roleIds: Object.keys(ROLES),
-    roleCount: roleEntries.length
+    salaryTemplate
   };
 }
 
 export async function POST(request: NextRequest) {
-  let requestType = 'both'; // Default to both for efficiency
   try {
     const body: RolesRequest = await request.json();
-    const { location, requestType: bodyRequestType = 'both' } = body;
-    requestType = bodyRequestType;
+    const { location, requestType = 'all' } = body;
 
     if (!location?.country) {
       return NextResponse.json(
@@ -77,25 +269,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const countryName = location.countryName;
-    const country = location.country;
+    const cacheKey = buildCacheKey(location, requestType);
+    const cached = aiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return NextResponse.json({ ...cached.data, cache: true });
+    }
+
+    const countryName = location.countryName || location.country;
     const currency = location.currency || 'USD';
     const currencySymbol = getCurrencySymbol(currency);
 
-    console.log('🌍 Effective location for roles:', {
+    console.log('🌍 Processing roles request for:', {
       country: location.country,
       countryName,
       currency,
-      source: 'auto-detected'
+      requestType
     });
-
-    // Safety check: countryName is required for AI prompts
-    if (!countryName) {
-      return NextResponse.json(
-        { error: 'countryName is required for generating roles' },
-        { status: 400 }
-      );
-    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -106,63 +295,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let prompt: string;
+    // Generate AI prompt based on rolesData.ts structure
+    const promptData = generateAIPrompt(location, requestType);
 
-    if (requestType === 'both') {
-      const currentDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-
-      const roleInfo = generateRoleInfoForPrompt(location.country);
-
-      console.log('🔧 Dynamic role info generated:', {
-        roleCount: roleInfo.roleCount,
-        roleIds: roleInfo.roleIds,
-        roleList: roleInfo.roleList
-      });
-
-      prompt = `You are a property management industry expert. Generate both location-specific role definitions AND comprehensive salary data for ${countryName} as of ${currentDate}.
-
-Context:
-- Country: ${countryName}
-- Market Type: ${country}
-- Currency: ${currency} (${currencySymbol})
-- Current Date: ${currentDate}
-- Target: Property management companies considering offshore teams
-
-Generate BOTH:
-
-1. ROLE DEFINITIONS for ${countryName} property management market:
-${roleInfo.roleList}
-
-2. SALARY DATA for ${countryName} vs Philippines comparison:
-   - Each role with entry, moderate, experienced levels
-   - Include base, total, benefits, taxes for each level
-   - Use current ${currentDate} market rates
-   - ${countryName} salaries in ${currency}
-   - Philippines salaries in PHP for comparison
-
-IMPORTANT: Role titles must be exactly as specified - do NOT modify these titles.
-
-Respond with ONLY a valid JSON object in this exact format:
-{
-  "roles": {
-${roleInfo.jsonTemplate}
-  },
-  "rolesSalaryComparison": {
-${roleInfo.salaryTemplate}
-  }
-}`;
-    } else {
-      return NextResponse.json(
-        { error: 'Only "both" request type is supported' },
-        { status: 400 }
-      );
-    }
-
-    console.log(`🤖 Calling Anthropic API for roles and salary generation...`);
+    console.log(`🤖 Calling Anthropic API for ${requestType} generation...`);
     
     // Call Anthropic API
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -174,12 +310,12 @@ ${roleInfo.salaryTemplate}
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 6000, // Always 6000 for 'both' request type
+        max_tokens: requestType === 'all' ? 8000 : 4000,
         temperature: 0.3,
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: promptData.prompt
           }
         ]
       })
@@ -189,7 +325,7 @@ ${roleInfo.salaryTemplate}
       const errorText = await anthropicResponse.text();
       console.error('❌ Anthropic API error:', errorText);
       return NextResponse.json(
-        { error: 'Failed to generate roles and salary data' },
+        { error: 'Failed to generate data' },
         { status: 500 }
       );
     }
@@ -216,40 +352,68 @@ ${roleInfo.salaryTemplate}
       );
     }
 
-    // Validate the structure for 'both' request type
-    const roleInfo = generateRoleInfoForPrompt(location.country);
-    const requiredRoles = roleInfo.roleIds;
-    
-    // Check roles
-    const rolesData = parsedData.roles;
-    if (!rolesData) {
-      return NextResponse.json({ error: 'Missing roles data' }, { status: 500 });
-    }
-    
-    for (const roleId of requiredRoles) {
-      if (!rolesData[roleId]) {
-        console.error(`❌ Missing role: ${roleId}`);
-        return NextResponse.json(
-          { error: `Missing role data for ${roleId}` },
-          { status: 500 }
-        );
+    // Validate and merge with static data from rolesData.ts
+    const staticRoles = getStaticRoles();
+    const staticSalary = getStaticRolesSalaryComparison();
+    const requiredRoles = Object.keys(staticRoles);
+    const rolesWithSalaryData = Object.keys(staticRoles); // Only main 3 roles have salary data
+
+    let responseData: any = {
+      success: true,
+      location: location,
+      generatedAt: new Date().toISOString(),
+      requestType
+    };
+
+    // Handle roles data
+    if (requestType === 'roles' || requestType === 'all') {
+      const rolesData = parsedData.roles;
+      if (!rolesData) {
+        return NextResponse.json({ error: 'Missing roles data' }, { status: 500 });
       }
-    }
 
-    // Check salary data
-    const salaryData = parsedData.rolesSalaryComparison;
-    if (!salaryData) {
-      return NextResponse.json({ error: 'Missing salary data' }, { status: 500 });
-    }
-
-          // Validate that all required roles have both country and PH salary data
+      // Validate all required roles are present
       for (const roleId of requiredRoles) {
+        if (!rolesData[roleId]) {
+          console.error(`❌ Missing role: ${roleId}`);
+          return NextResponse.json(
+            { error: `Missing role data for ${roleId}` },
+            { status: 500 }
+          );
+        }
+      }
+
+      // Merge AI-generated roles with static data from rolesData.ts
+      const enhancedRoles = Object.assign({}, staticRoles) as any;
+      for (const [roleId, aiRole] of Object.entries(rolesData)) {
+        if (enhancedRoles[roleId]) {
+          enhancedRoles[roleId] = Object.assign({}, enhancedRoles[roleId], aiRole, {
+            // Preserve static data that shouldn't be overridden
+            tasks: enhancedRoles[roleId].tasks,
+            experienceLevels: enhancedRoles[roleId].experienceLevels,
+            salary: enhancedRoles[roleId].salary
+          });
+        }
+      }
+
+      responseData.roles = enhancedRoles;
+    }
+
+    // Handle salary data (only for main 3 roles that have salary data)
+    if (requestType === 'salary' || requestType === 'all') {
+      const salaryData = parsedData.rolesSalaryComparison;
+      if (!salaryData) {
+        return NextResponse.json({ error: 'Missing salary data' }, { status: 500 });
+      }
+
+      // Validate salary data structure (only for roles with salary data)
+      for (const roleId of rolesWithSalaryData) {
         if (!salaryData[roleId]) {
           throw new Error(`Missing salary data for role: ${roleId}`);
         }
         
         const roleSalary = salaryData[roleId];
-                  const requiredCountries = [countryName, 'Philippines'];
+        const requiredCountries = [countryName, 'Philippines'];
         
         for (const country of requiredCountries) {
           if (!roleSalary[country]) {
@@ -276,24 +440,27 @@ ${roleInfo.salaryTemplate}
         }
       }
 
-    console.log('✅ Roles and salary data generated and validated successfully');
+      // Merge AI-generated salary data with static data from rolesData.ts
+      const enhancedSalary = Object.assign({}, staticSalary) as any;
+      for (const [roleId, aiSalary] of Object.entries(salaryData)) {
+        if (enhancedSalary[roleId as keyof typeof enhancedSalary]) {
+          enhancedSalary[roleId as keyof typeof enhancedSalary] = Object.assign({}, enhancedSalary[roleId as keyof typeof enhancedSalary], aiSalary);
+        }
+      }
 
-    // Return both roles and salary data
-    const responseData = {
-      success: true,
-      location: location,
-      generatedAt: new Date().toISOString(),
-      roles: parsedData.roles,
-      rolesSalaryComparison: parsedData.rolesSalaryComparison
-    };
+      responseData.rolesSalaryComparison = enhancedSalary;
+    }
 
+    console.log(`✅ ${requestType} data generated and validated successfully for ${countryName}`);
+
+    aiCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
     return NextResponse.json(responseData);
 
   } catch (error) {
-    console.error(`❌ ${requestType} API error:`, error);
+    console.error(`❌ Roles API error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-} 
+}

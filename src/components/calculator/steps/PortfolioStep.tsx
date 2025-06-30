@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
 import { ManualLocation, IPLocationData } from '@/types/location';
 
-import { useQuoteCalculatorData, getCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
+import { useQuoteCalculatorData, getDisplayCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 import { Building, TrendingUp, Users, Edit3, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, Globe } from 'lucide-react';
 import { LocationSelector } from '@/components/common/LocationSelector';
 import { Button } from '@/components/ui/Button';
@@ -32,6 +32,8 @@ interface PortfolioStepProps {
   // Data passed from parent to avoid duplicate API calls
   portfolioIndicators: Record<PortfolioSize, PortfolioIndicator>;
   isLoadingIndicators?: boolean;
+  portfolioCurrency?: string;
+  portfolioCurrencySymbol?: string;
 }
 
 export function PortfolioStep({ 
@@ -55,7 +57,9 @@ export function PortfolioStep({
   
   // Data from parent
   portfolioIndicators,
-  isLoadingIndicators = false
+  isLoadingIndicators = false,
+  portfolioCurrency,
+  portfolioCurrencySymbol
 }: PortfolioStepProps) {
   
   // Debug logging (can be removed in production)
@@ -92,7 +96,7 @@ export function PortfolioStep({
   const handleLocationChange = useCallback((location: { country: string }) => {
     onTempLocationChange?.({
       country: location.country,
-      currency: getCurrencyByCountry(location.country)
+      currency: getDisplayCurrencyByCountry(location.country)
     });
   }, [onTempLocationChange]);
 
@@ -153,15 +157,17 @@ export function PortfolioStep({
       return '$'; // Return default until API completes
     }
     
-    // Disabled automatic currency detection from portfolio data as it's unreliable
-    // Always use location-based detection for accuracy
+    // Use portfolio currency symbol if available (this is the correct currency for the data)
+    if (portfolioCurrencySymbol) {
+      return portfolioCurrencySymbol;
+    }
     
+    // Fallback to location-based detection only if portfolio currency is not available
     let currency: string;
     
-    // Fallback to location-based detection
     // Manual location takes priority over auto-detected location
     if (manualLocation?.country) {
-      currency = getCurrencyByCountry(manualLocation.country);
+      currency = getDisplayCurrencyByCountry(manualLocation.country);
     } 
     // Fallback to auto-detected location if no manual selection
     else if (locationData?.currency) {
@@ -228,7 +234,7 @@ export function PortfolioStep({
       <div className="text-center mb-8">
         <div className="mb-6">
           <h2 className="text-headline-1 text-neutral-900 text-center">
-            Tell us about your property portfolio
+            Portfolio Size
           </h2>
         </div>
         
@@ -315,7 +321,7 @@ export function PortfolioStep({
             <div className="mt-6">
               <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
                 <LocationSelector
-                  initialLocation={tempLocation || { country: '', currency: getCurrencyByCountry('') }}
+                  initialLocation={tempLocation || { country: '', currency: getDisplayCurrencyByCountry('') }}
                     onLocationChange={handleLocationChange}
                   onCancel={onLocationEditCancel || (() => {})}
                   onSave={onLocationEditSave || (() => {})}

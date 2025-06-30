@@ -28,7 +28,7 @@ const STEPS = [
   },
   {
     number: 2,
-    title: 'Team Roles',
+    title: 'Role Selection',
     description: 'Choose roles to offshore',
     icon: Users
   },

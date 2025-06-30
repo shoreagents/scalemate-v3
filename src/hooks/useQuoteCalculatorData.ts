@@ -2,16 +2,18 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PortfolioSize, PortfolioIndicator } from '@/types';
 import { ManualLocation, LocationData } from '@/types/location';
 import { getPortfolioIndicators, getStaticPortfolioIndicators } from '@/utils/quoteCalculatorData';
-import { getRoles, getRolesSalaryComparison, getStaticRoles, getStaticRolesSalaryComparison, ROLES } from '@/utils/rolesData';
-import { getCurrencySymbol, getCurrencyByCountry } from '@/utils/currency';
+import { getStaticRoles, getStaticRolesSalaryComparison, ROLES } from '@/utils/rolesData';
+import { getCurrencySymbol, getDisplayCurrencyByCountry, getCurrencyByCountry } from '@/utils/currency';
 
-// Re-export currency utilities for backward compatibility
-export { getCurrencySymbol, getCurrencyByCountry };
+// Re-export for convenience
+export { getCurrencySymbol, getDisplayCurrencyByCountry, getCurrencyByCountry };
 
 interface UseQuoteCalculatorDataResult {
   portfolioIndicators: Record<PortfolioSize, PortfolioIndicator>;
+  portfolioCurrency: string;
+  portfolioCurrencySymbol: string;
   roles: typeof ROLES;
-  rolesSalaryComparison: Awaited<ReturnType<typeof getRolesSalaryComparison>>;
+  rolesSalaryComparison: ReturnType<typeof getStaticRolesSalaryComparison>;
   isLoading: boolean;
   isLoadingRoles: boolean;
   error: string | null;
@@ -26,11 +28,11 @@ export function useQuoteCalculatorData(
   locationData?: LocationData | null,
   manualLocation?: ManualLocation | null
 ): UseQuoteCalculatorDataResult {
-  const [portfolioIndicators, setPortfolioIndicators] = useState<Record<PortfolioSize, PortfolioIndicator>>(
-    getStaticPortfolioIndicators()
-  );
+  const [portfolioIndicators, setPortfolioIndicators] = useState<Record<PortfolioSize, PortfolioIndicator>>(getStaticPortfolioIndicators());
+  const [portfolioCurrency, setPortfolioCurrency] = useState<string>('USD');
+  const [portfolioCurrencySymbol, setPortfolioCurrencySymbol] = useState<string>('$');
   const [roles, setRoles] = useState<typeof ROLES>(getStaticRoles());
-  const [rolesSalaryComparison, setRolesSalaryComparison] = useState(getStaticRolesSalaryComparison());
+  const [rolesSalaryComparison, setRolesSalaryComparison] = useState<ReturnType<typeof getStaticRolesSalaryComparison>>(getStaticRolesSalaryComparison());
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +51,8 @@ export function useQuoteCalculatorData(
       return {
         country: manualLocation.country as any, // Manual location bypass validation
         countryName: manualLocation.country,
-        currency: getCurrencyByCountry(manualLocation.country),
-        currencySymbol: getCurrencySymbol(getCurrencyByCountry(manualLocation.country)),
+        currency: getDisplayCurrencyByCountry(manualLocation.country),
+        currencySymbol: getCurrencySymbol(getDisplayCurrencyByCountry(manualLocation.country)),
         detected: false
       };
     }
@@ -81,6 +83,8 @@ export function useQuoteCalculatorData(
     if (!effectiveLocation) {
       // No location available, use static data
       setPortfolioIndicators(getStaticPortfolioIndicators());
+      setPortfolioCurrency('USD');
+      setPortfolioCurrencySymbol('$');
       setIsUsingDynamicData(false);
       setIsLoading(false);
       processedLocationRef.current = null;
@@ -89,30 +93,53 @@ export function useQuoteCalculatorData(
 
     try {
       console.log('🔄 Loading portfolio indicators for location:', effectiveLocation.countryName || effectiveLocation.country);
-      
-      const indicators = await getPortfolioIndicators(effectiveLocation);
-      setPortfolioIndicators(indicators);
-      
-      // Mark this location as processed
-      processedLocationRef.current = locationCacheKey;
-      
-      // Check if we got dynamic data by comparing with static data
-      const staticData = getStaticPortfolioIndicators();
-      const isDynamic = JSON.stringify(indicators) !== JSON.stringify(staticData);
-      setIsUsingDynamicData(isDynamic);
-      
-      if (isDynamic) {
-        console.log('✅ Using dynamic portfolio indicators for', effectiveLocation.countryName || effectiveLocation.country);
-      } else {
-        console.log('📋 Using static portfolio indicators (fallback)');
+
+      // Try to get dynamic data from API first
+      try {
+        console.log('🔄 Attempting to fetch dynamic portfolio indicators from AI API for:', effectiveLocation.countryName || effectiveLocation.country);
+
+        const response = await fetch('/api/anthropic/quote-calculator', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            location: effectiveLocation,
+            requestType: 'portfolio'
+          })
+        });
+
+        if (response.ok) {
+          const apiData = await response.json();
+
+          if (apiData.portfolioIndicators) {
+            setPortfolioIndicators(apiData.portfolioIndicators);
+            setPortfolioCurrency(apiData.currency || 'USD');
+            setPortfolioCurrencySymbol(apiData.currencySymbol || '$');
+            setIsUsingDynamicData(!!apiData.ai);
+            // Mark this location as processed
+            processedLocationRef.current = locationCacheKey;
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (apiError) {
+        console.log('⚠️ AI API call failed, falling back to static data:', apiError);
       }
-      
+
+      // Fallback to static data
+      setPortfolioIndicators(getStaticPortfolioIndicators());
+      setPortfolioCurrency('USD');
+      setPortfolioCurrencySymbol('$');
+      setIsUsingDynamicData(false);
+      processedLocationRef.current = locationCacheKey;
     } catch (err) {
       console.error('❌ Error loading portfolio indicators:', err);
       setError(err instanceof Error ? err.message : 'Failed to load portfolio indicators');
-      
       // Fallback to static data
       setPortfolioIndicators(getStaticPortfolioIndicators());
+      setPortfolioCurrency('USD');
+      setPortfolioCurrencySymbol('$');
       setIsUsingDynamicData(false);
     } finally {
       setIsLoading(false);
@@ -150,38 +177,50 @@ export function useQuoteCalculatorData(
     try {
       console.log('🔄 Loading roles data for location:', effectiveLocation.countryName || effectiveLocation.country);
       
-      // Load both roles and salary data
-      const [rolesData, salaryData] = await Promise.all([
-        getRoles(effectiveLocation),
-        getRolesSalaryComparison(effectiveLocation)
-      ]);
+      // Try to get dynamic data from API first
+      try {
+        console.log('🔄 Attempting to fetch dynamic roles data for:', effectiveLocation.countryName || effectiveLocation.country);
+        
+        const response = await fetch('/api/anthropic/roles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            location: effectiveLocation,
+            requestType: 'all'
+          })
+        });
+
+        if (response.ok) {
+          const apiData = await response.json();
+          
+          if (apiData.roles && apiData.rolesSalaryComparison) {
+            console.log('✅ Using dynamic roles data from API for:', effectiveLocation.countryName || effectiveLocation.country);
+            setRoles(apiData.roles);
+            setRolesSalaryComparison(apiData.rolesSalaryComparison);
+            setIsUsingDynamicRoles(true);
+            
+            // Mark this location as processed for roles
+            processedRolesLocationRef.current = locationCacheKey;
+            setIsLoadingRoles(false);
+            return;
+          }
+        }
+      } catch (apiError) {
+        console.log('⚠️ API call failed, falling back to static data:', apiError);
+      }
       
-      console.log('📊 Loaded roles data:', {
-        rolesData,
-        salaryData,
-        location: effectiveLocation
-      });
-      
-      setRoles(rolesData);
-      setRolesSalaryComparison(salaryData);
+      // Fallback to static data
+      console.log('📋 Using static roles data (fallback)');
+      const staticRoles = getStaticRoles();
+      const staticSalary = getStaticRolesSalaryComparison();
+      setRoles(staticRoles);
+      setRolesSalaryComparison(staticSalary);
+      setIsUsingDynamicRoles(false);
       
       // Mark this location as processed for roles
       processedRolesLocationRef.current = locationCacheKey;
-      
-      // Check if we got dynamic data by comparing with static data
-      const staticRoles = getStaticRoles();
-      const staticSalary = getStaticRolesSalaryComparison();
-      const isDynamicRoles = JSON.stringify(rolesData) !== JSON.stringify(staticRoles);
-      const isDynamicSalary = JSON.stringify(salaryData) !== JSON.stringify(staticSalary);
-      const isDynamic = isDynamicRoles || isDynamicSalary;
-      
-      setIsUsingDynamicRoles(isDynamic);
-      
-      if (isDynamic) {
-        console.log('✅ Using dynamic roles data for', effectiveLocation.countryName || effectiveLocation.country);
-      } else {
-        console.log('📋 Using static roles data (fallback)');
-      }
       
     } catch (err) {
       console.error('❌ Error loading roles data:', err);
@@ -221,6 +260,8 @@ export function useQuoteCalculatorData(
 
   return {
     portfolioIndicators,
+    portfolioCurrency,
+    portfolioCurrencySymbol,
     roles,
     rolesSalaryComparison,
     isLoading,

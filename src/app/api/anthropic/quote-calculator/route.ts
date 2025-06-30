@@ -1,27 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrencySymbol } from '@/utils/currency';
+import {
+  getStaticPortfolioIndicators
+} from '@/utils/quoteCalculatorData';
+import { LocationData } from '@/types/location';
 
 // Type for the request body
 interface PortfolioIndicatorRequest {
-  location: {
-    country: string;
-    countryName?: string;
-    region?: string;
-    city?: string;
-    currency?: string;
-  };
-  portfolioSizes: string[];
-  requestType?: 'portfolio' | 'roles' | 'salary';
+  location: LocationData;
+  requestType?: 'portfolio';
 }
 
+// Simple in-memory cache (for demonstration; use Redis for production)
+const aiCache = new Map();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
+// Helper to build cache key
+function buildCacheKey(location: LocationData) {
+  return `${location.country || ''}|${location.countryName || ''}|${location.currency || ''}`;
+}
+
+function generatePortfolioPrompt(location: LocationData) {
+  const countryName = location.countryName || location.country;
+  const currency = location.currency || 'USD';
+  const currencySymbol = getCurrencySymbol(currency);
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  // Portfolio sizes to generate
+  const sizes = [
+    '500-999',
+    '1000-1999',
+    '2000-4999',
+    '5000+',
+    'manual'
+  ];
+
+  // JSON template for the prompt (remove tier and implementationComplexity)
+  const jsonTemplate = sizes.map(size => {
+    return `    "${size}": {
+      "min": [minimum property count for ${size}],
+      "max": [maximum property count for ${size}],
+      "description": "[${countryName}-specific description for ${size}]",
+      "recommendedTeamSize": {
+        "assistantPropertyManager": [number],
+        "leasingCoordinator": [number],
+        "marketingSpecialist": [number]
+      },
+      "averageRevenue": { "min": [min revenue in ${currency}], "max": [max revenue in ${currency}] }
+    }`;
+  }).join(',\n');
+
+  return `You are a property management industry expert specializing in ${countryName}. Generate portfolio indicators for the ${countryName} market as of ${currentDate}.
+
+CONTEXT:
+- Country: ${countryName}
+- Currency: ${currency} (${currencySymbol})
+- Current Date: ${currentDate}
+- Target: Property management companies considering offshore teams
+
+PORTFOLIO SIZES:
+- 500-999
+- 1000-1999
+- 2000-4999
+- 5000+
+- manual (custom size)
+
+TASK: Generate portfolio indicators for each size, including min/max, description, recommendedTeamSize, and averageRevenue. Do NOT include tier or implementationComplexity in your response.
+
+Respond with ONLY a valid JSON object in this exact format:
+{
+${jsonTemplate}
+}`;
+}
 
 export async function POST(request: NextRequest) {
-  let requestType = 'portfolio'; // Default value for error handling
   try {
     const body: PortfolioIndicatorRequest = await request.json();
-    const { location, requestType: bodyRequestType = 'portfolio' } = body;
-    requestType = bodyRequestType;
+    const { location, requestType = 'portfolio' } = body;
 
     if (!location?.country) {
       return NextResponse.json(
@@ -30,351 +89,140 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For roles, return static data without API call
-    if (requestType === 'roles') {
-      console.log('✅ Using static role data instead of API call');
-      return NextResponse.json({
-        roles: {
-          assistantPropertyManager: {
-            id: 'assistantPropertyManager',
-            title: 'Assistant Property Manager',
-            icon: '🏢',
-            description: 'Handles day-to-day property operations, tenant relations, and administrative tasks.',
-            category: 'property-management',
-            type: 'predefined',
-            color: 'brand-primary',
-            requiredSkills: ['Property Management', 'Tenant Relations', 'Administrative Skills', 'Communication'],
-            optionalSkills: ['Maintenance Coordination', 'Compliance Knowledge', 'Basic Accounting'],
-            searchKeywords: ['property', 'manager', 'tenant', 'administration', 'operations', 'maintenance', 'compliance']
-          },
-          leasingCoordinator: {
-            id: 'leasingCoordinator',
-            title: 'Leasing Coordinator',
-            icon: '🗝️',
-            description: 'Manages leasing activities, prospect communication, and application processing.',
-            category: 'leasing',
-            type: 'predefined',
-            color: 'brand-secondary',
-            requiredSkills: ['Sales Skills', 'Customer Service', 'Application Processing', 'Market Knowledge'],
-            optionalSkills: ['Marketing Skills', 'CRM Software', 'Negotiation Skills'],
-            searchKeywords: ['leasing', 'coordinator', 'sales', 'applications', 'prospects', 'tours', 'inquiries']
-          },
-          marketingSpecialist: {
-            id: 'marketingSpecialist',
-            title: 'Marketing Specialist',
-            icon: '📈',
-            description: 'Creates marketing campaigns, manages digital presence, and analyzes market trends.',
-            category: 'marketing',
-            type: 'predefined',
-            color: 'brand-accent',
-            requiredSkills: ['Digital Marketing', 'Content Creation', 'Analytics', 'Social Media'],
-            optionalSkills: ['Graphic Design', 'SEO/SEM', 'Video Production', 'Data Analysis'],
-            searchKeywords: ['marketing', 'specialist', 'digital', 'social media', 'content', 'campaigns', 'analytics']
-          }
-        }
-      });
+    const cacheKey = buildCacheKey(location);
+    const cached = aiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return NextResponse.json({ ...cached.data, cache: true });
     }
 
-    // Check if API key is available for other request types
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      console.error('❌ ANTHROPIC_API_KEY environment variable is not set');
-      return NextResponse.json(
-        { 
-          error: `Failed to generate ${requestType} data`,
-          details: 'API configuration missing'
-        },
-        { status: 500 }
-      );
-    }
-
-    const countryName = location.countryName;
-    const country = location.country;
+    const countryName = location.countryName || location.country;
     const currency = location.currency || 'USD';
     const currencySymbol = getCurrencySymbol(currency);
 
-    let prompt: string;
-    let responseKey: string;
-    
-    if (requestType === 'roles') {
-      responseKey = 'roles';
-      const currentDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      prompt = `You are a property management industry expert. Generate location-specific role definitions for ${countryName} as of ${currentDate}.
-
-Context:
-- Country: ${countryName}
-- Currency: ${currency} (${currencySymbol})
-- Current Date: ${currentDate}
-- Target: Property management companies considering offshore teams
-
-Based on ${countryName}'s property management market and job requirements as of ${currentDate}, create realistic role definitions for property management positions. Consider:
-- Local property management practices and regulations
-- Cultural communication styles and expectations
-- Technology adoption in the region
-- Market maturity and business practices
-- Required skills based on local market conditions
-
-Generate enhanced role definitions for these key property management positions:
-1. Assistant Property Manager
-2. Leasing Coordinator  
-3. Marketing Specialist
-
-Requirements:
-1. Titles should reflect local market terminology
-2. Descriptions should be relevant to ${countryName} property management practices
-3. Skills should reflect local market needs and technology adoption
-4. Categories should be appropriate for the market structure
-5. Search keywords should include local terminology
-
-Respond with ONLY a valid JSON object in this exact format:
-{
-  "roles": {
-    "assistantPropertyManager": {
-      "id": "assistantPropertyManager",
-      "title": "[Local market appropriate title]",
-      "icon": "🏢",
-      "description": "[Description relevant to ${countryName} market practices]",
-      "category": "property-management",
-      "type": "predefined",
-      "color": "brand-primary",
-      "requiredSkills": ["[skill1]", "[skill2]", "[skill3]", "[skill4]"],
-      "optionalSkills": ["[skill1]", "[skill2]", "[skill3]"],
-      "searchKeywords": ["[keyword1]", "[keyword2]", "[keyword3]", "[keyword4]", "[keyword5]", "[keyword6]", "[keyword7]"]
-    },
-    "leasingCoordinator": {
-      "id": "leasingCoordinator",
-      "title": "[Local market appropriate title]",
-      "icon": "🗝️",
-      "description": "[Description relevant to ${countryName} leasing practices]",
-      "category": "leasing",
-      "type": "predefined",
-      "color": "brand-secondary",
-      "requiredSkills": ["[skill1]", "[skill2]", "[skill3]", "[skill4]"],
-      "optionalSkills": ["[skill1]", "[skill2]", "[skill3]"],
-      "searchKeywords": ["[keyword1]", "[keyword2]", "[keyword3]", "[keyword4]", "[keyword5]", "[keyword6]", "[keyword7]"]
-    },
-    "marketingSpecialist": {
-      "id": "marketingSpecialist",
-      "title": "[Local market appropriate title]",
-      "icon": "📈",
-      "description": "[Description relevant to ${countryName} marketing practices]",
-      "category": "marketing",
-      "type": "predefined",
-      "color": "brand-accent",
-      "requiredSkills": ["[skill1]", "[skill2]", "[skill3]", "[skill4]"],
-      "optionalSkills": ["[skill1]", "[skill2]", "[skill3]"],
-      "searchKeywords": ["[keyword1]", "[keyword2]", "[keyword3]", "[keyword4]", "[keyword5]", "[keyword6]", "[keyword7]"]
-    }
-  }
-}`;
-    } else if (requestType === 'salary') {
-      responseKey = 'rolesSalaryComparison';
-      const currentDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      prompt = `You are a property management industry expert. Generate location-specific salary data for ${countryName} as of ${currentDate}.
-
-Context:
-- Country: ${countryName}
-- Currency: ${currency} (${currencySymbol})
-- Current Date: ${currentDate}
-- Target: Property management salary benchmarking
-
-Based on ${countryName}'s employment market as of ${currentDate}, generate realistic salary data for property management roles. Consider:
-- Local salary standards and employment costs
-- Tax rates and benefit structures
-- Market competitiveness
-- Experience level variations
-- Total employment cost including benefits and taxes
-
-Generate salary data for these roles with experience levels (entry, moderate, experienced):
-1. Assistant Property Manager
-2. Leasing Coordinator
-3. Marketing Specialist
-
-Requirements:
-1. Base salaries should reflect current ${countryName} market rates
-2. Total costs should include realistic benefits and taxes
-3. Benefits should reflect local employment practices
-4. Tax calculations should be appropriate for ${countryName}
-5. All figures in ${currency}
-
-Respond with ONLY a valid JSON object in this exact format:
-{
-  "rolesSalaryComparison": {
-    "assistantPropertyManager": {
-      "${location.country}": {
-        "entry": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] },
-        "moderate": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] },
-        "experienced": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] }
-      }
-    },
-    "leasingCoordinator": {
-      "${location.country}": {
-        "entry": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] },
-        "moderate": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] },
-        "experienced": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] }
-      }
-    },
-    "marketingSpecialist": {
-      "${location.country}": {
-        "entry": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] },
-        "moderate": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] },
-        "experienced": { "base": [number], "total": [number], "benefits": [number], "taxes": [number] }
-      }
-    }
-  }
-}`;
-    } else {
-      responseKey = 'portfolioIndicators';
-      const currentDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      prompt = `You are a property management industry expert. Generate location-specific portfolio indicators for ${countryName} as of ${currentDate}.
-
-Context:
-- Country: ${countryName}
-- Market Type: ${country}
-- Currency: ${currency} (${currencySymbol})
-- Current Date: ${currentDate}
-- Target: Property management companies considering offshore teams
-
-Based on ${countryName}'s property management market conditions as of ${currentDate}, create 4 realistic portfolio size ranges that make sense for local companies, considering:
-- Typical property management company sizes in ${countryName}
-- Local market structure and competition
-- Average properties per manager ratios
-- Market maturity and business scale patterns
-
-For each portfolio size range you create, provide realistic data considering ${countryName}'s:
-- Property market conditions
-- Average property values
-- Labor costs
-- Regulatory environment
-- Technology adoption
-
-Requirements:
-1. Create 4 portfolio size ranges that reflect typical ${countryName} property management business sizes
-2. Property count ranges should be realistic for the local market (e.g., smaller ranges for emerging markets, larger for mature markets)
-3. Revenue ranges should reflect ${countryName} property market reality
-4. Descriptions should be generic and describe current portfolio characteristics (what this portfolio size typically represents now), not future implementation plans
-5. Team sizes should be generic and scale proportionally with portfolio size
-6. Implementation complexity should reflect local market maturity
-
-Respond with ONLY a valid JSON object in this exact format:
-{
-  "portfolioIndicators": {
-    "[range1]": {
-      "min": [realistic_min_for_local_market],
-      "max": [realistic_max_for_local_market],
-      "tier": "growing",
-      "description": "[Generic description of current portfolio characteristics - what companies this size typically manage now]",
-      "recommendedTeamSize": {
-        "assistantPropertyManager": [number],
-        "leasingCoordinator": [number],
-        "marketingSpecialist": [number]
-      },
-      "averageRevenue": {
-        "min": [realistic minimum in ${currency}],
-        "max": [realistic maximum in ${currency}]
-      },
-      "implementationComplexity": "simple"
-    },
-    "[range2]": { ... },
-    "[range3]": { ... },
-    "[range4]": { ... }
-  }
-}
-
-Tiers: "growing", "large", "major", "enterprise" (assign appropriately)
-Complexity: "simple", "moderate", "complex", "enterprise" (assign based on local market maturity)
-Portfolio range keys should be descriptive like "100-299", "300-999", "1000-2499", "2500+" - adjust numbers to fit ${countryName} market reality.`;
-    }
-
-    // Call Anthropic API
-    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 2000,
-        temperature: 0.3,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      })
+    console.log('🌍 Processing quote-calculator request for:', {
+      country: location.country,
+      countryName,
+      currency,
+      requestType
     });
 
-    if (!anthropicResponse.ok) {
-      const errorText = await anthropicResponse.text();
-      console.error('Anthropic API error:', errorText);
-      throw new Error(`Anthropic API error: ${anthropicResponse.status}`);
-    }
-
-    const anthropicData = await anthropicResponse.json();
-    const responseText = anthropicData.content?.[0]?.text;
-
-    if (!responseText) {
-      throw new Error('No response text from Anthropic');
-    }
-
-    // Parse the JSON response
-    let portfolioData;
-    try {
-      portfolioData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse Anthropic response:', responseText);
-      throw new Error('Invalid JSON response from Anthropic');
-    }
-
-    // Validate the response structure
-    if (!portfolioData[responseKey]) {
-      throw new Error(`Invalid response structure from Anthropic: missing ${responseKey}`);
-    }
-
-    // Add manual portfolio option for portfolio requests only
     if (requestType === 'portfolio') {
-      portfolioData.portfolioIndicators.manual = {
-        min: 0,
-        max: 99999,
-        tier: 'growing',
-        description: `Custom portfolio size with precise inputs - Optimized for ${countryName} market conditions`,
-        recommendedTeamSize: {
-          assistantPropertyManager: 1,
-          leasingCoordinator: 1,
-          marketingSpecialist: 1
-        },
-        averageRevenue: { min: 0, max: 100000000 },
-        implementationComplexity: 'simple'
-      };
+      // Build AI prompt
+      const prompt = generatePortfolioPrompt(location);
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        console.error('❌ Missing ANTHROPIC_API_KEY environment variable');
+        return NextResponse.json(
+          { error: 'API configuration error' },
+          { status: 500 }
+        );
+      }
+
+      try {
+        // Call Anthropic API
+        const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 2000,
+            temperature: 0.3,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ]
+          })
+        });
+
+        if (!anthropicResponse.ok) {
+          const errorText = await anthropicResponse.text();
+          console.error('❌ Anthropic API error:', errorText);
+          throw new Error('Failed to generate portfolio data');
+        }
+
+        const anthropicData = await anthropicResponse.json();
+        const generatedContent = anthropicData.content[0].text;
+
+        // Extract JSON from the response
+        let parsedData;
+        try {
+          const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedData = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error('No JSON found in response');
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse Anthropic response:', parseError);
+          throw new Error('Failed to parse generated data');
+        }
+
+        // Inject static tier and implementationComplexity
+        const staticData = getStaticPortfolioIndicators();
+        const sizes = ['500-999', '1000-1999', '2000-4999', '5000+', 'manual'];
+        for (const size of sizes) {
+          if (parsedData[size] && staticData[size]) {
+            parsedData[size].tier = staticData[size].tier;
+            parsedData[size].implementationComplexity = staticData[size].implementationComplexity;
+          }
+        }
+
+        // Set cache
+        aiCache.set(cacheKey, { data: {
+          portfolioIndicators: parsedData,
+          success: true,
+          location: location,
+          generatedAt: new Date().toISOString(),
+          requestType,
+          currency,
+          currencySymbol,
+          ai: true
+        }, timestamp: Date.now() });
+
+        return NextResponse.json({
+          portfolioIndicators: parsedData,
+          success: true,
+          location: location,
+          generatedAt: new Date().toISOString(),
+          requestType,
+          currency,
+          currencySymbol,
+          ai: true
+        });
+      } catch (error) {
+        console.error('❌ Error getting AI portfolio data:', error);
+        // Fallback to static data
+        console.log('🔄 Falling back to static portfolio data');
+        const staticData = getStaticPortfolioIndicators();
+        return NextResponse.json({
+          portfolioIndicators: staticData,
+          success: true,
+          location: location,
+          generatedAt: new Date().toISOString(),
+          requestType,
+          currency: 'USD',
+          currencySymbol: '$',
+          fallback: true
+        });
+      }
     }
 
-    console.log(`✅ Generated dynamic ${requestType} data for ${countryName}`);
-    
-    return NextResponse.json(portfolioData);
+    // Default response for unknown request types
+    return NextResponse.json(
+      { error: `Unknown request type: ${requestType}. Only 'portfolio' is supported.` },
+      { status: 400 }
+    );
 
   } catch (error) {
-    console.error(`Error generating ${requestType || 'portfolio'} data:`, error);
-    
+    console.error(`❌ Quote-calculator API error:`, error);
     return NextResponse.json(
-      { 
-        error: `Failed to generate ${requestType || 'portfolio'} data`,
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

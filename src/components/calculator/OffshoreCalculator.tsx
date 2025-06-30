@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel } from '@/types';
 import { ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
-import { getCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import { getDisplayCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import type { LocalMultiCountryRoleSalaryData } from '@/utils/calculations';
 
 import { Button } from '@/components/ui/Button';
@@ -40,8 +40,8 @@ interface OffshoreCalculatorProps {
 }
 
 // Helper functions moved outside component to prevent recreation on every render
-const getCurrencyFromCountry = (country: string): string => {
-  return getCurrencyByCountry(country);
+const getCurrencyFromCountry = (country: string) => {
+  return getDisplayCurrencyByCountry(country);
 };
 
 const getCurrencySymbolFromCountry = (country: string): string => {
@@ -142,7 +142,7 @@ export function OffshoreCalculator({
   
   // Location tracking state
   const [locationData, setLocationData] = useState<IPLocationData | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
   // Manual location override state
@@ -181,6 +181,8 @@ export function OffshoreCalculator({
   // Load dynamic salary data based on current location
   const { 
     portfolioIndicators,
+    portfolioCurrency,
+    portfolioCurrencySymbol,
     roles,
     rolesSalaryComparison, 
     isLoadingRoles, 
@@ -255,13 +257,21 @@ export function OffshoreCalculator({
     let isCancelled = false;
     
     const fetchLocation = async () => {
+      if (!isCancelled) {
+        setIsLoadingLocation(true);
+      }
+      
       // Check cache first - this makes the effect idempotent
       const cachedData = getCachedLocation();
       if (cachedData) {
         if (!isCancelled) {
-          setLocationData(cachedData);
-          setIsLoadingLocation(false);
-          console.log('📍 Using cached location:', cachedData.country_name);
+          // Add a small delay to show skeleton even for cached data
+          await new Promise(resolve => setTimeout(resolve, 300));
+          if (!isCancelled) {
+            setLocationData(cachedData);
+            setIsLoadingLocation(false);
+            console.log('📍 Using cached location:', cachedData.country_name);
+          }
         }
         return;
       }
@@ -272,7 +282,6 @@ export function OffshoreCalculator({
       console.log('🔄 Starting location fetch...');
       try {
         if (!isCancelled) {
-        setIsLoadingLocation(true);
         setLocationError(null);
         }
         
@@ -720,8 +729,24 @@ export function OffshoreCalculator({
     switch (step) {
       case 1: return formData.portfolioSize !== '';
       case 2: return Object.values(formData.selectedRoles).some(Boolean);
-      case 3: return Object.values(formData.selectedTasks).some(Boolean) || 
-                     Object.values(formData.customTasks).some((tasks: readonly unknown[]) => Array.isArray(tasks) && tasks.length > 0);
+      case 3: {
+        // Check that each selected role has at least one task
+        const selectedRoles = Object.entries(formData.selectedRoles)
+          .filter(([, selected]: [string, boolean]) => selected)
+          .map(([roleId]: [string, boolean]) => roleId);
+        
+        return selectedRoles.every((roleId: string) => {
+          // Check if this role has any selected tasks
+          const hasSelectedTasks = Object.keys(formData.selectedTasks).some(taskKey => 
+            taskKey.startsWith(`${roleId}-`)
+          );
+          
+          // Check if this role has any custom tasks
+          const hasCustomTasks = formData.customTasks[roleId] && formData.customTasks[roleId].length > 0;
+          
+          return hasSelectedTasks || hasCustomTasks;
+        });
+      }
       case 4: {
         // NEW: Multi-level experience validation
         const selectedRoles = Object.entries(formData.selectedRoles)
@@ -801,6 +826,8 @@ export function OffshoreCalculator({
             showPortfolioGridSkeleton={(isLoadingLocation || isLoadingPortfolio) && formData.currentStep === 1}
             portfolioIndicators={portfolioIndicators}
             isLoadingIndicators={isLoadingPortfolio}
+            portfolioCurrency={portfolioCurrency}
+            portfolioCurrencySymbol={portfolioCurrencySymbol}
           />
         );
       case 2:
@@ -831,19 +858,17 @@ export function OffshoreCalculator({
       case 4:
         return (
           <ExperienceStep
-            value={formData.experienceLevel}
             selectedRoles={formData.selectedRoles}
             customRoles={formData.customRoles || {}}
             teamSize={formData.teamSize}
-            roleExperienceLevels={formData.roleExperienceLevels || {}}
             roleExperienceDistribution={formData.roleExperienceDistribution || {}}
             {...(formData.userLocation && { userLocation: formData.userLocation })}
             {...(manualLocation && { manualLocation })}
-            onChange={handleExperienceChange}
-            onRoleExperienceChange={handleRoleExperienceChange}
+            rolesSalaryComparison={rolesSalaryComparison}
             onRoleExperienceDistributionChange={handleRoleExperienceDistributionChange}
             onCalculate={calculateSavingsAsync}
             isCalculating={isCalculating}
+            isUsingDynamicRoles={isUsingDynamicRoles}
           />
         );
       case 5:
