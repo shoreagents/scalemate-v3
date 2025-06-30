@@ -713,7 +713,7 @@ export function ExperienceStep({
                               <span className="text-lg">{role.icon}</span>
                               <div className="font-medium text-sm text-neutral-900">{role.title}</div>
                             </div>
-                            <div className="text-xs text-neutral-600">
+                            <div className="text-xs text-neutral-600 text-center">
                               {role.distribution.entry > 0 && `${role.distribution.entry} Entry Level`}
                               {role.distribution.entry > 0 && (role.distribution.moderate > 0 || role.distribution.experienced > 0) && ' | '}
                               {role.distribution.moderate > 0 && `${role.distribution.moderate} Mid Level`}
