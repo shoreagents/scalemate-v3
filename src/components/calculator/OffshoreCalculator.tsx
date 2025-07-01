@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel } from '@/types';
 import { ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
-import { getDisplayCurrencyByCountry, getCurrencySymbol, useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import { getDisplayCurrencyByCountryWithAPIFallback, getCurrencySymbol } from '@/utils/currency';
 import type { LocalMultiCountryRoleSalaryData } from '@/utils/calculations';
 
 import { Button } from '@/components/ui/Button';
@@ -40,8 +41,8 @@ interface OffshoreCalculatorProps {
 }
 
 // Helper functions moved outside component to prevent recreation on every render
-const getCurrencyFromCountry = (country: string) => {
-  return getDisplayCurrencyByCountry(country);
+const getCurrencyFromCountry = (country: string, isAPIFailed: boolean = false) => {
+  return getDisplayCurrencyByCountryWithAPIFallback(country, isAPIFailed);
 };
 
 const getCurrencySymbolFromCountry = (country: string): string => {
@@ -162,21 +163,24 @@ export function OffshoreCalculator({
       const translatedCountry = getCountryFromCode(locationData.country_code);
       const countryName = translatedCountry || locationData.country_name || 'United States';
       
+      // Use API-aware currency logic - use actual currency when AI is working
+      // For now, assume API is working (will be updated when hook data is available)
+      const displayCurrency = getDisplayCurrencyByCountryWithAPIFallback(countryName, false);
+      
       // Create LocationData from IP data
       return {
         country: countryName,
         countryName: locationData.country_name || 'United States',
-        currency: locationData.currency || 'USD',
-        currencySymbol: getCurrencySymbolFromCountry(locationData.country_name || 'United States'),
+        currency: displayCurrency, // Use display currency instead of detected currency
+        currencySymbol: getCurrencySymbol(displayCurrency),
         detected: true
       };
     }
     return null;
   }, [
     locationData?.country_code, 
-    locationData?.country_name, 
-    locationData?.currency
-  ]); // Only depend on key fields, not entire object
+    locationData?.country_name
+  ]); // Remove currency dependency since we're using display currency
 
   // Load dynamic salary data based on current location
   const { 
@@ -188,7 +192,8 @@ export function OffshoreCalculator({
     isLoadingRoles, 
     rolesError,
     isLoading: isLoadingPortfolio,
-    isUsingDynamicRoles
+    isUsingDynamicRoles,
+    isUsingDynamicData
   } = useQuoteCalculatorData(computedLocationForHook, manualLocation);
 
   // Get effective location (manual override or auto-detected)
@@ -331,11 +336,15 @@ export function OffshoreCalculator({
       const translatedCountry = getCountryFromCode(locationData.country_code);
       const countryName = translatedCountry || locationData.country_name || 'United States';
       
+      // Use API-aware currency logic - use actual currency when AI is working
+      const isAPIFailed = !isUsingDynamicData && !isUsingDynamicRoles;
+      const displayCurrency = getDisplayCurrencyByCountryWithAPIFallback(countryName, isAPIFailed);
+      
       const autoDetectedLocation = {
         country: countryName,
         countryName: locationData.country_name || 'United States',
-        currency: locationData.currency || 'USD',
-        currencySymbol: getCurrencySymbolFromCountry(countryName),
+        currency: displayCurrency, // Use display currency instead of detected currency
+        currencySymbol: getCurrencySymbol(displayCurrency),
         detected: true
       };
 
@@ -347,7 +356,7 @@ export function OffshoreCalculator({
         updateFormData({ userLocation: autoDetectedLocation });
       }
     }
-  }, [locationData, manualLocation, formData.userLocation]);
+  }, [locationData, manualLocation, formData.userLocation, isUsingDynamicData, isUsingDynamicRoles]);
 
   // Animation variants
   // const containerVariants = {

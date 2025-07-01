@@ -460,7 +460,7 @@ export function ExperienceStep({
                       
                       <div className="bg-white p-3 rounded-lg border text-left flex flex-col justify-center min-h-0 mb-6">
                         <p className="text-xs text-neutral-600 leading-tight">
-                          <span className="font-bold">Experience:</span> {option.description}
+                          <span className="font-bold">Description:</span> {option.description}
                           <br />
                           <span style={{ marginRight: '0.25rem', marginTop: '0.5rem', display: 'inline-block' }} className="font-bold">Best for:</span>{option.bestFor}
                         </p>

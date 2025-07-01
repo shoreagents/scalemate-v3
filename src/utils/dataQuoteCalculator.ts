@@ -19,7 +19,7 @@ export const detectUserLocation = async (): Promise<LocationData> => {
     // Import here to avoid circular dependencies
     const { fetchIPLocation } = await import('./locationApi');
     const { getCountryFromCode } = await import('../types/location');
-    const { getCurrencySymbol } = await import('./currency');
+    const { getCurrencySymbol, getDisplayCurrencyByCountry } = await import('./currency');
     
     const ipData = await fetchIPLocation();
     
@@ -27,11 +27,14 @@ export const detectUserLocation = async (): Promise<LocationData> => {
     const translatedCountry = getCountryFromCode(ipData.country_code);
     const country = translatedCountry || ipData.country_name;
     
+    // Use display currency logic to ensure consistency with fallback data
+    const displayCurrency = getDisplayCurrencyByCountry(country);
+    
     return {
       country: country,
       countryName: ipData.country_name,
-      currency: ipData.currency,
-      currencySymbol: getCurrencySymbol(ipData.currency),
+      currency: displayCurrency, // Use display currency instead of detected currency
+      currencySymbol: getCurrencySymbol(displayCurrency),
       detected: true,
       ipAddress: ipData.ip
     };

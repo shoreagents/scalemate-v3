@@ -12,7 +12,7 @@ import {
   LocationData
 } from '@/types';
 import { ROLES, TASK_COMPLEXITY_MULTIPLIERS, getRoleSalaryForCountry } from './rolesData';
-import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol } from './currency';
+import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol, getDisplayCurrencyByCountry } from './currency';
 import { ManualLocation } from '@/types/location';
 
 // Rename the local type
@@ -179,7 +179,8 @@ export const calculateSavings = async (
           
           // Convert Philippine salary from PHP to user's local currency using live API
           const phpToUsd = philippineSalary.base / await getBestExchangeRateMultiplier('PHP');
-          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
+          const effectiveCurrency = getDisplayCurrencyByCountry(userLocation?.country || 'United States');
+          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(effectiveCurrency);
           philippineCost += usdToLocal * memberCount;
           
           // Calculate weighted experience level for risk assessment
@@ -206,7 +207,8 @@ export const calculateSavings = async (
       
       // Convert Philippine salary from PHP to user's local currency using live API
       const phpToUsd = philippineSalary.base / await getBestExchangeRateMultiplier('PHP');
-      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
+      const effectiveCurrency = getDisplayCurrencyByCountry(userLocation?.country || 'United States');
+      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(effectiveCurrency);
       philippineCost = usdToLocal * teamSize;
     }
 
@@ -631,7 +633,8 @@ export const calculateDisplaySavings = (
   percentage: string;
 } => {
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
-  const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+  // Use display currency logic to ensure consistency with fallback data
+  const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
   
   const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
   const localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
@@ -698,7 +701,8 @@ export const calculateIndividualRoleSavingsSync = (
   range: string;
 } => {
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
-  const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+  // Use display currency logic to ensure consistency with fallback data
+  const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
   
   const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
   const localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
@@ -766,8 +770,9 @@ export const calculateAllRoleRatesAndSummary = async (
   error?: string;
 }> => {
   const roleRates: Record<string, { local: number; phConverted: number }> = {};
-  const targetCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
+  // Use display currency logic to ensure consistency with fallback data
+  const targetCurrency = getDisplayCurrencyByCountry(effectiveCountry);
   
   try {
     // Get exchange rate once for all calculations
@@ -887,7 +892,8 @@ export const calculateIndividualRoleSavings = async (
   try {
     // Get effective country: manual location takes priority over auto-detected
     const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
-    const targetCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+    // Use display currency logic to ensure consistency with fallback data
+    const targetCurrency = getDisplayCurrencyByCountry(effectiveCountry);
     
     if (role.type === 'predefined' && role.id && rolesSalaryComparison) {
       const roleSalaryData = rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison];
@@ -1162,7 +1168,8 @@ export const calculateMultiLevelSavings = async (
           
           // Convert Philippine salary from PHP to user's local currency using live API
           const phpToUsd = philippineSalary / await getBestExchangeRateMultiplier('PHP');
-          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
+          const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
+          const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(effectiveCurrency);
           
           const levelSavings = (localSalary - usdToLocal) * memberCount;
           roleSavings += levelSavings;
@@ -1175,7 +1182,8 @@ export const calculateMultiLevelSavings = async (
       
       // Convert Philippine salary using live API
       const phpToUsd = basePhilippineSalary / await getBestExchangeRateMultiplier('PHP');
-      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(userLocation?.currency || 'USD');
+      const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
+      const usdToLocal = phpToUsd * await getBestExchangeRateMultiplier(effectiveCurrency);
       
       const multipliers = { entry: 0.8, moderate: 1.0, experienced: 1.2 };
       for (const level of ['entry', 'moderate', 'experienced'] as ExperienceLevel[]) {
@@ -1367,7 +1375,7 @@ export const calculateIndividualLevelDisplay = async (
     const totalPhilippineCost = philippineSalary * memberCount;
     
     // Convert using live API rate for accurate conversion
-    const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+    const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
     let conversionRate: number;
     try {
       conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
@@ -1460,7 +1468,7 @@ export const calculateRoleBreakdownDisplay = async (
     }
     
     // Convert using live API rate for accurate conversion
-    const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+    const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
     let conversionRate: number;
     try {
       conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
@@ -1518,7 +1526,8 @@ export const getRoleSalaryDisplay = async (
     const phpSalary = philippineData[experienceLevel].base;
     
     // Convert using live API rate for accurate conversion
-    const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+    const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
+    const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
     let conversionRate: number;
     try {
       conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
@@ -1545,7 +1554,8 @@ export const getRoleSalaryDisplay = async (
   };
   
   const phpAmount = fallbackSalariesPHP[experienceLevel];
-  const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+  const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
+  const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
   let conversionRate: number;
   try {
     conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);

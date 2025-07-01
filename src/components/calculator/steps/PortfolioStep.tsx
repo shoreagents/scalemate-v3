@@ -464,7 +464,7 @@ export function PortfolioStep({
                         <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
                           <span>Revenue Range:</span>
                           <span className="font-medium">
-                            {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.min / 1000000).toFixed(1)}M - {getEffectiveCurrencySymbol(locationData, manualLocation)}{(option.averageRevenue.max / 1000000).toFixed(1)}M
+                            {getEffectiveCurrencySymbol(locationData, manualLocation)}{Math.round(option.averageRevenue.min / 1000000)}M - {getEffectiveCurrencySymbol(locationData, manualLocation)}{Math.round(option.averageRevenue.max / 1000000)}M
                           </span>
                         </div>
                       </button>

@@ -59,17 +59,25 @@ export function useQuoteCalculatorData(
     return locationData || null;
   }, [locationData, manualLocation]);
 
-  // Create location cache key
+  // Create location cache key (matches backend API cache key format)
   const locationCacheKey = useMemo(() => {
     if (!effectiveLocation) return null;
-    return `${effectiveLocation.country}-${effectiveLocation.countryName}-${effectiveLocation.currency}`;
+    const key = `${effectiveLocation.country || ''}|${effectiveLocation.countryName || ''}|${effectiveLocation.currency || ''}`;
+    console.log('🔑 [HOOK] Generated cache key:', key, 'for location:', effectiveLocation.country);
+    return key;
   }, [effectiveLocation]);
 
   // Load portfolio indicators based on location
   const loadPortfolioIndicators = useCallback(async () => {
+    console.log('🔍 [HOOK] Portfolio cache check:', {
+      locationCacheKey,
+      processedLocation: processedLocationRef.current,
+      isMatch: locationCacheKey === processedLocationRef.current
+    });
+    
     // Check if we already processed this location
     if (locationCacheKey && processedLocationRef.current === locationCacheKey) {
-      console.log('📋 Skipping portfolio indicators - already processed for:', locationCacheKey);
+      console.log('📋 [HOOK] Skipping portfolio indicators - already processed for:', locationCacheKey);
       return;
     }
     
@@ -96,7 +104,13 @@ export function useQuoteCalculatorData(
 
       // Try to get dynamic data from API first
       try {
-        console.log('🔄 Attempting to fetch dynamic portfolio indicators from AI API for:', effectiveLocation.countryName || effectiveLocation.country);
+        console.log('🔄 [HOOK] Attempting to fetch dynamic portfolio indicators from AI API for:', effectiveLocation.countryName || effectiveLocation.country);
+        console.log('📡 [HOOK] Calling /api/anthropic/quote-calculator with:', {
+          country: effectiveLocation.country,
+          countryName: effectiveLocation.countryName,
+          currency: effectiveLocation.currency,
+          requestType: 'portfolio'
+        });
 
         const response = await fetch('/api/anthropic/quote-calculator', {
           method: 'POST',
@@ -111,6 +125,16 @@ export function useQuoteCalculatorData(
 
         if (response.ok) {
           const apiData = await response.json();
+          
+          console.log('✅ [HOOK] Quote-calculator API response received:', {
+            success: apiData.success,
+            ai: apiData.ai,
+            fallback: apiData.fallback,
+            cache: apiData.cache,
+            currency: apiData.currency,
+            currencySymbol: apiData.currencySymbol,
+            portfolioSizes: apiData.portfolioIndicators ? Object.keys(apiData.portfolioIndicators) : 'N/A'
+          });
 
           if (apiData.portfolioIndicators) {
             setPortfolioIndicators(apiData.portfolioIndicators);
@@ -124,7 +148,7 @@ export function useQuoteCalculatorData(
           }
         }
       } catch (apiError) {
-        console.log('⚠️ AI API call failed, falling back to static data:', apiError);
+        console.log('⚠️ [HOOK] Quote-calculator AI API call failed, falling back to static data:', apiError);
       }
 
       // Fallback to static data
@@ -148,9 +172,15 @@ export function useQuoteCalculatorData(
 
   // Load roles data based on location
   const loadRolesData = useCallback(async () => {
+    console.log('🔍 [HOOK] Roles cache check:', {
+      locationCacheKey,
+      processedRolesLocation: processedRolesLocationRef.current,
+      isMatch: locationCacheKey === processedRolesLocationRef.current
+    });
+    
     // Check if we already processed this location for roles
     if (locationCacheKey && processedRolesLocationRef.current === locationCacheKey) {
-      console.log('📋 Skipping roles data - already processed for:', locationCacheKey);
+      console.log('📋 [HOOK] Skipping roles data - already processed for:', locationCacheKey);
       return;
     }
     
@@ -179,7 +209,13 @@ export function useQuoteCalculatorData(
       
       // Try to get dynamic data from API first
       try {
-        console.log('🔄 Attempting to fetch dynamic roles data for:', effectiveLocation.countryName || effectiveLocation.country);
+        console.log('🔄 [HOOK] Attempting to fetch dynamic roles data for:', effectiveLocation.countryName || effectiveLocation.country);
+        console.log('📡 [HOOK] Calling /api/anthropic/roles with:', {
+          country: effectiveLocation.country,
+          countryName: effectiveLocation.countryName,
+          currency: effectiveLocation.currency,
+          requestType: 'all'
+        });
         
         const response = await fetch('/api/anthropic/roles', {
           method: 'POST',
@@ -195,8 +231,18 @@ export function useQuoteCalculatorData(
         if (response.ok) {
           const apiData = await response.json();
           
+          console.log('✅ [HOOK] Roles API response received:', {
+            success: apiData.success,
+            ai: apiData.ai,
+            fallback: apiData.fallback,
+            cache: apiData.cache,
+            requestType: apiData.requestType,
+            roles: apiData.roles ? Object.keys(apiData.roles) : 'N/A',
+            salaryComparison: apiData.rolesSalaryComparison ? Object.keys(apiData.rolesSalaryComparison) : 'N/A'
+          });
+          
           if (apiData.roles && apiData.rolesSalaryComparison) {
-            console.log('✅ Using dynamic roles data from API for:', effectiveLocation.countryName || effectiveLocation.country);
+            console.log('✅ [HOOK] Using dynamic roles data from API for:', effectiveLocation.countryName || effectiveLocation.country);
             setRoles(apiData.roles);
             setRolesSalaryComparison(apiData.rolesSalaryComparison);
             setIsUsingDynamicRoles(true);
@@ -208,7 +254,7 @@ export function useQuoteCalculatorData(
           }
         }
       } catch (apiError) {
-        console.log('⚠️ API call failed, falling back to static data:', apiError);
+        console.log('⚠️ [HOOK] Roles AI API call failed, falling back to static data:', apiError);
       }
       
       // Fallback to static data
