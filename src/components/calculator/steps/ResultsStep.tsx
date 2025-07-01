@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalculationResult, FormData, RoleId } from '@/types';
-import { ROLES } from '@/utils/quoteCalculatorData';
+import { ROLES, SALARY_DATA } from '@/utils/quoteCalculatorData';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useImplementationPlan } from '@/hooks/useImplementationPlan';
@@ -44,6 +44,7 @@ import {
   BarChart,
   TrendingUpIcon
 } from 'lucide-react';
+import { AIProcessingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface ResultsStepProps {
   result: CalculationResult;
@@ -92,6 +93,56 @@ interface RoleBreakdownProps {
 
 function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
   const breakdownArray = Object.values(breakdown);
+  const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
+  const [roleViewModes, setRoleViewModes] = useState<Record<string, 'annual' | 'monthly'>>(
+    Object.fromEntries(breakdownArray.map(role => [role.roleId, 'annual']))
+  );
+
+  // Helper function to toggle role expansion
+  const toggleRole = (roleId: string) => {
+    setExpandedRoles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roleId)) {
+        newSet.delete(roleId);
+      } else {
+        newSet.add(roleId);
+      }
+      return newSet;
+    });
+  };
+
+  // Helper function to toggle role view mode (annual/monthly)
+  const toggleRoleViewMode = (roleId: string) => {
+    setRoleViewModes(prev => ({
+      ...prev,
+      [roleId]: prev[roleId] === 'annual' ? 'monthly' : 'annual'
+    }));
+  };
+
+  // Helper function to set specific role view mode
+  const setRoleViewMode = (roleId: string, mode: 'annual' | 'monthly') => {
+    setRoleViewModes(prev => ({
+      ...prev,
+      [roleId]: mode
+    }));
+  };
+
+  // Helper function to get cost values based on view mode
+  const getCostValues = (role: any, viewMode: 'annual' | 'monthly' | undefined) => {
+    const mode = viewMode || 'annual';
+    if (mode === 'monthly') {
+      return {
+        australianCost: Math.round(role.australianCost / 12),
+        philippineCost: Math.round(role.philippineCost / 12),
+        savings: Math.round(role.savings / 12)
+      };
+    }
+    return {
+      australianCost: role.australianCost,
+      philippineCost: role.philippineCost,
+      savings: role.savings
+    };
+  };
 
   // Helper function to get experience distribution for a role
   const getExperienceDistribution = (roleId: string) => {
@@ -126,7 +177,7 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
       animate={{ opacity: 1 }}
       transition={{ delay: 0.7, duration: 0.5 }}
     >
-      <Card className="p-4 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+      <Card className="p-4 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 lg:p-3 bg-neural-blue-100 rounded-xl shadow-sm">
             <BarChart3 className="w-5 h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
@@ -137,117 +188,10 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
           </div>
         </div>
 
-        {/* Team Overview */}
-        {totalMembers > 0 && (
-          <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900">
-                  Your Team: {totalMembers} Members
-                </h4>
-                <p className="text-sm text-gray-600">Experience level breakdown</p>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              {totalEntry > 0 && (
-                <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-green-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
-                      {totalEntry}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">Entry Level</div>
-                      <div className="text-sm text-gray-600">1-2 years experience</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-green-600">
-                      {Math.round((totalEntry / totalMembers) * 100)}%
-                    </div>
-                    <div className="text-xs text-gray-500">of your team</div>
-                  </div>
-                </div>
-              )}
-
-              {totalModerate > 0 && (
-                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
-                      {totalModerate}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">Mid-Level</div>
-                      <div className="text-sm text-gray-600">3-5 years experience</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-blue-600">
-                      {Math.round((totalModerate / totalMembers) * 100)}%
-                    </div>
-                    <div className="text-xs text-gray-500">of your team</div>
-                  </div>
-                </div>
-              )}
-
-              {totalExperienced > 0 && (
-                <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-purple-500 text-white rounded-lg flex items-center justify-center font-bold text-lg">
-                      {totalExperienced}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">Senior Level</div>
-                      <div className="text-sm text-gray-600">6+ years experience</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-purple-600">
-                      {Math.round((totalExperienced / totalMembers) * 100)}%
-                    </div>
-                    <div className="text-xs text-gray-500">of your team</div>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2">
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                  <span>Team Composition</span>
-                  <span>{totalMembers} total members</span>
-                </div>
-                <div className="flex rounded-lg overflow-hidden h-3 bg-gray-200">
-                  {totalEntry > 0 && (
-                    <div 
-                      className="bg-green-500"
-                      style={{ width: `${(totalEntry / totalMembers) * 100}%` }}
-                      title={`${totalEntry} Entry Level (${Math.round((totalEntry / totalMembers) * 100)}%)`}
-                    />
-                  )}
-                  {totalModerate > 0 && (
-                    <div 
-                      className="bg-blue-500"
-                      style={{ width: `${(totalModerate / totalMembers) * 100}%` }}
-                      title={`${totalModerate} Mid-Level (${Math.round((totalModerate / totalMembers) * 100)}%)`}
-                    />
-                  )}
-                  {totalExperienced > 0 && (
-                    <div 
-                      className="bg-purple-500"
-                      style={{ width: `${(totalExperienced / totalMembers) * 100}%` }}
-                      title={`${totalExperienced} Senior Level (${Math.round((totalExperienced / totalMembers) * 100)}%)`}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Role Breakdown Details */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {breakdownArray.map((role, index) => {
             const roleData = ROLES[role.roleId as RoleId];
             if (!roleData) return null;
@@ -257,162 +201,375 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.3 }}
-                className="p-4 lg:p-5 border border-neural-blue-100 bg-white/60 backdrop-blur-sm rounded-xl hover:border-neural-blue-300 hover:shadow-lg transition-all duration-300 group"
+                className="relative overflow-hidden bg-gradient-to-br from-white via-white to-neural-blue-50/30 border border-neural-blue-200 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 group"
               >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 lg:p-3 rounded-xl shadow-sm ${roleData.color.replace('bg-', 'bg-').replace('-600', '-100')} group-hover:scale-105 transition-transform duration-300`}>
-                      <span className="text-lg lg:text-xl">{roleData.icon}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-base lg:text-lg font-bold text-neutral-900 truncate">{role.roleName}</h4>
-                      <p className="text-sm text-neutral-600">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <div className="text-right sm:text-left lg:text-right">
-                    <p className="text-lg lg:text-xl font-bold text-cyber-green-600">
-                      ${role.savings.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-neutral-600">
-                      {role.savingsPercentage.toFixed(1)}% savings/year
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                    <div className="p-3 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <p className="text-red-700 font-medium text-xs">Current Cost</p>
-                      </div>
-                      <p className="font-bold text-red-800 text-base">${role.australianCost.toLocaleString()}</p>
-                      <p className="text-xs text-red-600 mt-1">Australian workforce</p>
-                    </div>
-                    <div className="p-3 bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
-                        <p className="text-cyber-green-700 font-medium text-xs">Offshore Cost</p>
-                      </div>
-                      <p className="font-bold text-cyber-green-800 text-base">${role.philippineCost.toLocaleString()}</p>
-                      <p className="text-xs text-cyber-green-600 mt-1">Philippine workforce</p>
-                    </div>
-                    <div className="p-3 bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
-                        <p className="text-neural-blue-700 font-medium text-xs">Core Tasks</p>
-                      </div>
-                      <p className="font-bold text-neural-blue-800 text-base">{role.selectedTasksCount}</p>
-                      <p className="text-xs text-neural-blue-600 mt-1">Standard tasks</p>
-                    </div>
-                    <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg hover:shadow-md transition-shadow duration-300">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                        <p className="text-amber-700 font-medium text-xs">Implementation</p>
-                      </div>
-                      <p className="font-bold text-amber-800 text-base">{role.estimatedImplementationTime}</p>
-                      <p className="text-xs text-amber-600 mt-1">days to deploy</p>
-                    </div>
-                  </div>
-
-                  {(() => {
-                    const experienceDistribution = getExperienceDistribution(role.roleId);
-                    if (experienceDistribution && experienceDistribution.totalAssigned > 0) {
-                      return (
-                        <div className="p-4 bg-gradient-to-r from-neural-blue-50/30 to-quantum-purple-50/30 rounded-xl border border-neural-blue-100">
-                          <h5 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Team Composition ({experienceDistribution.totalAssigned} members)
-                          </h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            {experienceDistribution.entry > 0 && (
-                              <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
-                                <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('entry')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
-                                  <span className="text-base sm:text-lg font-bold">{experienceDistribution.entry}</span>
-                                </div>
-                                <div className="flex-1 sm:flex-none">
-                                  <div className="text-sm sm:text-xs font-medium text-neutral-700">Entry Level</div>
-                                  <div className="text-xs text-neutral-500">Fresh talent</div>
-                                </div>
-                              </div>
-                            )}
-                            {experienceDistribution.moderate > 0 && (
-                              <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
-                                <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('moderate')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
-                                  <span className="text-base sm:text-lg font-bold">{experienceDistribution.moderate}</span>
-                                </div>
-                                <div className="flex-1 sm:flex-none">
-                                  <div className="text-sm sm:text-xs font-medium text-neutral-700">Mid-Level</div>
-                                  <div className="text-xs text-neutral-500">Experienced</div>
-                                </div>
-                              </div>
-                            )}
-                            {experienceDistribution.experienced > 0 && (
-                              <div className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
-                                <div className={`w-10 h-10 sm:w-12 sm:h-12 sm:mx-auto rounded-xl ${getExperienceLevelColor('experienced')} flex items-center justify-center mb-0 sm:mb-2 flex-shrink-0`}>
-                                  <span className="text-base sm:text-lg font-bold">{experienceDistribution.experienced}</span>
-                                </div>
-                                <div className="flex-1 sm:flex-none">
-                                  <div className="text-sm sm:text-xs font-medium text-neutral-700">Senior Level</div>
-                                  <div className="text-xs text-neutral-500">Leadership</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="mt-3">
-                            <div className="flex rounded-full overflow-hidden h-3 bg-neutral-200">
-                              {experienceDistribution.entry > 0 && (
-                                <div 
-                                  className="bg-green-500 transition-all duration-500"
-                                  style={{ width: `${(experienceDistribution.entry / experienceDistribution.totalAssigned) * 100}%` }}
-                                  title={`${experienceDistribution.entry} Entry Level (${Math.round((experienceDistribution.entry / experienceDistribution.totalAssigned) * 100)}%)`}
-                                />
-                              )}
-                              {experienceDistribution.moderate > 0 && (
-                                <div 
-                                  className="bg-blue-500 transition-all duration-500"
-                                  style={{ width: `${(experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100}%` }}
-                                  title={`${experienceDistribution.moderate} Mid-Level (${Math.round((experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100)}%)`}
-                                />
-                              )}
-                              {experienceDistribution.experienced > 0 && (
-                                <div 
-                                  className="bg-purple-500 transition-all duration-500"
-                                  style={{ width: `${(experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100}%` }}
-                                  title={`${experienceDistribution.experienced} Senior Level (${Math.round((experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100)}%)`}
-                                />
+                {/* Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-neural-blue-50/20 opacity-50"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyber-green-100/20 to-transparent rounded-full transform translate-x-16 -translate-y-16"></div>
+                
+                <div className="relative p-4 lg:p-5">
+                  {/* Collapsible Header Section */}
+                  <button
+                    onClick={() => toggleRole(role.roleId)}
+                    className="w-full flex flex-col lg:flex-row lg:items-start lg:justify-between gap-2 lg:gap-4 mb-2 text-left group/header hover:bg-white/50 transition-colors duration-300 rounded-lg p-1 -m-1"
+                  >
+                                          <div className="flex items-center gap-3 flex-1">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h4 className="text-base lg:text-lg font-bold text-neutral-900">{role.roleName}</h4>
+                            <div className="ml-auto lg:hidden">
+                              {expandedRoles.has(role.roleId) ? (
+                                <ChevronUp className="w-5 h-5 text-neural-blue-600 transition-transform duration-300" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-neural-blue-600 transition-transform duration-300" />
                               )}
                             </div>
-                            <div className="flex justify-between text-xs text-neutral-500 mt-1">
-                              <span>Entry</span>
-                              <span>Mid</span>
-                              <span>Senior</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-neural-blue-600" />
+                            <p className="text-sm text-neutral-600 font-medium">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
+                          </div>
+                        </div>
+                      </div>
+                    <div className="hidden lg:block">
+                      {expandedRoles.has(role.roleId) ? (
+                        <ChevronUp className="w-6 h-6 text-neural-blue-600 transition-transform duration-300" />
+                      ) : (
+                        <ChevronDown className="w-6 h-6 text-neural-blue-600 transition-transform duration-300" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Collapsible Content */}
+                  <AnimatePresence>
+                    {expandedRoles.has(role.roleId) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        {/* View Mode Toggle */}
+                        <div className="flex items-center justify-between mb-4">
+                          <h5 className="text-lg font-semibold text-neutral-900">Cost Analysis</h5>
+                          <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
+                            <button
+                              onClick={() => setRoleViewMode(role.roleId, 'annual')}
+                              className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                                (roleViewModes[role.roleId] || 'annual') === 'annual'
+                                  ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                                  : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                              }`}
+                            >
+                              Annual
+                            </button>
+                            <button
+                              onClick={() => setRoleViewMode(role.roleId, 'monthly')}
+                              className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                                (roleViewModes[role.roleId] || 'annual') === 'monthly'
+                                  ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                                  : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                              }`}
+                            >
+                              Monthly
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Cost Comparison Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {(() => {
+                      const currentViewMode = roleViewModes[role.roleId] || 'annual';
+                      const costValues = getCostValues(role, currentViewMode);
+                      const timeLabel = currentViewMode === 'monthly' ? 'per month' : 'per year';
+                      
+                      return (
+                        <>
+                          <div className="group/card p-4 bg-gradient-to-br from-red-50 via-red-50 to-red-100 border border-red-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <DollarSign className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-red-700 font-semibold text-sm">Current Cost</p>
+                                <p className="text-xs text-red-600">Australian workforce {timeLabel}</p>
+                              </div>
+                            </div>
+                            <p className="font-bold text-red-800 text-lg">${costValues.australianCost.toLocaleString()}</p>
+                          </div>
+
+                          <div className="group/card p-4 bg-gradient-to-br from-neural-blue-50 via-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 bg-neural-blue-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <TrendingDown className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-neural-blue-700 font-semibold text-sm">Offshore Cost</p>
+                                <p className="text-xs text-neural-blue-600">Philippine workforce {timeLabel}</p>
+                              </div>
+                            </div>
+                            <p className="font-bold text-neural-blue-800 text-lg">${costValues.philippineCost.toLocaleString()}</p>
+                          </div>
+
+                          <div className="group/card p-4 bg-gradient-to-br from-cyber-green-50 via-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 bg-cyber-green-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <TrendingUp className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-cyber-green-700 font-semibold text-sm">{currentViewMode === 'monthly' ? 'Monthly' : 'Annual'} Savings</p>
+                                <p className="text-xs text-cyber-green-600">Total {currentViewMode} savings</p>
+                              </div>
+                            </div>
+                            <p className="font-bold text-cyber-green-800 text-lg">${costValues.savings.toLocaleString()}</p>
+                          </div>
+
+                          <div className="group/card p-4 bg-gradient-to-br from-amber-50 via-amber-50 to-amber-100 border border-amber-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <Calendar className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-amber-700 font-semibold text-sm">Implementation</p>
+                                <p className="text-xs text-amber-600">Time to deploy</p>
+                              </div>
+                            </div>
+                            <p className="font-bold text-amber-800 text-lg">{role.estimatedImplementationTime} days</p>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Detailed Cost Breakdown Section */}
+                  {(() => {
+                    const experienceDistribution = getExperienceDistribution(role.roleId);
+                    const currentViewMode = roleViewModes[role.roleId] || 'annual';
+                    const timeLabel = currentViewMode === 'monthly' ? '/month' : '/year';
+                    
+                    if (!experienceDistribution || experienceDistribution.totalAssigned === 0) return null;
+                    
+                    const experienceLevels = [
+                      { key: 'entry', name: 'Entry Level', count: experienceDistribution.entry },
+                      { key: 'moderate', name: 'Mid-Level', count: experienceDistribution.moderate },
+                      { key: 'experienced', name: 'Senior Level', count: experienceDistribution.experienced }
+                    ] as const;
+                    
+                    // Get salary data for this role
+                    const roleSalaryData = SALARY_DATA[role.roleId as keyof typeof SALARY_DATA];
+                    if (!roleSalaryData) return null;
+                    
+                    const activeExperienceLevels = experienceLevels.filter(level => level.count > 0);
+                    if (activeExperienceLevels.length === 0) return null;
+                    
+                    return (
+                      <Card hoverLift={false} className="p-6 bg-gradient-to-br from-amber-50/50 via-white to-amber-50/30 backdrop-blur-sm border border-amber-150 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="p-2 bg-amber-100 rounded-lg shadow-sm">
+                            <Calculator className="w-5 h-5 text-amber-600" />
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-neutral-900 text-lg">Detailed Cost Breakdown</h5>
+                            <p className="text-sm text-neutral-600">Individual costs by experience level</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {activeExperienceLevels.map((level) => {
+                            const levelKey = level.key as keyof typeof roleSalaryData.australian;
+                            const australianSalary = roleSalaryData.australian[levelKey];
+                            const philippineSalary = roleSalaryData.philippine[levelKey];
+                            
+                            const australianCost = currentViewMode === 'monthly' 
+                              ? Math.round(australianSalary.total / 12)
+                              : australianSalary.total;
+                            const philippineCost = currentViewMode === 'monthly'
+                              ? Math.round(philippineSalary.total / 12)
+                              : philippineSalary.total;
+                            const savings = australianCost - philippineCost;
+                            
+                            return (
+                              <div key={level.key} className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 bg-white/60 rounded-lg border border-amber-100">
+                                {/* Role Description */}
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${
+                                    level.key === 'entry' ? 'bg-green-500' :
+                                    level.key === 'moderate' ? 'bg-blue-500' : 'bg-purple-500'
+                                  }`}>
+                                    {level.count}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-medium text-neutral-900">
+                                      {level.count}x {role.roleName}
+                                    </div>
+                                    <div className={`text-sm font-medium ${
+                                      level.key === 'entry' ? 'text-green-700' :
+                                      level.key === 'moderate' ? 'text-blue-700' : 'text-purple-700'
+                                    }`}>
+                                      {level.name}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Cost Comparison */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="text-center">
+                                    <div className="text-xs text-red-600 font-medium mb-1">Australian Cost</div>
+                                    <div className="font-bold text-red-700">
+                                      ${(australianCost * level.count).toLocaleString()}{timeLabel}
+                                    </div>
+                                    <div className="text-xs text-red-600">
+                                      ${australianCost.toLocaleString()}{timeLabel} each
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-xs text-neural-blue-600 font-medium mb-1">Offshore Cost</div>
+                                    <div className="font-bold text-neural-blue-700">
+                                      ${(philippineCost * level.count).toLocaleString()}{timeLabel}
+                                    </div>
+                                    <div className="text-xs text-neural-blue-600">
+                                      ${philippineCost.toLocaleString()}{timeLabel} each
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Savings */}
+                                <div className="text-center lg:text-right">
+                                  <div className="text-xs text-cyber-green-600 font-medium mb-1">Savings</div>
+                                  <div className="font-bold text-cyber-green-700 text-lg">
+                                    ${(savings * level.count).toLocaleString()}{timeLabel}
+                                  </div>
+                                  <div className="text-xs text-cyber-green-600">
+                                    ${savings.toLocaleString()}{timeLabel} each
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Total Row */}
+                          <div className="pt-3 border-t border-amber-200">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 bg-amber-100/50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center text-white font-bold text-sm">
+                                  Σ
+                                </div>
+                                <div className="font-bold text-neutral-900">
+                                  Total: {experienceDistribution.totalAssigned}x {role.roleName}
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="text-center">
+                                  <div className="text-xs text-red-600 font-medium mb-1">Total Australian</div>
+                                  <div className="font-bold text-red-800">
+                                    ${getCostValues(role, currentViewMode).australianCost.toLocaleString()}{timeLabel}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-neural-blue-600 font-medium mb-1">Total Offshore</div>
+                                  <div className="font-bold text-neural-blue-800">
+                                    ${getCostValues(role, currentViewMode).philippineCost.toLocaleString()}{timeLabel}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="text-center lg:text-right">
+                                <div className="text-xs text-cyber-green-600 font-medium mb-1">Total Savings</div>
+                                <div className="font-bold text-cyber-green-800 text-xl">
+                                  ${getCostValues(role, currentViewMode).savings.toLocaleString()}{timeLabel}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      );
-                    }
-                    return null;
+                      </Card>
+                    );
                   })()}
-                </div>
 
-                {role.riskFactors && role.riskFactors.length > 0 && (
-                  <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      <span className="text-body-small font-medium text-amber-800">Risk Considerations</span>
-                    </div>
-                    <ul className="text-caption text-amber-700 space-y-2">
-                      {role.riskFactors.map((factor: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="w-1 h-1 bg-amber-600 rounded-full mt-2 flex-shrink-0"></span>
-                          <span>{factor}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+
+
+                  {/* Core Tasks Section */}
+                  {(() => {
+                    const roleData = ROLES[role.roleId as RoleId];
+                    if (!roleData) return null;
+                    
+                    // Get selected tasks for this role
+                    const selectedTasks = roleData.tasks.filter(task => 
+                      formData.selectedTasks[`${role.roleId}-${task.id}`]
+                    );
+                    
+                    if (selectedTasks.length === 0) return null;
+                    
+                    return (
+                      <Card hoverLift={false} className="mt-6 p-6 bg-gradient-to-br from-neural-blue-50/50 via-white to-neural-blue-50/30 backdrop-blur-sm border border-neural-blue-150 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="p-2 bg-neural-blue-100 rounded-lg shadow-sm">
+                            <ClipboardList className="w-5 h-5 text-neural-blue-600" />
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-neutral-900 text-lg">Core Tasks</h5>
+                            <p className="text-sm text-neutral-600">{selectedTasks.length} selected tasks for offshore execution</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {selectedTasks.map((task, index) => (
+                            <div key={task.id} className="flex items-start gap-3 p-3 bg-white/60 rounded-lg border border-neural-blue-100">
+                              <div className="mt-1">
+                                <CheckCircle2 className="w-4 h-4 text-cyber-green-500" />
+                              </div>
+                              <div className="flex-1">
+                                <h6 className="font-medium text-neutral-900 mb-1">{task.name}</h6>
+                                <p className="text-sm text-neutral-600 mb-2">{task.aiAdvantage}</p>
+                                <div className="flex items-center gap-4 text-xs text-neutral-500">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {task.timeSaved}
+                                  </span>
+                                  <span className={`px-2 py-1 rounded-full font-medium ${
+                                    task.complexity === 'low' ? 'bg-green-100 text-green-700' :
+                                    task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    {task.complexity} complexity
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    );
+                  })()}
+
+                  {/* Risk Considerations Section */}
+                  {role.riskFactors && role.riskFactors.length > 0 && (
+                    <Card hoverLift={false} className="mt-6 p-6 bg-gradient-to-br from-amber-50 via-amber-50 to-amber-100 backdrop-blur-sm border border-amber-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="p-2 bg-amber-100 rounded-lg shadow-sm">
+                          <AlertTriangle className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-amber-800 text-lg">Risk Considerations</h5>
+                          <p className="text-sm text-amber-600">Potential challenges for this role</p>
+                        </div>
+                      </div>
+                      <ul className="text-sm text-amber-700 space-y-3">
+                        {role.riskFactors.map((factor: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-3">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <span>{factor}</span>
+                          </li>
+                        ))}
+                                             </ul>
+                     </Card>
+                                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             );
           })}
@@ -430,6 +587,21 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
   type TabType = 'overview' | 'implementation' | 'pitch';
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [savingsView, setSavingsView] = useState<'annual' | 'monthly'>('annual');
+
+  // Scroll to top when component first mounts
+  useEffect(() => {
+    // Multiple fallback methods to ensure scroll to top works
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    
+    // Also try with a slight delay in case of timing issues
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 50);
+  }, []);
 
   // Toggle tooltip every 15 seconds (loop)
   useEffect(() => {
@@ -499,7 +671,6 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         return [
           { id: 'executive-summary', title: 'Executive Summary', icon: <FileText className="w-4 h-4" /> },
           { id: 'implementation-phases', title: 'Implementation Phases', icon: <ClipboardList className="w-4 h-4" /> },
-          { id: 'business-risk-assessment', title: 'Business Risk Assessment', icon: <Shield className="w-4 h-4" /> },
           { id: 'risk-mitigation', title: 'Implementation Risk Mitigation', icon: <Shield className="w-4 h-4" /> },
           { id: 'ai-setup-guide', title: 'Claude AI Setup Guide', icon: <Brain className="w-4 h-4" /> },
           { id: 'next-steps', title: 'Next Steps', icon: <Target className="w-4 h-4" /> },
@@ -795,13 +966,28 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                      <div className="text-xs font-bold text-neural-blue-800 uppercase tracking-wide text-right">MEMBERS</div>
                    </div>
                    {/* Table Rows */}
-                   <div className="space-y-1">
-                     {Object.values(result.breakdown).map((role: any, index: number) => (
-                       <div key={index} className="grid grid-cols-[1fr,auto] gap-4 text-xs">
-                         <span className="text-neural-blue-600">{role.roleName}</span>
-                         <span className="font-medium text-neural-blue-700 text-right">{role.teamSize}</span>
-                       </div>
-                     ))}
+                   <div className="space-y-2">
+                     {Object.values(result.breakdown).map((role: any, index: number) => {
+                       const experienceDistribution = formData.roleExperienceDistribution?.[role.roleId];
+                       
+                       return (
+                         <div key={index} className="space-y-1">
+                           <div className="grid grid-cols-[1fr,auto] gap-4 text-xs">
+                             <span className="text-neural-blue-600 font-medium">{role.roleName}</span>
+                             <span className="font-medium text-neural-blue-700 text-right">{role.teamSize}</span>
+                           </div>
+                           {experienceDistribution && (
+                             <div className="ml-2 text-xs text-neural-blue-500">
+                               {[
+                                 experienceDistribution.entry > 0 && `${experienceDistribution.entry}x Entry`,
+                                 experienceDistribution.moderate > 0 && `${experienceDistribution.moderate}x Mid`,
+                                 experienceDistribution.experienced > 0 && `${experienceDistribution.experienced}x Senior`
+                               ].filter(Boolean).join(', ')}
+                             </div>
+                           )}
+                         </div>
+                       );
+                     })}
                    </div>
                  </div>
                </div>
@@ -977,7 +1163,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <Card className="p-6 bg-white border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+        <Card className="p-6 bg-white border border-neural-blue-100 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
@@ -1032,7 +1218,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                  <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-4">
                    <div className="flex justify-between items-center">
                      <span className="text-sm font-medium text-gray-700">
-                       {savingsView === 'annual' ? 'Annual Cost' : 'Monthly Cost'}
+                       {savingsView === 'annual' ? 'Total Annual Cost' : 'Total Monthly Cost'}
                      </span>
                      <span className="text-xl font-bold text-neural-blue-600">
                        {savingsView === 'annual' 
@@ -1045,18 +1231,68 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
 
                  <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-4">
                    <div className="text-sm font-medium text-gray-700 mb-3">Cost Breakdown</div>
-                   <div className="space-y-2">
-                     {Object.values(result.breakdown).map((role: any, index) => (
-                       <div key={index} className="flex justify-between items-center text-xs">
-                         <span className="text-gray-600">{role.roleName}</span>
-                         <span className="font-medium text-neural-blue-600">
-                           {savingsView === 'annual'
-                             ? `${formatCurrency(role.australianCost)}/year`
-                             : `${formatCurrency(Math.round(role.australianCost / 12))}/month`
-                           }
-                         </span>
-                       </div>
-                     ))}
+                   <div className="space-y-3">
+                     {Object.values(result.breakdown).map((role: any, index) => {
+                       const experienceDistribution = formData.roleExperienceDistribution?.[role.roleId];
+                       const roleSalaryData = SALARY_DATA[role.roleId as keyof typeof SALARY_DATA];
+                       
+                       return (
+                         <div key={index} className="space-y-1">
+                           <div className="flex justify-between items-center text-xs">
+                             <span className="text-gray-600 font-medium">{role.roleName}</span>
+                             <span className="font-medium text-neural-blue-600">
+                               {savingsView === 'annual'
+                                 ? `${formatCurrency(role.australianCost)}/year`
+                                 : `${formatCurrency(Math.round(role.australianCost / 12))}/month`
+                               }
+                             </span>
+                           </div>
+                           {experienceDistribution && roleSalaryData && (
+                             <div className="ml-3 space-y-1">
+                               {experienceDistribution.entry > 0 && (
+                                 <div className="flex justify-between items-center text-xs">
+                                   <span className="text-gray-500">
+                                     {experienceDistribution.entry}x Entry Level
+                                   </span>
+                                   <span className="font-medium text-gray-600">
+                                     {savingsView === 'annual'
+                                       ? `${formatCurrency(roleSalaryData.australian.entry.total)}/year`
+                                       : `${formatCurrency(Math.round(roleSalaryData.australian.entry.total / 12))}/month`
+                                     }
+                                   </span>
+                                 </div>
+                               )}
+                               {experienceDistribution.moderate > 0 && (
+                                 <div className="flex justify-between items-center text-xs">
+                                   <span className="text-gray-500">
+                                     {experienceDistribution.moderate}x Mid-Level
+                                   </span>
+                                   <span className="font-medium text-gray-600">
+                                     {savingsView === 'annual'
+                                       ? `${formatCurrency(roleSalaryData.australian.moderate.total)}/year`
+                                       : `${formatCurrency(Math.round(roleSalaryData.australian.moderate.total / 12))}/month`
+                                     }
+                                   </span>
+                                 </div>
+                               )}
+                               {experienceDistribution.experienced > 0 && (
+                                 <div className="flex justify-between items-center text-xs">
+                                   <span className="text-gray-500">
+                                     {experienceDistribution.experienced}x Senior Level
+                                   </span>
+                                   <span className="font-medium text-gray-600">
+                                     {savingsView === 'annual'
+                                       ? `${formatCurrency(roleSalaryData.australian.experienced.total)}/year`
+                                       : `${formatCurrency(Math.round(roleSalaryData.australian.experienced.total / 12))}/month`
+                                     }
+                                   </span>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+                         </div>
+                       );
+                     })}
                    </div>
                  </div>
 
@@ -1085,7 +1321,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                  <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-4">
                    <div className="flex justify-between items-center">
                      <span className="text-sm font-medium text-gray-700">
-                       {savingsView === 'annual' ? 'Annual Cost' : 'Monthly Cost'}
+                       {savingsView === 'annual' ? 'Total Annual Cost' : 'Total Monthly Cost'}
                      </span>
                      <span className="text-xl font-bold text-cyber-green-600">
                        {savingsView === 'annual' 
@@ -1098,18 +1334,68 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
 
                  <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-4">
                    <div className="text-sm font-medium text-gray-700 mb-3">Cost Breakdown</div>
-                   <div className="space-y-2">
-                     {Object.values(result.breakdown).map((role: any, index) => (
-                       <div key={index} className="flex justify-between items-center text-xs">
-                         <span className="text-gray-600">{role.roleName}</span>
-                         <span className="font-medium text-cyber-green-600">
-                           {savingsView === 'annual'
-                             ? `${formatCurrency(role.philippineCost)}/year`
-                             : `${formatCurrency(Math.round(role.philippineCost / 12))}/month`
-                           }
-                         </span>
-                       </div>
-                     ))}
+                   <div className="space-y-3">
+                     {Object.values(result.breakdown).map((role: any, index) => {
+                       const experienceDistribution = formData.roleExperienceDistribution?.[role.roleId];
+                       const roleSalaryData = SALARY_DATA[role.roleId as keyof typeof SALARY_DATA];
+                       
+                       return (
+                         <div key={index} className="space-y-1">
+                           <div className="flex justify-between items-center text-xs">
+                             <span className="text-gray-600 font-medium">{role.roleName}</span>
+                             <span className="font-medium text-cyber-green-600">
+                               {savingsView === 'annual'
+                                 ? `${formatCurrency(role.philippineCost)}/year`
+                                 : `${formatCurrency(Math.round(role.philippineCost / 12))}/month`
+                               }
+                             </span>
+                           </div>
+                           {experienceDistribution && roleSalaryData && (
+                             <div className="ml-3 space-y-1">
+                               {experienceDistribution.entry > 0 && (
+                                 <div className="flex justify-between items-center text-xs">
+                                   <span className="text-gray-500">
+                                     {experienceDistribution.entry}x Entry Level
+                                   </span>
+                                   <span className="font-medium text-gray-600">
+                                     {savingsView === 'annual'
+                                       ? `${formatCurrency(roleSalaryData.philippine.entry.total)}/year`
+                                       : `${formatCurrency(Math.round(roleSalaryData.philippine.entry.total / 12))}/month`
+                                     }
+                                   </span>
+                                 </div>
+                               )}
+                               {experienceDistribution.moderate > 0 && (
+                                 <div className="flex justify-between items-center text-xs">
+                                   <span className="text-gray-500">
+                                     {experienceDistribution.moderate}x Mid-Level
+                                   </span>
+                                   <span className="font-medium text-gray-600">
+                                     {savingsView === 'annual'
+                                       ? `${formatCurrency(roleSalaryData.philippine.moderate.total)}/year`
+                                       : `${formatCurrency(Math.round(roleSalaryData.philippine.moderate.total / 12))}/month`
+                                     }
+                                   </span>
+                                 </div>
+                               )}
+                               {experienceDistribution.experienced > 0 && (
+                                 <div className="flex justify-between items-center text-xs">
+                                   <span className="text-gray-500">
+                                     {experienceDistribution.experienced}x Senior Level
+                                   </span>
+                                   <span className="font-medium text-gray-600">
+                                     {savingsView === 'annual'
+                                       ? `${formatCurrency(roleSalaryData.philippine.experienced.total)}/year`
+                                       : `${formatCurrency(Math.round(roleSalaryData.philippine.experienced.total / 12))}/month`
+                                     }
+                                   </span>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+                         </div>
+                       );
+                     })}
                    </div>
                  </div>
 
@@ -1239,24 +1525,10 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           >
             {/* Loading/Error States */}
             {isPlanLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Card className="p-12 text-center bg-gradient-to-br from-neural-blue-50 to-quantum-purple-50 border-2 border-neural-blue-200 shadow-lg">
-                  <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-12 h-12 text-neural-blue-600 animate-spin" />
-                    <div>
-                      <h3 className="text-2xl font-bold text-neural-blue-900 mb-2">Generating Implementation Plan</h3>
-                      <p className="text-neural-blue-700 text-lg max-w-md mx-auto">
-                        Claude AI is analyzing your requirements...
-                      </p>
-                      <p className="text-neural-blue-600 text-sm mt-2">This may take a few moments</p>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
+              <AIProcessingSpinner
+                text="Generating Implementation Plan"
+                subtext="This may take a few moments"
+              />
             )}
 
             {planError && (
@@ -1374,56 +1646,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                   </Card>
                 </motion.div>
 
-                {/* Business Risk Assessment */}
-                <motion.div
-                  id="business-risk-assessment"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                >
-                  <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-amber-100 rounded-xl shadow-sm">
-                        <Shield className="w-6 h-6 text-amber-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-headline-3 font-bold text-neutral-900">Business Risk Assessment</h3>
-                        <p className="text-body-small text-neutral-600">Strategic risks and considerations for offshore scaling</p>
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4 ${getRiskLevelColor(result.riskAssessment.level)}`}>
-                          <Activity className="w-4 h-4" />
-                          {result.riskAssessment.level.charAt(0).toUpperCase() + result.riskAssessment.level.slice(1)} Risk
-                        </div>
-                        
-                        <h4 className="text-body-large font-bold text-neutral-900 mb-4">Risk Factors</h4>
-                        <ul className="space-y-3">
-                          {result.riskAssessment.factors.map((factor, index) => (
-                            <li key={index} className="flex items-start gap-3 text-body-small text-neutral-600 p-3 bg-amber-50/50 rounded-lg">
-                              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                              {factor}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h4 className="text-body-large font-bold text-neutral-900 mb-4">Mitigation Strategies</h4>
-                        <ul className="space-y-3">
-                          {result.riskAssessment.mitigationStrategies.map((strategy, index) => (
-                            <li key={index} className="flex items-start gap-3 text-body-small text-neutral-600 p-3 bg-cyber-green-50/50 rounded-lg">
-                              <CheckCircle2 className="w-5 h-5 text-cyber-green-500 mt-0.5 flex-shrink-0" />
-                              {strategy}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
 
                 {/* Implementation Risk Assessment & Mitigation */}
                 {implementationPlan.riskAssessment && implementationPlan.riskAssessment.length > 0 && (
@@ -2119,7 +2342,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1, duration: 0.3 }}
         onClick={() => setShowTableOfContents(!showTableOfContents)}
-        className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-3 rounded-xl shadow-lg hover:shadow-neural-glow transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
+        className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
         aria-label="Quick navigation"
       >
         <svg 

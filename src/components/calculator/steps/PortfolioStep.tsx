@@ -4,65 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { PortfolioSize, ManualPortfolioData, RevenueRange } from '@/types';
 import { PORTFOLIO_INDICATORS, REVENUE_RANGES, detectBusinessTier } from '@/utils/quoteCalculatorData';
-import { Building, TrendingUp, Users, Target, Edit3, Calculator, ChevronDown, Sparkles, CheckCircle, ArrowRight, Zap, ArrowLeft, BarChart3, MapPin, Globe, Wifi, Check, X } from 'lucide-react';
-import { EnhancedLocationSelector } from '@/components/common/EnhancedLocationSelector';
-
-interface LocationData {
-  ip: string;
-  city: string;
-  region: string;
-  country_name: string;
-  country_code: string;
-  timezone: string;
-  latitude: number;
-  longitude: number;
-  currency: string;
-  currency_name: string;
-  languages: string;
-  org: string;
-}
-
-interface ManualLocation {
-  country: string;
-  region: string;
-  city: string;
-}
+import { Building, TrendingUp, Users, Target, Calculator, ChevronDown, Sparkles, CheckCircle, ArrowRight, Zap, ArrowLeft, BarChart3 } from 'lucide-react';
 
 interface PortfolioStepProps {
   value: PortfolioSize | '';
   manualData?: ManualPortfolioData | undefined;
-  locationData?: LocationData | null;
-  isLoadingLocation?: boolean;
-  locationError?: string | null;
-  isEditingLocation?: boolean;
-  manualLocation?: ManualLocation | null;
-  tempLocation?: ManualLocation;
-  countryRegions?: { [key: string]: string[] };
-  onLocationEditStart?: () => void;
-  onLocationEditSave?: () => void;
-  onLocationEditCancel?: () => void;
-  onLocationReset?: () => void;
-  onTempLocationChange?: (location: ManualLocation) => void;
-  getEffectiveLocation?: () => LocationData | { city: string; region: string; country_name: string; } | null | undefined;
   onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined) => void;
 }
 
 export function PortfolioStep({ 
   value, 
   manualData, 
-  locationData,
-  isLoadingLocation = false,
-  locationError,
-  isEditingLocation = false,
-  manualLocation,
-  tempLocation,
-  countryRegions = {},
-  onLocationEditStart,
-  onLocationEditSave,
-  onLocationEditCancel,
-  onLocationReset,
-  onTempLocationChange,
-  getEffectiveLocation,
   onChange 
 }: PortfolioStepProps) {
   const [showPreciseInput, setShowPreciseInput] = useState(value === 'manual');
@@ -131,103 +83,6 @@ export function PortfolioStep({
           <h2 className="text-headline-1 text-neutral-900 text-center">
             Tell us about your property portfolio
           </h2>
-        </div>
-        
-        {/* Location Section with Background */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-6 max-w-5xl mx-auto">
-          <div className="text-center mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-bold text-neutral-900 mb-2">
-              Where is your property management business primarily located?
-            </h3>
-            <p className="text-sm sm:text-base text-neutral-600 px-2">
-              We'll use this to show you accurate cost comparisons and savings calculations in your local currency.
-            </p>
-          </div>
-          
-          {/* Responsive Location Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-            {isLoadingLocation ? (
-              <div className="flex items-center gap-3">
-                <div className="animate-spin">
-                  <Wifi className="w-5 h-5 text-blue-500" />
-                </div>
-                <span className="text-neutral-700 font-medium text-sm sm:text-base">
-                  Detecting your location...
-                </span>
-              </div>
-            ) : locationError && !isLoadingLocation && !manualLocation ? (
-              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-3 bg-white rounded-lg border border-neutral-200 w-full sm:w-auto justify-center sm:justify-start">
-                  <Globe className="w-4 sm:w-5 h-4 sm:h-5 text-neutral-500" />
-                  <span className="text-neutral-700 font-medium text-sm sm:text-base">
-                    {locationError}
-                  </span>
-                </div>
-                <button
-                  onClick={onLocationEditStart}
-                  className="px-4 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow transition-all duration-200 font-medium text-sm sm:text-base w-full sm:w-auto shadow-lg"
-                >
-                  Set Location Manually
-                </button>
-              </div>
-            ) : (getEffectiveLocation?.()) ? (
-              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                {/* Location Display */}
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-lg border border-blue-200 shadow-sm w-full sm:w-auto justify-center sm:justify-start">
-                  <span className="text-base sm:text-lg">🌏</span>
-                  <span className="font-medium text-neutral-900 text-sm sm:text-base">
-                    {getEffectiveLocation?.()?.country_name}
-                  </span>
-                </div>
-                
-                {/* Change Button */}
-                <button
-                  onClick={onLocationEditStart}
-                  className="px-3 sm:px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-lg hover:bg-blue-100 bg-white shadow-sm text-sm sm:text-base w-full sm:w-auto justify-center"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span className="sm:inline">Change Location</span>
-                  <span className="sm:hidden">Change</span>
-                </button>
-                
-                {manualLocation && (
-                  <button
-                    onClick={onLocationReset}
-                    className="text-xs sm:text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors mt-2 sm:mt-0"
-                  >
-                    Reset to auto-detected
-                  </button>
-                )}
-              </div>
-            ) : null}
-          </div>
-          
-          {/* Location Edit Modal */}
-          {isEditingLocation && (
-            <div className="mt-4 sm:mt-6">
-              <div className="bg-white border border-neutral-200 rounded-xl p-4 sm:p-6 shadow-lg">
-                <EnhancedLocationSelector
-                  {...(tempLocation && tempLocation.country && {
-                    initialLocation: {
-                      country: tempLocation.country,
-                      region: tempLocation.region,
-                      city: tempLocation.city
-                    }
-                  })}
-                  onLocationChange={(location: { country: string; region: string; city: string }) => {
-                    onTempLocationChange?.({
-                      country: location.country,
-                      region: location.region,
-                      city: location.city
-                    });
-                  }}
-                  onCancel={onLocationEditCancel || (() => {})}
-                  onSave={onLocationEditSave || (() => {})}
-                  showPreview={false}
-                />
-              </div>
-            </div>
-          )}
         </div>
         
         <p className="text-body-large text-neutral-600">

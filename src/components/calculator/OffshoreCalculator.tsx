@@ -7,7 +7,9 @@ import { calculateSavings } from '@/utils/calculations';
 import { DEFAULT_FORM_DATA } from '@/utils/quoteCalculatorData';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CalculatingSpinner } from '@/components/ui/LoadingSpinner';
 import { StepIndicator } from '@/components/calculator/StepIndicator';
+import { LocationStep } from './steps/LocationStep';
 import { PortfolioStep } from './steps/PortfolioStep';
 import { RoleSelectionStep } from './steps/RoleSelectionStep';
 import { TaskSelectionStep } from './steps/TaskSelectionStep';
@@ -339,12 +341,15 @@ export function OffshoreCalculator({
       setCalculationResult(result);
       setProcessingStage('');
       
-      // Advance to step 5 (results) after calculation is complete
-      updateFormData({ currentStep: 5 });
+      // Advance to step 6 (results) after calculation is complete
+      updateFormData({ currentStep: 6 });
       // Scroll to top to show the step indicator and results
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+      // Use requestAnimationFrame to ensure DOM updates are complete
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 200);
+      });
       analytics.trackEvent('calculation_complete', { 
         result
       });
@@ -376,11 +381,17 @@ export function OffshoreCalculator({
 
   const canProceedFromStep = (step: CalculatorStep): boolean => {
     switch (step) {
-      case 1: return formData.portfolioSize !== '';
-      case 2: return Object.values(formData.selectedRoles).some(Boolean);
-      case 3: return Object.values(formData.selectedTasks).some(Boolean) || 
+      case 1: {
+        // Location step: can proceed when location is detected OR manually selected
+        const hasAutoDetectedLocation = locationData && !locationError;
+        const hasManualLocation = manualLocation;
+        return !!(hasAutoDetectedLocation || hasManualLocation);
+      }
+      case 2: return formData.portfolioSize !== '';
+      case 3: return Object.values(formData.selectedRoles).some(Boolean);
+      case 4: return Object.values(formData.selectedTasks).some(Boolean) || 
                      Object.values(formData.customTasks).some((tasks: any) => Array.isArray(tasks) && tasks.length > 0);
-      case 4: {
+      case 5: {
         // NEW: Multi-level experience validation
         const selectedRoles = Object.entries(formData.selectedRoles)
           .filter(([_, selected]: [string, boolean]) => selected)
@@ -400,9 +411,7 @@ export function OffshoreCalculator({
     switch (formData.currentStep) {
       case 1:
         return (
-          <PortfolioStep
-            value={formData.portfolioSize}
-            manualData={formData.manualPortfolioData}
+          <LocationStep
             locationData={locationData}
             isLoadingLocation={isLoadingLocation}
             locationError={locationError}
@@ -416,13 +425,24 @@ export function OffshoreCalculator({
             onLocationReset={resetToAutoLocation}
             onTempLocationChange={setTempLocation}
             getEffectiveLocation={getEffectiveLocation}
+            onChange={(locationData) => {
+              setLocationData(locationData);
+              setLocationError(null);
+            }}
+          />
+        );
+      case 2:
+        return (
+          <PortfolioStep
+            value={formData.portfolioSize}
+            manualData={formData.manualPortfolioData}
             onChange={(portfolioSize, manualData) => updateFormData({ 
               portfolioSize, 
               ...(manualData !== undefined && { manualPortfolioData: manualData })
             })}
           />
         );
-      case 2:
+      case 3:
         return (
           <RoleSelectionStep
             selectedRoles={formData.selectedRoles}
@@ -437,7 +457,7 @@ export function OffshoreCalculator({
             })}
           />
         );
-      case 3:
+      case 4:
         return (
           <TaskSelectionStep
             selectedRoles={formData.selectedRoles}
@@ -446,7 +466,7 @@ export function OffshoreCalculator({
             onChange={(selectedTasks, customTasks) => updateFormData({ selectedTasks, customTasks })}
           />
         );
-      case 4:
+      case 5:
         return (
           <ExperienceStep
             value={formData.experienceLevel}
@@ -463,7 +483,7 @@ export function OffshoreCalculator({
             isCalculating={isCalculating}
           />
         );
-      case 5:
+      case 6:
         return (
           <ResultsStep
             result={calculationResult!}
@@ -478,22 +498,24 @@ export function OffshoreCalculator({
 
   const getStepTitle = (step: CalculatorStep): string => {
     const titles = {
-      1: 'Portfolio Size',
-      2: 'Team Roles',
-      3: 'Task Selection', 
-      4: 'Experience Level',
-      5: 'Your Results'
+      1: 'Location',
+      2: 'Portfolio Size',
+      3: 'Team Roles',
+      4: 'Task Selection', 
+      5: 'Experience Level',
+      6: 'Your Results'
     };
     return titles[step] || 'Unknown Step';
   };
 
   const getStepIcon = (step: CalculatorStep) => {
     const icons = {
-      1: TrendingUp,
-      2: Users,
-      3: Target,
-      4: Calculator,
-      5: Sparkles
+      1: MapPin,
+      2: TrendingUp,
+      3: Users,
+      4: Target,
+      5: Calculator,
+      6: Sparkles
     };
     const IconComponent = icons[step] || Calculator;
     return <IconComponent className="h-5 w-5" />;
@@ -501,11 +523,12 @@ export function OffshoreCalculator({
 
   const getStepDescription = (step: CalculatorStep): string => {
     const descriptions = {
-      1: 'Tell us about your property portfolio size and management structure',
-      2: 'Select the roles you want to offshore and team size requirements',
-      3: 'Choose specific tasks for each role to get accurate cost projections',
-      4: 'Set experience requirements to match your quality standards',
-      5: 'Your comprehensive savings breakdown and implementation guide'
+      1: 'Tell us where your business is located for accurate cost comparisons',
+      2: 'Tell us about your property portfolio size and management structure',
+      3: 'Select the roles you want to offshore and team size requirements',
+      4: 'Choose specific tasks for each role to get accurate cost projections',
+      5: 'Set experience requirements to match your quality standards',
+      6: 'Your comprehensive savings breakdown and implementation guide'
     };
     return descriptions[step] || '';
   };
@@ -542,51 +565,10 @@ export function OffshoreCalculator({
         </div>
 
         {/* Processing Overlay */}
-        <AnimatePresence>
-          {isCalculating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-neural-blue-900/80 backdrop-blur-lg z-50 flex items-center justify-center"
-            >
-              <Card 
-                variant="quantum-glass" 
-                className="p-12 text-center max-w-md mx-4"
-                aiPowered={true}
-                neuralGlow={true}
-              >
-                <>
-                  <div className="mb-6">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neural-primary rounded-full flex items-center justify-center shadow-neural-glow">
-                      <Calculator className="h-8 w-8 text-white animate-neural-pulse" />
-                    </div>
-                    
-                    <h3 className="text-headline-3 gradient-text-neural mb-2 font-display">
-                      Calculating Your Savings
-                    </h3>
-                    
-                    <motion.p 
-                      key={processingStage}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-neural-blue-600 font-medium"
-                    >
-                      {processingStage}
-                    </motion.p>
-                  </div>
-                  
-                  {/* Processing dots */}
-                  <div className="loading-neural-dots justify-center">
-                    <div className="animate-neural-pulse"></div>
-                    <div className="animate-neural-pulse [animation-delay:0.2s]"></div>
-                    <div className="animate-neural-pulse [animation-delay:0.4s]"></div>
-                  </div>
-                </>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <CalculatingSpinner
+          show={isCalculating}
+          subtext={processingStage}
+        />
 
         {/* Step Content */}
         <AnimatePresence mode="wait">
@@ -602,7 +584,7 @@ export function OffshoreCalculator({
         </AnimatePresence>
 
         {/* Navigation */}
-        {formData.currentStep < 5 && (
+        {formData.currentStep < 6 && (
           <Card 
             variant="neural-elevated" 
             className="mt-8 p-6"
@@ -636,10 +618,10 @@ export function OffshoreCalculator({
               
               <div className="flex items-center gap-4">
                 <div className="text-sm text-neural-blue-600 font-medium">
-                  Step {formData.currentStep} of 5
+                  Step {formData.currentStep} of 6
                 </div>
                 
-                {formData.currentStep < 4 && (
+                {formData.currentStep < 5 && (
                   <Button
                     variant="neural-primary"
                     onClick={nextStep}
@@ -651,11 +633,11 @@ export function OffshoreCalculator({
                   </Button>
                 )}
                 
-                {formData.currentStep === 4 && (
+                {formData.currentStep === 5 && (
                   <Button
                     variant="neural-primary"
                     onClick={calculateSavingsAsync}
-                    disabled={isCalculating || !canProceedFromStep(4)}
+                    disabled={isCalculating || !canProceedFromStep(5)}
                     className="w-40 h-12"
                   >
                     {isCalculating ? 'Calculating...' : 'Calculate Savings'}
@@ -668,11 +650,11 @@ export function OffshoreCalculator({
             <div className="flex sm:hidden flex-col items-center gap-4">
               {/* Step counter at top */}
               <div className="text-sm text-neural-blue-600 font-medium">
-                Step {formData.currentStep} of 5
+                Step {formData.currentStep} of 6
               </div>
               
               {/* Continue button */}
-              {formData.currentStep < 4 && (
+              {formData.currentStep < 5 && (
                 <Button
                   variant="neural-primary"
                   onClick={nextStep}
@@ -684,12 +666,12 @@ export function OffshoreCalculator({
                 </Button>
               )}
               
-              {/* Calculate button for step 4 */}
-              {formData.currentStep === 4 && (
+              {/* Calculate button for step 5 */}
+              {formData.currentStep === 5 && (
                 <Button
                   variant="neural-primary"
                   onClick={calculateSavingsAsync}
-                  disabled={isCalculating || !canProceedFromStep(4)}
+                  disabled={isCalculating || !canProceedFromStep(5)}
                   className="w-full h-12"
                 >
                   {isCalculating ? 'Calculating...' : 'Calculate My Detailed Savings'}

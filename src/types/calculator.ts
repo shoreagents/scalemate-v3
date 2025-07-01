@@ -4,7 +4,7 @@ export type ExperienceLevel = 'entry' | 'moderate' | 'experienced';
 export type RoleId = 'assistantPropertyManager' | 'leasingCoordinator' | 'marketingSpecialist' | string; // Allow custom role IDs
 export type BusinessTier = 'growing' | 'large' | 'major' | 'enterprise';
 export type TaskComplexity = 'low' | 'medium' | 'high';
-export type CalculatorStep = 1 | 2 | 3 | 4 | 5;
+export type CalculatorStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 // Location and country types for savings comparison
 export type Country = 'AU' | 'US' | 'CA' | 'UK' | 'NZ' | 'SG';

@@ -9,7 +9,8 @@ import {
   GraduationCap, 
   TrendingUp,
   Brain,
-  Sparkles
+  Sparkles,
+  MapPin
 } from 'lucide-react';
 
 interface StepIndicatorProps {
@@ -22,30 +23,36 @@ interface StepIndicatorProps {
 const STEPS = [
   {
     number: 1,
+    title: 'Location',
+    description: 'Set your business location',
+    icon: MapPin
+  },
+  {
+    number: 2,
     title: 'Portfolio Size',
     description: 'Select your property count',
     icon: Building
   },
   {
-    number: 2,
+    number: 3,
     title: 'Team Roles',
     description: 'Choose roles to offshore',
     icon: Users
   },
   {
-    number: 3,
+    number: 4,
     title: 'Task Selection',
     description: 'Select specific tasks',
     icon: CheckSquare
   },
   {
-    number: 4,
+    number: 5,
     title: 'Experience Level',
     description: 'Set team experience',
     icon: GraduationCap
   },
   {
-    number: 5,
+    number: 6,
     title: 'Results',
     description: 'View your savings',
     icon: TrendingUp
