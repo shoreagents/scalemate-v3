@@ -130,7 +130,7 @@ export function ExitIntentProvider({ children, enabled = true }: ExitIntentProvi
           )}
           
           {/* Back to Top Button - bottom right */}
-          <div className="fixed bottom-4 right-4 z-50">
+          <div className="fixed bottom-4 right-2 xs:right-4 z-50">
             <button
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -138,11 +138,11 @@ export function ExitIntentProvider({ children, enabled = true }: ExitIntentProvi
                   page: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
                 });
               }}
-              className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-3 rounded-xl shadow-lg hover:shadow-neural-glow transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
+              className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-2.5 xs:p-3 rounded-xl shadow-lg hover:shadow-neural-glow transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
               aria-label="Back to top"
             >
               <svg 
-                className="w-5 h-5 transform group-hover:-translate-y-0.5 transition-transform duration-200" 
+                className="w-4 h-4 xs:w-5 xs:h-5 transform group-hover:-translate-y-0.5 transition-transform duration-200" 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"

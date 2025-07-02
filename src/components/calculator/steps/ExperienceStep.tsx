@@ -309,20 +309,20 @@ export function ExperienceStep({
               }`}
             >
               {/* Role Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">{role.icon}</div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="text-xl sm:text-2xl">{role.icon}</div>
                   <div>
-                    <h4 className="text-lg font-semibold text-neutral-900">{role.title}</h4>
-                    <p className="text-sm text-neutral-600">
+                    <h4 className="text-base sm:text-lg font-semibold text-neutral-900">{role.title}</h4>
+                    <p className="text-xs sm:text-sm text-neutral-600">
                       Total Team Size: {role.teamSize} member{role.teamSize !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
 
                 {/* Assignment Status */}
-                <div className="text-right">
-                  <div className={`text-sm font-medium ${
+                <div className="text-left sm:text-right">
+                  <div className={`text-xs sm:text-sm font-medium ${
                     distribution.isComplete 
                       ? 'text-green-600' 
                       : unassignedCount < 0 

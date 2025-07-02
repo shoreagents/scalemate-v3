@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask } from '@/types';
+import { FormData, CalculationResult, CalculatorStep, RoleId, CustomTask, Country } from '@/types';
 import { calculateSavings } from '@/utils/calculations';
 import { DEFAULT_FORM_DATA } from '@/utils/quoteCalculatorData';
 import { Button } from '@/components/ui/Button';
@@ -150,14 +150,64 @@ export function OffshoreCalculator({
   // Handle location edit save
   const saveLocationEdit = () => {
     if (tempLocation.country) {
-      setManualLocation({ 
+      const manualLocationData = { 
         country: tempLocation.country,
         region: '', // Set empty since we're using country-only now
         city: ''    // Set empty since we're using country-only now
-      });
+      };
+      setManualLocation(manualLocationData);
       setIsEditingLocation(false);
+      
+      // Update form data with user location for calculations
+      updateFormData({ 
+        userLocation: {
+          country: getCountryCode(tempLocation.country),
+          countryName: tempLocation.country,
+          currency: getCurrencyForCountry(tempLocation.country),
+          currencySymbol: getCurrencySymbolForCountry(tempLocation.country),
+          detected: false // This is manually selected
+        }
+      });
+      
       console.log('📍 Location manually overridden:', { country: tempLocation.country });
     }
+  };
+
+  // Helper functions to map country names to codes and currencies
+  const getCountryCode = (countryName: string): Country => {
+    const countryMap: { [key: string]: Country } = {
+      'Australia': 'AU',
+      'United States': 'US',
+      'Canada': 'CA',
+      'United Kingdom': 'UK',
+      'New Zealand': 'NZ',
+      'Singapore': 'SG'
+    };
+    return countryMap[countryName] || 'AU'; // Default to AU if not found
+  };
+
+  const getCurrencyForCountry = (countryName: string): string => {
+    const currencyMap: { [key: string]: string } = {
+      'Australia': 'AUD',
+      'United States': 'USD',
+      'Canada': 'CAD',
+      'United Kingdom': 'GBP',
+      'New Zealand': 'NZD',
+      'Singapore': 'SGD'
+    };
+    return currencyMap[countryName] || 'AUD';
+  };
+
+  const getCurrencySymbolForCountry = (countryName: string): string => {
+    const symbolMap: { [key: string]: string } = {
+      'Australia': '$',
+      'United States': '$',
+      'Canada': '$',
+      'United Kingdom': '£',
+      'New Zealand': '$',
+      'Singapore': '$'
+    };
+    return symbolMap[countryName] || '$';
   };
 
   // Handle location edit cancel
@@ -186,6 +236,20 @@ export function OffshoreCalculator({
   const resetToAutoLocation = () => {
     setManualLocation(null);
     setIsEditingLocation(false);
+    
+    // Update form data back to auto-detected location if available
+    if (locationData) {
+      updateFormData({ 
+        userLocation: {
+          country: getCountryCode(locationData.country_name),
+          countryName: locationData.country_name,
+          currency: locationData.currency,
+          currencySymbol: getCurrencySymbolForCountry(locationData.country_name),
+          detected: true
+        }
+      });
+    }
+    
     console.log('📍 Location reset to auto-detected');
   };
 
@@ -203,6 +267,17 @@ export function OffshoreCalculator({
         
         const data: LocationData = await response.json();
         setLocationData(data);
+        
+        // Update form data with auto-detected location
+        updateFormData({ 
+          userLocation: {
+            country: getCountryCode(data.country_name),
+            countryName: data.country_name,
+            currency: data.currency,
+            currencySymbol: getCurrencySymbolForCountry(data.country_name),
+            detected: true
+          }
+        });
         
         console.log('📍 Location detected:', data);
       } catch (error) {

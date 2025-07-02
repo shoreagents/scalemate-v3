@@ -211,31 +211,22 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                   {/* Collapsible Header Section */}
                   <button
                     onClick={() => toggleRole(role.roleId)}
-                    className="w-full flex flex-col lg:flex-row lg:items-start lg:justify-between gap-2 lg:gap-4 mb-2 text-left group/header hover:bg-white/50 transition-colors duration-300 rounded-lg p-1 -m-1"
+                    className="w-full flex flex-row items-center justify-between gap-2 mb-2 text-left group/header hover:bg-white/50 transition-colors duration-300 rounded-lg p-2 -m-1"
                   >
-                                          <div className="flex items-center gap-3 flex-1">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <h4 className="text-base lg:text-lg font-bold text-neutral-900">{role.roleName}</h4>
-                            <div className="ml-auto lg:hidden">
-                              {expandedRoles.has(role.roleId) ? (
-                                <ChevronUp className="w-5 h-5 text-neural-blue-600 transition-transform duration-300" />
-                              ) : (
-                                <ChevronDown className="w-5 h-5 text-neural-blue-600 transition-transform duration-300" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-neural-blue-600" />
-                            <p className="text-sm text-neutral-600 font-medium">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
-                          </div>
+                    <div className="flex items-center gap-2 xs:gap-3 flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm xs:text-base lg:text-lg font-bold text-neutral-900 truncate">{role.roleName}</h4>
+                        <div className="flex items-center gap-1.5 xs:gap-2 mt-0.5">
+                          <Users className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-neural-blue-600 flex-shrink-0" />
+                          <p className="text-xs xs:text-sm text-neutral-600 font-medium">{role.teamSize} team member{role.teamSize > 1 ? 's' : ''}</p>
                         </div>
                       </div>
-                    <div className="hidden lg:block">
+                    </div>
+                    <div className="flex-shrink-0">
                       {expandedRoles.has(role.roleId) ? (
-                        <ChevronUp className="w-6 h-6 text-neural-blue-600 transition-transform duration-300" />
+                        <ChevronUp className="w-5 h-5 xs:w-6 xs:h-6 text-neural-blue-600 transition-transform duration-300" />
                       ) : (
-                        <ChevronDown className="w-6 h-6 text-neural-blue-600 transition-transform duration-300" />
+                        <ChevronDown className="w-5 h-5 xs:w-6 xs:h-6 text-neural-blue-600 transition-transform duration-300" />
                       )}
                     </div>
                   </button>
@@ -251,34 +242,36 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                         className="overflow-hidden"
                       >
                         {/* View Mode Toggle */}
-                        <div className="flex items-center justify-between mb-4">
-                          <h5 className="text-lg font-semibold text-neutral-900">Cost Analysis</h5>
-                          <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
-                            <button
-                              onClick={() => setRoleViewMode(role.roleId, 'annual')}
-                              className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
-                                (roleViewModes[role.roleId] || 'annual') === 'annual'
-                                  ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
-                                  : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
-                              }`}
-                            >
-                              Annual
-                            </button>
-                            <button
-                              onClick={() => setRoleViewMode(role.roleId, 'monthly')}
-                              className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
-                                (roleViewModes[role.roleId] || 'annual') === 'monthly'
-                                  ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
-                                  : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
-                              }`}
-                            >
-                              Monthly
-                            </button>
+                        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 xs:gap-4 mb-4">
+                          <h5 className="text-base xs:text-lg font-semibold text-neutral-900">Cost Analysis</h5>
+                          <div className="flex justify-center xs:justify-end">
+                            <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
+                              <button
+                                onClick={() => setRoleViewMode(role.roleId, 'annual')}
+                                className={`relative px-3 xs:px-4 py-1 text-xs xs:text-sm font-bold rounded-lg transition-all duration-300 ${
+                                  (roleViewModes[role.roleId] || 'annual') === 'annual'
+                                    ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                                    : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                                }`}
+                              >
+                                Annual
+                              </button>
+                              <button
+                                onClick={() => setRoleViewMode(role.roleId, 'monthly')}
+                                className={`relative px-3 xs:px-4 py-1 text-xs xs:text-sm font-bold rounded-lg transition-all duration-300 ${
+                                  (roleViewModes[role.roleId] || 'annual') === 'monthly'
+                                    ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                                    : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                                }`}
+                              >
+                                Monthly
+                              </button>
+                            </div>
                           </div>
                         </div>
 
                         {/* Cost Comparison Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 mb-4 xs:mb-6">
                     {(() => {
                       const currentViewMode = roleViewModes[role.roleId] || 'annual';
                       const costValues = getCostValues(role, currentViewMode);
@@ -286,56 +279,56 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                       
                       return (
                         <>
-                          <div className="group/card p-4 bg-gradient-to-br from-red-50 via-red-50 to-red-100 border border-red-200 rounded-xl hover:shadow-lg transition-all duration-300">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
-                                <DollarSign className="w-5 h-5 text-white" />
+                          <div className="group/card p-3 xs:p-4 bg-gradient-to-br from-red-50 via-red-50 to-red-100 border border-red-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
+                              <div className="w-8 h-8 xs:w-10 xs:h-10 bg-red-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <DollarSign className="w-4 h-4 xs:w-5 xs:h-5 text-white" />
                               </div>
-                              <div className="flex-1">
-                                <p className="text-red-700 font-semibold text-sm">Current Cost</p>
-                                <p className="text-xs text-red-600">Australian workforce {timeLabel}</p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-red-700 font-semibold text-xs xs:text-sm">Current Cost</p>
+                                <p className="text-xs text-red-600 truncate">Australian workforce {timeLabel}</p>
                               </div>
                             </div>
-                            <p className="font-bold text-red-800 text-lg">${costValues.australianCost.toLocaleString()}</p>
+                            <p className="font-bold text-red-800 text-base xs:text-lg">${costValues.australianCost.toLocaleString()}</p>
                           </div>
 
-                          <div className="group/card p-4 bg-gradient-to-br from-neural-blue-50 via-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-xl hover:shadow-lg transition-all duration-300">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-10 h-10 bg-neural-blue-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
-                                <TrendingDown className="w-5 h-5 text-white" />
+                          <div className="group/card p-3 xs:p-4 bg-gradient-to-br from-neural-blue-50 via-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
+                              <div className="w-8 h-8 xs:w-10 xs:h-10 bg-neural-blue-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <TrendingDown className="w-4 h-4 xs:w-5 xs:h-5 text-white" />
                               </div>
-                              <div className="flex-1">
-                                <p className="text-neural-blue-700 font-semibold text-sm">Offshore Cost</p>
-                                <p className="text-xs text-neural-blue-600">Philippine workforce {timeLabel}</p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-neural-blue-700 font-semibold text-xs xs:text-sm">Offshore Cost</p>
+                                <p className="text-xs text-neural-blue-600 truncate">Philippine workforce {timeLabel}</p>
                               </div>
                             </div>
-                            <p className="font-bold text-neural-blue-800 text-lg">${costValues.philippineCost.toLocaleString()}</p>
+                            <p className="font-bold text-neural-blue-800 text-base xs:text-lg">${costValues.philippineCost.toLocaleString()}</p>
                           </div>
 
-                          <div className="group/card p-4 bg-gradient-to-br from-cyber-green-50 via-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl hover:shadow-lg transition-all duration-300">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-10 h-10 bg-cyber-green-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
-                                <TrendingUp className="w-5 h-5 text-white" />
+                          <div className="group/card p-3 xs:p-4 bg-gradient-to-br from-cyber-green-50 via-cyber-green-50 to-cyber-green-100 border border-cyber-green-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
+                              <div className="w-8 h-8 xs:w-10 xs:h-10 bg-cyber-green-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <TrendingUp className="w-4 h-4 xs:w-5 xs:h-5 text-white" />
                               </div>
-                              <div className="flex-1">
-                                <p className="text-cyber-green-700 font-semibold text-sm">{currentViewMode === 'monthly' ? 'Monthly' : 'Annual'} Savings</p>
-                                <p className="text-xs text-cyber-green-600">Total {currentViewMode} savings</p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-cyber-green-700 font-semibold text-xs xs:text-sm">{currentViewMode === 'monthly' ? 'Monthly' : 'Annual'} Savings</p>
+                                <p className="text-xs text-cyber-green-600 truncate">Total {currentViewMode} savings</p>
                               </div>
                             </div>
-                            <p className="font-bold text-cyber-green-800 text-lg">${costValues.savings.toLocaleString()}</p>
+                            <p className="font-bold text-cyber-green-800 text-base xs:text-lg">${costValues.savings.toLocaleString()}</p>
                           </div>
 
-                          <div className="group/card p-4 bg-gradient-to-br from-amber-50 via-amber-50 to-amber-100 border border-amber-200 rounded-xl hover:shadow-lg transition-all duration-300">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
-                                <Calendar className="w-5 h-5 text-white" />
+                          <div className="group/card p-3 xs:p-4 bg-gradient-to-br from-amber-50 via-amber-50 to-amber-100 border border-amber-200 rounded-xl hover:shadow-lg transition-all duration-300">
+                            <div className="flex items-center gap-2 xs:gap-3 mb-2 xs:mb-3">
+                              <div className="w-8 h-8 xs:w-10 xs:h-10 bg-amber-500 rounded-lg flex items-center justify-center shadow-md group-hover/card:scale-110 transition-transform duration-300">
+                                <Calendar className="w-4 h-4 xs:w-5 xs:h-5 text-white" />
                               </div>
-                              <div className="flex-1">
-                                <p className="text-amber-700 font-semibold text-sm">Implementation</p>
-                                <p className="text-xs text-amber-600">Time to deploy</p>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-amber-700 font-semibold text-xs xs:text-sm">Implementation</p>
+                                <p className="text-xs text-amber-600 truncate">Time to deploy</p>
                               </div>
                             </div>
-                            <p className="font-bold text-amber-800 text-lg">{role.estimatedImplementationTime} days</p>
+                            <p className="font-bold text-amber-800 text-base xs:text-lg">{role.estimatedImplementationTime} days</p>
                           </div>
                         </>
                       );
@@ -364,18 +357,18 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                     if (activeExperienceLevels.length === 0) return null;
                     
                     return (
-                      <Card hoverLift={false} className="p-6 bg-gradient-to-br from-amber-50/50 via-white to-amber-50/30 backdrop-blur-sm border border-amber-150 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-6">
-                        <div className="flex items-center gap-3 mb-5">
-                          <div className="p-2 bg-amber-100 rounded-lg shadow-sm">
-                            <Calculator className="w-5 h-5 text-amber-600" />
+                      <Card hoverLift={false} className="p-3 xs:p-4 lg:p-6 bg-gradient-to-br from-amber-50/50 via-white to-amber-50/30 backdrop-blur-sm border border-amber-150 shadow-lg hover:shadow-xl transition-shadow duration-300 mb-4 xs:mb-6">
+                        <div className="flex items-center gap-2 xs:gap-3 mb-3 xs:mb-5">
+                          <div className="p-1.5 xs:p-2 bg-amber-100 rounded-lg shadow-sm">
+                            <Calculator className="w-4 h-4 xs:w-5 xs:h-5 text-amber-600" />
                           </div>
-                          <div>
-                            <h5 className="font-semibold text-neutral-900 text-lg">Detailed Cost Breakdown</h5>
-                            <p className="text-sm text-neutral-600">Individual costs by experience level</p>
+                          <div className="min-w-0 flex-1">
+                            <h5 className="font-semibold text-neutral-900 text-base xs:text-lg">Detailed Cost Breakdown</h5>
+                            <p className="text-xs xs:text-sm text-neutral-600">Individual costs by experience level</p>
                           </div>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-2 xs:space-y-3">
                           {activeExperienceLevels.map((level) => {
                             const levelKey = level.key as keyof typeof roleSalaryData.australian;
                             const australianSalary = roleSalaryData.australian[levelKey];
@@ -390,58 +383,112 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                             const savings = australianCost - philippineCost;
                             
                             return (
-                              <div key={level.key} className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 bg-white/60 rounded-lg border border-amber-100">
-                                {/* Role Description */}
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${
-                                    level.key === 'entry' ? 'bg-green-500' :
-                                    level.key === 'moderate' ? 'bg-blue-500' : 'bg-purple-500'
-                                  }`}>
-                                    {level.count}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-medium text-neutral-900">
-                                      {level.count}x {role.roleName}
-                                    </div>
-                                    <div className={`text-sm font-medium ${
-                                      level.key === 'entry' ? 'text-green-700' :
-                                      level.key === 'moderate' ? 'text-blue-700' : 'text-purple-700'
+                              <div key={level.key} className="bg-white/60 rounded-lg border border-amber-100 p-2.5 xs:p-3 lg:p-4">
+                                {/* Mobile Layout */}
+                                <div className="block lg:hidden">
+                                  {/* Role Header */}
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className={`w-6 h-6 xs:w-7 xs:h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs ${
+                                      level.key === 'entry' ? 'bg-green-500' :
+                                      level.key === 'moderate' ? 'bg-blue-500' : 'bg-purple-500'
                                     }`}>
-                                      {level.name}
+                                      {level.count}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="font-medium text-neutral-900 text-sm">
+                                        {level.count}x {role.roleName}
+                                      </div>
+                                      <div className={`text-xs font-medium ${
+                                        level.key === 'entry' ? 'text-green-700' :
+                                        level.key === 'moderate' ? 'text-blue-700' : 'text-purple-700'
+                                      }`}>
+                                        {level.name}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Cost Details - Stacked */}
+                                  <div className="space-y-2">
+                                    <div className="py-2 px-2 bg-red-50 rounded">
+                                      <div className="text-xs text-red-600 font-medium mb-1">Australian Cost</div>
+                                      <div className="font-bold text-red-700 text-sm mb-1">
+                                        ${(australianCost * level.count).toLocaleString()}{timeLabel}
+                                      </div>
+                                      <div className="text-xs text-red-500">${australianCost.toLocaleString()}{timeLabel} each</div>
+                                    </div>
+                                    
+                                    <div className="py-2 px-2 bg-neural-blue-50 rounded">
+                                      <div className="text-xs text-neural-blue-600 font-medium mb-1">Offshore Cost</div>
+                                      <div className="font-bold text-neural-blue-700 text-sm mb-1">
+                                        ${(philippineCost * level.count).toLocaleString()}{timeLabel}
+                                      </div>
+                                      <div className="text-xs text-neural-blue-500">${philippineCost.toLocaleString()}{timeLabel} each</div>
+                                    </div>
+                                    
+                                    <div className="py-2 px-2 bg-cyber-green-50 rounded">
+                                      <div className="text-xs text-cyber-green-600 font-medium mb-1">Savings</div>
+                                      <div className="font-bold text-cyber-green-700 text-base mb-1">
+                                        ${(savings * level.count).toLocaleString()}{timeLabel}
+                                      </div>
+                                      <div className="text-xs text-cyber-green-500">${savings.toLocaleString()}{timeLabel} each</div>
                                     </div>
                                   </div>
                                 </div>
-                                
-                                {/* Cost Comparison */}
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="text-center">
-                                    <div className="text-xs text-red-600 font-medium mb-1">Australian Cost</div>
-                                    <div className="font-bold text-red-700">
-                                      ${(australianCost * level.count).toLocaleString()}{timeLabel}
+
+                                {/* Desktop Layout */}
+                                <div className="hidden lg:grid lg:grid-cols-3 lg:gap-4">
+                                  {/* Role Description */}
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm ${
+                                      level.key === 'entry' ? 'bg-green-500' :
+                                      level.key === 'moderate' ? 'bg-blue-500' : 'bg-purple-500'
+                                    }`}>
+                                      {level.count}
                                     </div>
-                                    <div className="text-xs text-red-600">
-                                      ${australianCost.toLocaleString()}{timeLabel} each
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium text-neutral-900 text-base truncate">
+                                        {level.count}x {role.roleName}
+                                      </div>
+                                      <div className={`text-sm font-medium ${
+                                        level.key === 'entry' ? 'text-green-700' :
+                                        level.key === 'moderate' ? 'text-blue-700' : 'text-purple-700'
+                                      }`}>
+                                        {level.name}
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="text-center">
-                                    <div className="text-xs text-neural-blue-600 font-medium mb-1">Offshore Cost</div>
-                                    <div className="font-bold text-neural-blue-700">
-                                      ${(philippineCost * level.count).toLocaleString()}{timeLabel}
+                                  
+                                  {/* Cost Comparison */}
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="text-center">
+                                      <div className="text-xs text-red-600 font-medium mb-1">Australian Cost</div>
+                                      <div className="font-bold text-red-700 text-base">
+                                        ${(australianCost * level.count).toLocaleString()}{timeLabel}
+                                      </div>
+                                      <div className="text-xs text-red-600">
+                                        ${australianCost.toLocaleString()}{timeLabel} each
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-neural-blue-600">
-                                      ${philippineCost.toLocaleString()}{timeLabel} each
+                                    <div className="text-center">
+                                      <div className="text-xs text-neural-blue-600 font-medium mb-1">Offshore Cost</div>
+                                      <div className="font-bold text-neural-blue-700 text-base">
+                                        ${(philippineCost * level.count).toLocaleString()}{timeLabel}
+                                      </div>
+                                      <div className="text-xs text-neural-blue-600">
+                                        ${philippineCost.toLocaleString()}{timeLabel} each
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                                
-                                {/* Savings */}
-                                <div className="text-center lg:text-right">
-                                  <div className="text-xs text-cyber-green-600 font-medium mb-1">Savings</div>
-                                  <div className="font-bold text-cyber-green-700 text-lg">
-                                    ${(savings * level.count).toLocaleString()}{timeLabel}
-                                  </div>
-                                  <div className="text-xs text-cyber-green-600">
-                                    ${savings.toLocaleString()}{timeLabel} each
+                                  
+                                  {/* Savings */}
+                                  <div className="text-right">
+                                    <div className="text-xs text-cyber-green-600 font-medium mb-1">Savings</div>
+                                    <div className="font-bold text-cyber-green-700 text-lg">
+                                      ${(savings * level.count).toLocaleString()}{timeLabel}
+                                    </div>
+                                    <div className="text-xs text-cyber-green-600">
+                                      ${savings.toLocaleString()}{timeLabel} each
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -449,36 +496,76 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                           })}
                           
                           {/* Total Row */}
-                          <div className="pt-3 border-t border-amber-200">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 bg-amber-100/50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center text-white font-bold text-sm">
-                                  Σ
-                                </div>
-                                <div className="font-bold text-neutral-900">
-                                  Total: {experienceDistribution.totalAssigned}x {role.roleName}
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-3">
-                                <div className="text-center">
-                                  <div className="text-xs text-red-600 font-medium mb-1">Total Australian</div>
-                                  <div className="font-bold text-red-800">
-                                    ${getCostValues(role, currentViewMode).australianCost.toLocaleString()}{timeLabel}
+                          <div className="pt-2 xs:pt-3 border-t border-amber-200">
+                            <div className="bg-amber-100/50 rounded-lg p-2.5 xs:p-3 lg:p-4">
+                              {/* Mobile Layout */}
+                              <div className="block lg:hidden">
+                                {/* Total Header */}
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className="w-6 h-6 xs:w-7 xs:h-7 rounded-lg bg-amber-600 flex items-center justify-center text-white font-bold text-xs">
+                                    Σ
+                                  </div>
+                                  <div className="font-bold text-neutral-900 text-sm">
+                                    Total: {experienceDistribution.totalAssigned}x {role.roleName}
                                   </div>
                                 </div>
-                                <div className="text-center">
-                                  <div className="text-xs text-neural-blue-600 font-medium mb-1">Total Offshore</div>
-                                  <div className="font-bold text-neural-blue-800">
-                                    ${getCostValues(role, currentViewMode).philippineCost.toLocaleString()}{timeLabel}
+                                
+                                {/* Cost Details - Stacked */}
+                                <div className="space-y-2">
+                                  <div className="py-2 px-2 bg-red-100 rounded">
+                                    <div className="text-xs text-red-600 font-medium mb-1">Total Australian</div>
+                                    <div className="font-bold text-red-800 text-sm">
+                                      ${getCostValues(role, currentViewMode).australianCost.toLocaleString()}{timeLabel}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="py-2 px-2 bg-neural-blue-100 rounded">
+                                    <div className="text-xs text-neural-blue-600 font-medium mb-1">Total Offshore</div>
+                                    <div className="font-bold text-neural-blue-800 text-sm">
+                                      ${getCostValues(role, currentViewMode).philippineCost.toLocaleString()}{timeLabel}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="py-2 px-2 bg-cyber-green-100 rounded">
+                                    <div className="text-xs text-cyber-green-600 font-medium mb-1">Total Savings</div>
+                                    <div className="font-bold text-cyber-green-800 text-base">
+                                      ${getCostValues(role, currentViewMode).savings.toLocaleString()}{timeLabel}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                              
-                              <div className="text-center lg:text-right">
-                                <div className="text-xs text-cyber-green-600 font-medium mb-1">Total Savings</div>
-                                <div className="font-bold text-cyber-green-800 text-xl">
-                                  ${getCostValues(role, currentViewMode).savings.toLocaleString()}{timeLabel}
+
+                              {/* Desktop Layout */}
+                              <div className="hidden lg:grid lg:grid-cols-3 lg:gap-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center text-white font-bold text-sm">
+                                    Σ
+                                  </div>
+                                  <div className="font-bold text-neutral-900 text-base">
+                                    Total: {experienceDistribution.totalAssigned}x {role.roleName}
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="text-center">
+                                    <div className="text-xs text-red-600 font-medium mb-1">Total Australian</div>
+                                    <div className="font-bold text-red-800 text-base">
+                                      ${getCostValues(role, currentViewMode).australianCost.toLocaleString()}{timeLabel}
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-xs text-neural-blue-600 font-medium mb-1">Total Offshore</div>
+                                    <div className="font-bold text-neural-blue-800 text-base">
+                                      ${getCostValues(role, currentViewMode).philippineCost.toLocaleString()}{timeLabel}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="text-right">
+                                  <div className="text-xs text-cyber-green-600 font-medium mb-1">Total Savings</div>
+                                  <div className="font-bold text-cyber-green-800 text-xl">
+                                    ${getCostValues(role, currentViewMode).savings.toLocaleString()}{timeLabel}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -503,32 +590,32 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
                     if (selectedTasks.length === 0) return null;
                     
                     return (
-                      <Card hoverLift={false} className="mt-6 p-6 bg-gradient-to-br from-neural-blue-50/50 via-white to-neural-blue-50/30 backdrop-blur-sm border border-neural-blue-150 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <div className="flex items-center gap-3 mb-5">
-                          <div className="p-2 bg-neural-blue-100 rounded-lg shadow-sm">
-                            <ClipboardList className="w-5 h-5 text-neural-blue-600" />
+                      <Card hoverLift={false} className="mt-4 xs:mt-6 p-3 xs:p-4 lg:p-6 bg-gradient-to-br from-neural-blue-50/50 via-white to-neural-blue-50/30 backdrop-blur-sm border border-neural-blue-150 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div className="flex items-center gap-2 xs:gap-3 mb-3 xs:mb-5">
+                          <div className="p-1.5 xs:p-2 bg-neural-blue-100 rounded-lg shadow-sm">
+                            <ClipboardList className="w-4 h-4 xs:w-5 xs:h-5 text-neural-blue-600" />
                           </div>
-                          <div>
-                            <h5 className="font-semibold text-neutral-900 text-lg">Core Tasks</h5>
-                            <p className="text-sm text-neutral-600">{selectedTasks.length} selected tasks for offshore execution</p>
+                          <div className="min-w-0 flex-1">
+                            <h5 className="font-semibold text-neutral-900 text-base xs:text-lg">Core Tasks</h5>
+                            <p className="text-xs xs:text-sm text-neutral-600">{selectedTasks.length} selected tasks for offshore execution</p>
                           </div>
                         </div>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-2 xs:space-y-3">
                           {selectedTasks.map((task, index) => (
-                            <div key={task.id} className="flex items-start gap-3 p-3 bg-white/60 rounded-lg border border-neural-blue-100">
-                              <div className="mt-1">
-                                <CheckCircle2 className="w-4 h-4 text-cyber-green-500" />
+                            <div key={task.id} className="flex items-start gap-2 xs:gap-3 p-2.5 xs:p-3 bg-white/60 rounded-lg border border-neural-blue-100">
+                              <div className="mt-0.5 xs:mt-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-cyber-green-500" />
                               </div>
-                              <div className="flex-1">
-                                <h6 className="font-medium text-neutral-900 mb-1">{task.name}</h6>
-                                <p className="text-sm text-neutral-600 mb-2">{task.aiAdvantage}</p>
-                                <div className="flex items-center gap-4 text-xs text-neutral-500">
+                              <div className="flex-1 min-w-0">
+                                <h6 className="font-medium text-neutral-900 mb-1 text-sm xs:text-base">{task.name}</h6>
+                                <p className="text-xs xs:text-sm text-neutral-600 mb-2">{task.aiAdvantage}</p>
+                                <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4 text-xs text-neutral-500">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
                                     {task.timeSaved}
                                   </span>
-                                  <span className={`px-2 py-1 rounded-full font-medium ${
+                                  <span className={`px-2 py-1 rounded-full font-medium self-start xs:self-auto ${
                                     task.complexity === 'low' ? 'bg-green-100 text-green-700' :
                                     task.complexity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-red-100 text-red-700'
@@ -546,26 +633,26 @@ function RoleBreakdown({ breakdown, formData }: RoleBreakdownProps) {
 
                   {/* Risk Considerations Section */}
                   {role.riskFactors && role.riskFactors.length > 0 && (
-                    <Card hoverLift={false} className="mt-6 p-6 bg-gradient-to-br from-amber-50 via-amber-50 to-amber-100 backdrop-blur-sm border border-amber-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="p-2 bg-amber-100 rounded-lg shadow-sm">
-                          <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <Card hoverLift={false} className="mt-4 xs:mt-6 p-3 xs:p-4 lg:p-6 bg-gradient-to-br from-amber-50 via-amber-50 to-amber-100 backdrop-blur-sm border border-amber-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                      <div className="flex items-center gap-2 xs:gap-3 mb-3 xs:mb-5">
+                        <div className="p-1.5 xs:p-2 bg-amber-100 rounded-lg shadow-sm">
+                          <AlertTriangle className="w-4 h-4 xs:w-5 xs:h-5 text-amber-600" />
                         </div>
-                        <div>
-                          <h5 className="font-semibold text-amber-800 text-lg">Risk Considerations</h5>
-                          <p className="text-sm text-amber-600">Potential challenges for this role</p>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="font-semibold text-amber-800 text-base xs:text-lg">Risk Considerations</h5>
+                          <p className="text-xs xs:text-sm text-amber-600">Potential challenges for this role</p>
                         </div>
                       </div>
-                      <ul className="text-sm text-amber-700 space-y-3">
+                      <ul className="text-xs xs:text-sm text-amber-700 space-y-2 xs:space-y-3">
                         {role.riskFactors.map((factor: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-3">
-                            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <li key={idx} className="flex items-start gap-2 xs:gap-3">
+                            <AlertTriangle className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                             <span>{factor}</span>
                           </li>
                         ))}
-                                             </ul>
-                     </Card>
-                                        )}
+                      </ul>
+                    </Card>
+                  )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -700,15 +787,15 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           transition={{ duration: 0.6 }}
           className="text-center"
         >
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-16 h-16 rounded-2xl border-2 border-neural-blue-500 bg-neural-blue-500 flex items-center justify-center shadow-lg">
-            <TrendingUp className="w-8 h-8 text-white" />
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-lg sm:rounded-xl lg:rounded-2xl border-2 border-neural-blue-500 bg-neural-blue-500 flex items-center justify-center shadow-lg">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-white" />
           </div>
-          <h2 className="text-display-2 font-display font-bold text-neural-blue-900">
+          <h2 className="text-lg sm:text-xl lg:text-display-2 font-display font-bold text-neural-blue-900">
             Your Offshore Scaling Results
           </h2>
         </div>
-        <p className="text-body-large text-neural-blue-700 max-w-3xl mx-auto">
+        <p className="text-xs sm:text-sm lg:text-body-large text-neural-blue-700 max-w-3xl mx-auto px-3 sm:px-4 lg:px-0">
           Here's your comprehensive analysis of potential savings and implementation strategy
         </p>
       </motion.div>
@@ -844,30 +931,30 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
       >
-        <Card className="p-6 lg:p-8 bg-gradient-to-br from-white via-neural-blue-50/30 to-cyber-green-50/30 border-2 border-neural-blue-200 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+        <Card className="p-3 sm:p-4 lg:p-8 bg-gradient-to-br from-white via-neural-blue-50/30 to-cyber-green-50/30 border-2 border-neural-blue-200 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-3 rounded-xl bg-neural-blue-100 shadow-sm">
-              <BarChart3 className="w-6 h-6 text-neural-blue-600" />
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-4 sm:mb-6 lg:mb-8">
+            <div className="p-1.5 sm:p-2 lg:p-3 rounded-md sm:rounded-lg lg:rounded-xl bg-neural-blue-100 shadow-sm">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
             </div>
             <div>
-              <h3 className="text-xl lg:text-2xl font-bold text-neural-blue-900">Key Performance Metrics</h3>
-              <p className="text-sm lg:text-base text-neural-blue-700">
+              <h3 className="text-base sm:text-lg lg:text-2xl font-bold text-neural-blue-900">Key Performance Metrics</h3>
+              <p className="text-xs sm:text-sm lg:text-base text-neural-blue-700">
                 Comprehensive overview of financial benefits and timeline
               </p>
             </div>
           </div>
 
           {/* Main Metrics Grid - Top 3 Cards */}
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
              {/* Savings with Toggle */}
-             <div className="bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 rounded-2xl p-6 border-l-4 border-l-cyber-green-500 hover:shadow-lg transition-all duration-300 group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="p-3 rounded-xl bg-cyber-green-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                   <DollarSign className="w-6 h-6 text-cyber-green-700" />
+             <div className="bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border-l-4 border-l-cyber-green-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
+                 <div className="p-1.5 sm:p-2 lg:p-3 rounded-md sm:rounded-lg lg:rounded-xl bg-cyber-green-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-cyber-green-700" />
                  </div>
                  <div className="flex-1">
-                   <h4 className="text-sm font-bold text-cyber-green-800">
+                   <h4 className="text-xs sm:text-sm font-bold text-cyber-green-800">
                      {savingsView === 'annual' ? 'Annual Savings' : 'Monthly Savings'}
                    </h4>
                    <p className="text-xs text-cyber-green-600">
@@ -877,11 +964,11 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                </div>
                
                {/* Toggle Switch */}
-               <div className="flex justify-center mb-4">
-                 <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
+               <div className="flex justify-center mb-2 sm:mb-3 lg:mb-4">
+                 <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-md sm:rounded-lg lg:rounded-xl p-0.5 sm:p-1 shadow-lg">
                    <button
                      onClick={() => setSavingsView('annual')}
-                     className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                     className={`relative px-2 sm:px-3 lg:px-4 py-1 text-xs sm:text-sm font-bold rounded-md sm:rounded-lg transition-all duration-300 ${
                        savingsView === 'annual'
                          ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
                          : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
@@ -891,7 +978,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                    </button>
                    <button
                      onClick={() => setSavingsView('monthly')}
-                     className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
+                     className={`relative px-2 sm:px-3 lg:px-4 py-1 text-xs sm:text-sm font-bold rounded-md sm:rounded-lg transition-all duration-300 ${
                        savingsView === 'monthly'
                          ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
                          : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
@@ -902,21 +989,21 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                  </div>
                </div>
 
-               <div className="space-y-2">
-                 <p className="text-3xl font-bold text-cyber-green-800 text-center">
+               <div className="space-y-1.5 sm:space-y-2">
+                 <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-cyber-green-800 text-center">
                    {savingsView === 'annual' 
                      ? formatCurrency(result.totalSavings)
                      : formatCurrency(Math.round(result.totalSavings / 12))
                    }
                  </p>
-                 <div className="flex items-center justify-center gap-2">
+                 <div className="flex items-center justify-center gap-1 sm:gap-2">
                    <div className="flex items-center gap-1">
-                     <TrendingDown className="w-4 h-4 text-cyber-green-600" />
-                     <span className="text-sm font-medium text-cyber-green-700">{formatPercentage(result.averageSavingsPercentage)}</span>
+                     <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-cyber-green-600" />
+                     <span className="text-xs sm:text-sm font-medium text-cyber-green-700">{formatPercentage(result.averageSavingsPercentage)}</span>
                    </div>
                    <span className="text-xs text-cyber-green-600">cost reduction</span>
                  </div>
-                 <div className="pt-2 border-t border-cyber-green-200">
+                 <div className="pt-1.5 sm:pt-2 border-t border-cyber-green-200">
                    {savingsView === 'annual' ? (
                      <>
                        <div className="flex justify-between text-xs">
@@ -945,39 +1032,39 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
              </div>
 
              {/* Team Structure */}
-             <div className="bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 rounded-2xl p-6 border-l-4 border-l-neural-blue-500 hover:shadow-lg transition-all duration-300 group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="p-3 rounded-xl bg-neural-blue-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                   <Users className="w-6 h-6 text-neural-blue-700" />
+             <div className="bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 rounded-xl sm:rounded-2xl p-4 sm:p-6 border-l-4 border-l-neural-blue-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
+                 <div className="p-1.5 sm:p-2 lg:p-3 rounded-md sm:rounded-lg lg:rounded-xl bg-neural-blue-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-neural-blue-700" />
                  </div>
                  <div>
-                   <h4 className="text-sm font-bold text-neural-blue-800">Team Scaling</h4>
+                   <h4 className="text-xs sm:text-sm font-bold text-neural-blue-800">Team Scaling</h4>
                    <p className="text-xs text-neural-blue-600">Offshore workforce size</p>
                  </div>
                </div>
-                                <div className="space-y-2">
-                   <p className="text-lg text-neural-blue-800 text-center">
+                                <div className="space-y-1.5 sm:space-y-2">
+                   <p className="text-sm sm:text-lg text-neural-blue-800 text-center">
                      <span className="font-bold text-neural-blue-900">{result.totalTeamSize}</span> team members across <span className="font-bold text-neural-blue-900">{Object.keys(result.breakdown).length}</span> different roles
                    </p>
-                 <div className="pt-2 border-t border-neural-blue-200">
+                 <div className="pt-1.5 sm:pt-2 border-t border-neural-blue-200">
                    {/* Table Headers */}
-                   <div className="grid grid-cols-[1fr,auto] gap-4 mb-2 pb-1 border-b border-neural-blue-200">
+                   <div className="grid grid-cols-[1fr,auto] gap-1.5 sm:gap-2 lg:gap-4 mb-1.5 sm:mb-2 pb-1 border-b border-neural-blue-200">
                      <div className="text-xs font-bold text-neural-blue-800 uppercase tracking-wide">ROLE</div>
                      <div className="text-xs font-bold text-neural-blue-800 uppercase tracking-wide text-right">MEMBERS</div>
                    </div>
                    {/* Table Rows */}
-                   <div className="space-y-2">
+                   <div className="space-y-1 sm:space-y-2">
                      {Object.values(result.breakdown).map((role: any, index: number) => {
                        const experienceDistribution = formData.roleExperienceDistribution?.[role.roleId];
                        
                        return (
-                         <div key={index} className="space-y-1">
-                           <div className="grid grid-cols-[1fr,auto] gap-4 text-xs">
-                             <span className="text-neural-blue-600 font-medium">{role.roleName}</span>
+                         <div key={index} className="space-y-0.5 sm:space-y-1">
+                           <div className="grid grid-cols-[1fr,auto] gap-1.5 sm:gap-2 lg:gap-4 text-xs">
+                             <span className="text-neural-blue-600 font-medium truncate">{role.roleName}</span>
                              <span className="font-medium text-neural-blue-700 text-right">{role.teamSize}</span>
                            </div>
                            {experienceDistribution && (
-                             <div className="ml-2 text-xs text-neural-blue-500">
+                             <div className="ml-1.5 sm:ml-2 text-xs text-neural-blue-500">
                                {[
                                  experienceDistribution.entry > 0 && `${experienceDistribution.entry}x Entry`,
                                  experienceDistribution.moderate > 0 && `${experienceDistribution.moderate}x Mid`,
@@ -996,59 +1083,59 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
 
 
              {/* Implementation Timeline */}
-             <div className="bg-gradient-to-br from-matrix-orange-50 to-matrix-orange-100 rounded-2xl p-6 border-l-4 border-l-matrix-orange-500 hover:shadow-lg transition-all duration-300 group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="p-3 rounded-xl bg-matrix-orange-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                   <Clock className="w-6 h-6 text-matrix-orange-700" />
+             <div className="bg-gradient-to-br from-matrix-orange-50 to-matrix-orange-100 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border-l-4 border-l-matrix-orange-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
+                 <div className="p-1.5 sm:p-2 lg:p-3 rounded-md sm:rounded-lg lg:rounded-xl bg-matrix-orange-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-matrix-orange-700" />
                  </div>
                  <div>
-                   <h4 className="text-sm font-bold text-matrix-orange-800">Implementation Timeline</h4>
+                   <h4 className="text-xs sm:text-sm font-bold text-matrix-orange-800">Implementation Timeline</h4>
                    <p className="text-xs text-matrix-orange-600">Start to fully operational team</p>
                  </div>
                </div>
                
                {/* Total Time Display */}
-               <div className="text-center mb-4">
-                 <p className="text-3xl font-bold text-matrix-orange-800">{result.implementationTimeline.fullImplementation}</p>
-                 <div className="flex items-center justify-center gap-2">
-                   <Zap className="w-4 h-4 text-matrix-orange-600" />
-                   <span className="text-sm font-medium text-matrix-orange-700">weeks total</span>
+               <div className="text-center mb-2 sm:mb-3 lg:mb-4">
+                 <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-matrix-orange-800">{result.implementationTimeline.fullImplementation}</p>
+                 <div className="flex items-center justify-center gap-1 sm:gap-2">
+                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-matrix-orange-600" />
+                   <span className="text-xs sm:text-sm font-medium text-matrix-orange-700">weeks total</span>
                  </div>
                </div>
 
                {/* Phase Timeline */}
-               <div className="space-y-3">
+               <div className="space-y-1.5 sm:space-y-2 lg:space-y-3">
                  {/* Phase 1: Planning */}
-                 <div className="flex items-center gap-3 p-2 bg-white/50 rounded-lg">
-                   <div className="w-6 h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">1</div>
-                   <div className="flex-1">
+                 <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 p-1.5 sm:p-2 bg-white/50 rounded-lg">
+                   <div className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">1</div>
+                   <div className="flex-1 min-w-0">
                      <div className="flex justify-between items-center">
-                       <span className="text-xs font-medium text-matrix-orange-800">Setup & Planning</span>
-                       <span className="text-xs text-matrix-orange-700">{result.implementationTimeline.planning} weeks</span>
+                       <span className="text-xs font-medium text-matrix-orange-800 truncate">Setup & Planning</span>
+                       <span className="text-xs text-matrix-orange-700 flex-shrink-0">{result.implementationTimeline.planning} weeks</span>
                      </div>
                      <p className="text-xs text-matrix-orange-600">Process documentation & role definition</p>
                    </div>
                  </div>
 
                  {/* Phase 2: Hiring */}
-                 <div className="flex items-center gap-3 p-2 bg-white/50 rounded-lg">
-                   <div className="w-6 h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">2</div>
-                   <div className="flex-1">
+                 <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 p-1.5 sm:p-2 bg-white/50 rounded-lg">
+                   <div className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">2</div>
+                   <div className="flex-1 min-w-0">
                      <div className="flex justify-between items-center">
-                       <span className="text-xs font-medium text-matrix-orange-800">Recruitment</span>
-                       <span className="text-xs text-matrix-orange-700">{result.implementationTimeline.hiring} weeks</span>
+                       <span className="text-xs font-medium text-matrix-orange-800 truncate">Recruitment</span>
+                       <span className="text-xs text-matrix-orange-700 flex-shrink-0">{result.implementationTimeline.hiring} weeks</span>
                      </div>
                      <p className="text-xs text-matrix-orange-600">Interview & hire your team members</p>
                    </div>
                  </div>
 
                  {/* Phase 3: Training */}
-                 <div className="flex items-center gap-3 p-2 bg-white/50 rounded-lg">
-                   <div className="w-6 h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
-                   <div className="flex-1">
+                 <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 p-1.5 sm:p-2 bg-white/50 rounded-lg">
+                   <div className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 rounded-full bg-matrix-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
+                   <div className="flex-1 min-w-0">
                      <div className="flex justify-between items-center">
-                       <span className="text-xs font-medium text-matrix-orange-800">Training & Integration</span>
-                       <span className="text-xs text-matrix-orange-700">{result.implementationTimeline.training} weeks</span>
+                       <span className="text-xs font-medium text-matrix-orange-800 truncate">Training & Integration</span>
+                       <span className="text-xs text-matrix-orange-700 flex-shrink-0">{result.implementationTimeline.training} weeks</span>
                      </div>
                      <p className="text-xs text-matrix-orange-600">Onboarding & skills development</p>
                    </div>
@@ -1058,25 +1145,26 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
            </div>
 
            {/* Investment Returns - Full Width Section */}
-           <div className="mb-8">
-             <div className="bg-gradient-to-br from-quantum-purple-50 to-quantum-purple-100 rounded-2xl p-6 border-l-4 border-l-quantum-purple-500 hover:shadow-lg transition-all duration-300 group">
-               <div className="flex items-center gap-3 mb-4">
-                 <div className="p-3 rounded-xl bg-quantum-purple-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                   <TrendingUp className="w-6 h-6 text-quantum-purple-700" />
+           <div className="mb-4 sm:mb-6 lg:mb-8">
+             <div className="bg-gradient-to-br from-quantum-purple-50 to-quantum-purple-100 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border-l-4 border-l-quantum-purple-500 hover:shadow-lg transition-all duration-300 group">
+               <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-2 sm:mb-3 lg:mb-4">
+                 <div className="p-1.5 sm:p-2 lg:p-3 rounded-md sm:rounded-lg lg:rounded-xl bg-quantum-purple-200 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                   <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-quantum-purple-700" />
                  </div>
                  <div>
-                   <h4 className="text-sm font-bold text-quantum-purple-800">Investment Returns</h4>
+                   <h4 className="text-xs sm:text-sm font-bold text-quantum-purple-800">Investment Returns</h4>
                    <p className="text-xs text-quantum-purple-600">Your offshore investment performance</p>
                  </div>
                </div>
-               <div className="space-y-4">
+               <div className="space-y-2 sm:space-y-3 lg:space-y-4">
                  {/* Investment Flow */}
-                 <div className="bg-white/60 rounded-xl p-4 border border-quantum-purple-200">
-                   <div className="grid grid-cols-3 gap-4 items-center">
+                 <div className="bg-white/60 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 border border-quantum-purple-200">
+                   {/* Mobile Layout - Stacked */}
+                   <div className="block sm:hidden space-y-3">
                      {/* You Invest */}
                      <div className="text-center">
                        <div className="text-xs text-quantum-purple-600 mb-1">You Invest</div>
-                       <div className="text-lg font-bold text-quantum-purple-800">
+                       <div className="text-base font-bold text-quantum-purple-800">
                          {formatCurrency(Math.round(result.totalPhilippineCost * 1.2))}
                        </div>
                        <div className="text-xs text-quantum-purple-600 mt-1">Initial cost</div>
@@ -1085,46 +1173,75 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                      {/* Arrow */}
                      <div className="text-center">
                        <div className="flex items-center justify-center">
-                         <div className="text-2xl text-quantum-purple-500">→</div>
+                         <div className="text-lg text-quantum-purple-500">↓</div>
                        </div>
                        <div className="text-xs text-quantum-purple-600 mt-1">Generates</div>
                      </div>
                      
-                     {/* You Get Back */}
+                     {/* You Save */}
                      <div className="text-center">
                        <div className="text-xs text-quantum-purple-600 mb-1">You Save</div>
-                       <div className="text-lg font-bold text-green-700">
+                       <div className="text-base font-bold text-green-700">
                          {formatCurrency(result.totalSavings)}
                        </div>
                        <div className="text-xs text-quantum-purple-600 mt-1">Annual savings</div>
                      </div>
                    </div>
+                   
+                   {/* Desktop Layout - Horizontal */}
+                   <div className="hidden sm:grid grid-cols-3 gap-2 lg:gap-4 items-center">
+                     {/* You Invest */}
+                     <div className="text-center">
+                       <div className="text-xs text-quantum-purple-600 mb-0.5 sm:mb-1">You Invest</div>
+                       <div className="text-sm sm:text-lg font-bold text-quantum-purple-800">
+                         {formatCurrency(Math.round(result.totalPhilippineCost * 1.2))}
+                       </div>
+                       <div className="text-xs text-quantum-purple-600 mt-0.5 sm:mt-1">Initial cost</div>
+                     </div>
+                     
+                     {/* Arrow */}
+                     <div className="text-center">
+                       <div className="flex items-center justify-center">
+                         <div className="text-lg sm:text-xl lg:text-2xl text-quantum-purple-500">→</div>
+                       </div>
+                       <div className="text-xs text-quantum-purple-600 mt-0.5 sm:mt-1">Generates</div>
+                     </div>
+                     
+                     {/* You Save */}
+                     <div className="text-center">
+                       <div className="text-xs text-quantum-purple-600 mb-0.5 sm:mb-1">You Save</div>
+                       <div className="text-sm sm:text-lg font-bold text-green-700">
+                         {formatCurrency(result.totalSavings)}
+                       </div>
+                       <div className="text-xs text-quantum-purple-600 mt-0.5 sm:mt-1">Annual savings</div>
+                     </div>
+                   </div>
                  </div>
                  
                  {/* ROI Summary & Key Details - Single Row */}
-                 <div className="grid grid-cols-3 gap-4 text-center">
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 text-center">
                    {/* ROI Summary */}
-                   <div className="bg-white/60 rounded-xl p-3 border border-quantum-purple-200">
-                     <div className="text-xs text-quantum-purple-600 mb-1">Your Return on Investment</div>
-                     <div className="text-xl font-bold text-quantum-purple-800">
+                   <div className="bg-white/60 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-quantum-purple-200">
+                     <div className="text-xs text-quantum-purple-600 mb-0.5 sm:mb-1">Your Return on Investment</div>
+                     <div className="text-base sm:text-lg lg:text-xl font-bold text-quantum-purple-800">
                        {result.estimatedROI.toFixed(0)}% Annual Return
                      </div>
-                     <div className="text-xs text-quantum-purple-600 mt-1">
+                     <div className="text-xs text-quantum-purple-600 mt-0.5 sm:mt-1">
                        Every $1 returns ${(result.estimatedROI / 100).toFixed(2)}
                      </div>
                    </div>
                    
                    {/* Payback Time */}
-                   <div className="bg-white/60 rounded-xl p-3 border border-quantum-purple-200">
-                     <div className="text-xs text-quantum-purple-600 mb-1">Payback Time</div>
-                     <div className="text-xl font-bold text-quantum-purple-800">5 Months</div>
-                     <div className="text-xs text-quantum-purple-600 mt-1">Investment recovery</div>
+                   <div className="bg-white/60 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-quantum-purple-200">
+                     <div className="text-xs text-quantum-purple-600 mb-0.5 sm:mb-1">Payback Time</div>
+                     <div className="text-base sm:text-lg lg:text-xl font-bold text-quantum-purple-800">5 Months</div>
+                     <div className="text-xs text-quantum-purple-600 mt-0.5 sm:mt-1">Investment recovery</div>
                    </div>
                    
                    {/* Investment Grade */}
-                   <div className="bg-white/60 rounded-xl p-3 border border-quantum-purple-200">
-                     <div className="text-xs text-quantum-purple-600 mb-1">Investment Grade</div>
-                     <div className="text-xl font-bold text-quantum-purple-800">
+                   <div className="bg-white/60 rounded-lg sm:rounded-xl p-2 sm:p-3 border border-quantum-purple-200">
+                     <div className="text-xs text-quantum-purple-600 mb-0.5 sm:mb-1">Investment Grade</div>
+                     <div className="text-base sm:text-lg lg:text-xl font-bold text-quantum-purple-800">
                        {(() => {
                          const roi = result.estimatedROI / 100;
                          if (roi >= 5.0) return 'Exceptional';
@@ -1135,7 +1252,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                          return 'Poor';
                        })()}
                      </div>
-                     <div className="text-xs text-quantum-purple-600 mt-1">Quality rating</div>
+                     <div className="text-xs text-quantum-purple-600 mt-0.5 sm:mt-1">Quality rating</div>
                    </div>
                  </div>
                </div>
@@ -1143,8 +1260,8 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
            </div>
 
            {/* Explanatory Text */}
-           <div className="mt-8 p-6 bg-white/80 backdrop-blur-sm rounded-xl border border-neural-blue-200">
-             <p className="text-neural-blue-800 leading-relaxed">
+           <div className="mt-4 sm:mt-6 lg:mt-8 p-3 sm:p-4 lg:p-6 bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl border border-neural-blue-200">
+             <p className="text-xs sm:text-sm lg:text-base text-neural-blue-800 leading-relaxed">
                Your offshore scaling strategy shows promising results across all key metrics. With an annual savings of {formatCurrency(result.totalSavings)} ({formatPercentage(result.averageSavingsPercentage)} cost reduction), 
                the plan demonstrates strong financial viability. The implementation timeline of {result.implementationTimeline.fullImplementation} weeks ensures a measured approach to building your team of {result.totalTeamSize} members across {Object.keys(result.breakdown).length} specialized roles. 
                The exceptional ROI of {result.estimatedROI.toFixed(1)}x, combined with a rapid break-even point in Week {Math.ceil(result.implementationTimeline.fullImplementation / 2)}, indicates a highly effective scaling strategy.
@@ -1163,64 +1280,66 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <Card className="p-6 bg-white border border-neural-blue-100 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
-                <PieChart className="w-6 h-6 text-neural-blue-600" />
+        <Card className="p-3 sm:p-4 lg:p-6 bg-white border border-neural-blue-100 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6 lg:mb-8">
+            <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
+              <div className="p-1.5 sm:p-2 lg:p-3 bg-neural-blue-100 rounded-md sm:rounded-lg lg:rounded-xl shadow-sm">
+                <PieChart className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-neutral-900">Detailed Cost Analysis</h3>
-                <p className="text-sm text-neutral-600">Complete breakdown of your potential savings</p>
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-neutral-900">Detailed Cost Analysis</h3>
+                <p className="text-xs sm:text-sm text-neutral-600">Complete breakdown of your potential savings</p>
               </div>
             </div>
             
             {/* Cost View Toggle */}
-            <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-xl p-1 shadow-lg">
-              <button
-                onClick={() => setSavingsView('annual')}
-                className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
-                  savingsView === 'annual'
-                    ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
-                    : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
-                }`}
-              >
-                Annual
-              </button>
-              <button
-                onClick={() => setSavingsView('monthly')}
-                className={`relative px-4 py-1 text-sm font-bold rounded-lg transition-all duration-300 ${
-                  savingsView === 'monthly'
-                    ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
-                    : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
-                }`}
-              >
-                Monthly
-              </button>
+            <div className="flex justify-center">
+              <div className="relative flex bg-gradient-to-r from-cyber-green-200 via-cyber-green-300 to-cyber-green-200 rounded-md sm:rounded-lg lg:rounded-xl p-0.5 sm:p-1 shadow-lg">
+                <button
+                  onClick={() => setSavingsView('annual')}
+                  className={`relative px-2 sm:px-3 lg:px-4 py-1 text-xs sm:text-sm font-bold rounded-md sm:rounded-lg transition-all duration-300 ${
+                    savingsView === 'annual'
+                      ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                      : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                  }`}
+                >
+                  Annual
+                </button>
+                <button
+                  onClick={() => setSavingsView('monthly')}
+                  className={`relative px-2 sm:px-3 lg:px-4 py-1 text-xs sm:text-sm font-bold rounded-md sm:rounded-lg transition-all duration-300 ${
+                    savingsView === 'monthly'
+                      ? 'bg-gradient-to-br from-white via-cyber-green-50 to-white text-cyber-green-800 shadow-lg transform translate-y-[-1px]'
+                      : 'text-cyber-green-700 hover:text-cyber-green-800 hover:bg-white/30'
+                  }`}
+                >
+                  Monthly
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Main Cost Comparison Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
                          {/* Australian Costs */}
-             <div className="bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border-2 border-neural-blue-200 rounded-2xl p-6">
-               <div className="flex items-center gap-3 mb-6">
-                 <div className="p-3 bg-neural-blue-100 rounded-xl">
-                   <Globe className="w-6 h-6 text-neural-blue-600" />
+             <div className="bg-gradient-to-br from-neural-blue-50 to-neural-blue-100 border-2 border-neural-blue-200 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6">
+               <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-3 sm:mb-4 lg:mb-6">
+                 <div className="p-1.5 sm:p-2 lg:p-3 bg-neural-blue-100 rounded-md sm:rounded-lg lg:rounded-xl">
+                   <Globe className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
                  </div>
                  <div>
-                   <h4 className="text-lg font-bold text-neural-blue-800">Australian Workforce</h4>
-                   <p className="text-sm text-neural-blue-600">Current market rates</p>
+                   <h4 className="text-sm sm:text-base lg:text-lg font-bold text-neural-blue-800">Australian Workforce</h4>
+                   <p className="text-xs sm:text-sm text-neural-blue-600">Current market rates</p>
                  </div>
                </div>
 
-                             <div className="space-y-4">
-                 <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-4">
+                             <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+                 <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-2 sm:p-3 lg:p-4">
                    <div className="flex justify-between items-center">
-                     <span className="text-sm font-medium text-gray-700">
+                     <span className="text-xs sm:text-sm font-medium text-gray-700">
                        {savingsView === 'annual' ? 'Total Annual Cost' : 'Total Monthly Cost'}
                      </span>
-                     <span className="text-xl font-bold text-neural-blue-600">
+                     <span className="text-base sm:text-lg lg:text-xl font-bold text-neural-blue-600">
                        {savingsView === 'annual' 
                          ? formatCurrency(result.totalAustralianCost)
                          : formatCurrency(Math.round(result.totalAustralianCost / 12))
@@ -1229,9 +1348,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                    </div>
                  </div>
 
-                 <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-4">
-                   <div className="text-sm font-medium text-gray-700 mb-3">Cost Breakdown</div>
-                   <div className="space-y-3">
+                 <div className="bg-white/60 border border-neural-blue-200 rounded-lg p-3 sm:p-4">
+                   <div className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Cost Breakdown</div>
+                   <div className="space-y-2 sm:space-y-3">
                      {Object.values(result.breakdown).map((role: any, index) => {
                        const experienceDistribution = formData.roleExperienceDistribution?.[role.roleId];
                        const roleSalaryData = SALARY_DATA[role.roleId as keyof typeof SALARY_DATA];
@@ -1239,8 +1358,8 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                        return (
                          <div key={index} className="space-y-1">
                            <div className="flex justify-between items-center text-xs">
-                             <span className="text-gray-600 font-medium">{role.roleName}</span>
-                             <span className="font-medium text-neural-blue-600">
+                             <span className="text-gray-600 font-medium truncate">{role.roleName}</span>
+                             <span className="font-medium text-neural-blue-600 flex-shrink-0">
                                {savingsView === 'annual'
                                  ? `${formatCurrency(role.australianCost)}/year`
                                  : `${formatCurrency(Math.round(role.australianCost / 12))}/month`
@@ -1248,7 +1367,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                              </span>
                            </div>
                            {experienceDistribution && roleSalaryData && (
-                             <div className="ml-3 space-y-1">
+                             <div className="ml-2 sm:ml-3 space-y-1">
                                {experienceDistribution.entry > 0 && (
                                  <div className="flex justify-between items-center text-xs">
                                    <span className="text-gray-500">
@@ -1296,9 +1415,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                    </div>
                  </div>
 
-                 <div className="bg-neural-blue-100 border border-neural-blue-300 rounded-lg p-3">
+                 <div className="bg-neural-blue-100 border border-neural-blue-300 rounded-lg p-2 sm:p-3">
                    <div className="flex items-center gap-2 text-neural-blue-700">
-                     <AlertTriangle className="w-4 h-4" />
+                     <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                      <span className="text-xs font-medium">High operational costs impacting growth</span>
                    </div>
                  </div>
@@ -1306,24 +1425,24 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </div>
 
                          {/* Philippine Costs */}
-             <div className="bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border-2 border-cyber-green-200 rounded-2xl p-6">
-               <div className="flex items-center gap-3 mb-6">
-                 <div className="p-3 bg-cyber-green-100 rounded-xl">
-                   <Globe className="w-6 h-6 text-cyber-green-600" />
+             <div className="bg-gradient-to-br from-cyber-green-50 to-cyber-green-100 border-2 border-cyber-green-200 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6">
+               <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-3 sm:mb-4 lg:mb-6">
+                 <div className="p-1.5 sm:p-2 lg:p-3 bg-cyber-green-100 rounded-md sm:rounded-lg lg:rounded-xl">
+                   <Globe className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-cyber-green-600" />
                  </div>
                  <div>
-                   <h4 className="text-lg font-bold text-cyber-green-800">Philippine Offshore</h4>
-                   <p className="text-sm text-cyber-green-600">Optimized talent strategy</p>
+                   <h4 className="text-sm sm:text-base lg:text-lg font-bold text-cyber-green-800">Philippine Offshore</h4>
+                   <p className="text-xs sm:text-sm text-cyber-green-600">Optimized talent strategy</p>
                  </div>
                </div>
 
-                             <div className="space-y-4">
-                 <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-4">
+                             <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+                 <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-2 sm:p-3 lg:p-4">
                    <div className="flex justify-between items-center">
-                     <span className="text-sm font-medium text-gray-700">
+                     <span className="text-xs sm:text-sm font-medium text-gray-700">
                        {savingsView === 'annual' ? 'Total Annual Cost' : 'Total Monthly Cost'}
                      </span>
-                     <span className="text-xl font-bold text-cyber-green-600">
+                     <span className="text-base sm:text-lg lg:text-xl font-bold text-cyber-green-600">
                        {savingsView === 'annual' 
                          ? formatCurrency(result.totalPhilippineCost)
                          : formatCurrency(Math.round(result.totalPhilippineCost / 12))
@@ -1332,9 +1451,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                    </div>
                  </div>
 
-                 <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-4">
-                   <div className="text-sm font-medium text-gray-700 mb-3">Cost Breakdown</div>
-                   <div className="space-y-3">
+                 <div className="bg-white/60 border border-cyber-green-200 rounded-lg p-3 sm:p-4">
+                   <div className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Cost Breakdown</div>
+                   <div className="space-y-2 sm:space-y-3">
                      {Object.values(result.breakdown).map((role: any, index) => {
                        const experienceDistribution = formData.roleExperienceDistribution?.[role.roleId];
                        const roleSalaryData = SALARY_DATA[role.roleId as keyof typeof SALARY_DATA];
@@ -1342,8 +1461,8 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                        return (
                          <div key={index} className="space-y-1">
                            <div className="flex justify-between items-center text-xs">
-                             <span className="text-gray-600 font-medium">{role.roleName}</span>
-                             <span className="font-medium text-cyber-green-600">
+                             <span className="text-gray-600 font-medium truncate">{role.roleName}</span>
+                             <span className="font-medium text-cyber-green-600 flex-shrink-0">
                                {savingsView === 'annual'
                                  ? `${formatCurrency(role.philippineCost)}/year`
                                  : `${formatCurrency(Math.round(role.philippineCost / 12))}/month`
@@ -1351,7 +1470,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                              </span>
                            </div>
                            {experienceDistribution && roleSalaryData && (
-                             <div className="ml-3 space-y-1">
+                             <div className="ml-2 sm:ml-3 space-y-1">
                                {experienceDistribution.entry > 0 && (
                                  <div className="flex justify-between items-center text-xs">
                                    <span className="text-gray-500">
@@ -1399,9 +1518,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                    </div>
                  </div>
 
-                 <div className="bg-cyber-green-100 border border-cyber-green-300 rounded-lg p-3">
+                 <div className="bg-cyber-green-100 border border-cyber-green-300 rounded-lg p-2 sm:p-3">
                    <div className="flex items-center gap-2 text-cyber-green-700">
-                     <CheckCircle2 className="w-4 h-4" />
+                     <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
                      <span className="text-xs font-medium">Access to top 1% talent at 60-80% savings</span>
                    </div>
                  </div>
@@ -1410,36 +1529,36 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           </div>
 
                      {/* Savings Summary & Projections */}
-           <div className="bg-gradient-to-r from-cyber-green-50 to-cyber-green-100 border-2 border-cyber-green-200 rounded-2xl p-6">
-             <div className="flex items-center gap-3 mb-6">
-               <div className="p-3 bg-cyber-green-100 rounded-xl">
-                 <TrendingUp className="w-6 h-6 text-cyber-green-600" />
+           <div className="bg-gradient-to-r from-cyber-green-50 to-cyber-green-100 border-2 border-cyber-green-200 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6">
+             <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 mb-3 sm:mb-4 lg:mb-6">
+               <div className="p-1.5 sm:p-2 lg:p-3 bg-cyber-green-100 rounded-md sm:rounded-lg lg:rounded-xl">
+                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-cyber-green-600" />
                </div>
                <div>
-                 <h4 className="text-lg font-bold text-cyber-green-800">Your Savings Impact</h4>
-                 <p className="text-sm text-cyber-green-600">Financial benefits and projections</p>
+                 <h4 className="text-sm sm:text-base lg:text-lg font-bold text-cyber-green-800">Your Savings Impact</h4>
+                 <p className="text-xs sm:text-sm text-cyber-green-600">Financial benefits and projections</p>
                </div>
              </div>
 
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-3 sm:mb-4 lg:mb-6">
                {/* Annual Savings */}
-               <div className="bg-white border border-cyber-green-200 rounded-xl p-4 text-center">
-                 <div className="text-2xl font-bold text-cyber-green-600 mb-2">{formatCurrency(result.totalSavings)}</div>
-                 <div className="text-sm font-medium text-gray-700 mb-1">Annual Savings</div>
+               <div className="bg-white border border-cyber-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-cyber-green-600 mb-1 sm:mb-2">{formatCurrency(result.totalSavings)}</div>
+                 <div className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Annual Savings</div>
                  <div className="text-xs text-cyber-green-600">{formatPercentage(result.averageSavingsPercentage)} reduction</div>
                </div>
 
                {/* Monthly Savings */}
-               <div className="bg-white border border-cyber-green-200 rounded-xl p-4 text-center">
-                 <div className="text-2xl font-bold text-cyber-green-600 mb-2">{formatCurrency(Math.round(result.totalSavings / 12))}</div>
-                 <div className="text-sm font-medium text-gray-700 mb-1">Monthly Savings</div>
+               <div className="bg-white border border-cyber-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-cyber-green-600 mb-1 sm:mb-2">{formatCurrency(Math.round(result.totalSavings / 12))}</div>
+                 <div className="text-xs sm:text-sm font-medium text-gray-700 mb-1">Monthly Savings</div>
                  <div className="text-xs text-cyber-green-600">Recurring cash flow improvement</div>
                </div>
 
                {/* 3-Year Projection */}
-               <div className="bg-white border border-cyber-green-200 rounded-xl p-4 text-center">
-                 <div className="text-2xl font-bold text-cyber-green-600 mb-2">{formatCurrency(result.totalSavings * 3)}</div>
-                 <div className="text-sm font-medium text-gray-700 mb-1">3-Year Savings</div>
+               <div className="bg-white border border-cyber-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                 <div className="text-lg sm:text-xl lg:text-2xl font-bold text-cyber-green-600 mb-1 sm:mb-2">{formatCurrency(result.totalSavings * 3)}</div>
+                 <div className="text-xs sm:text-sm font-medium text-gray-700 mb-1">3-Year Savings</div>
                  <div className="text-xs text-cyber-green-600">Compound growth opportunity</div>
                </div>
              </div>
@@ -1448,40 +1567,40 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
           </div>
 
                      {/* What This Means Section */}
-           <div className="mt-6 p-6 bg-gradient-to-r from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-xl">
-             <div className="flex items-start gap-3">
-               <div className="p-2 bg-neural-blue-100 rounded-lg">
-                 <Lightbulb className="w-5 h-5 text-neural-blue-600" />
+           <div className="mt-3 sm:mt-4 lg:mt-6 p-3 sm:p-4 lg:p-6 bg-gradient-to-r from-neural-blue-50 to-neural-blue-100 border border-neural-blue-200 rounded-lg sm:rounded-xl">
+             <div className="flex items-start gap-1.5 sm:gap-2 lg:gap-3">
+               <div className="p-1.5 sm:p-2 bg-neural-blue-100 rounded-md sm:rounded-lg">
+                 <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-neural-blue-600" />
                </div>
                <div className="flex-1">
-                 <h5 className="text-lg font-bold text-neural-blue-800 mb-3">What This Means for Your Business</h5>
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
-                       <span className="text-sm text-gray-700">Reinvest {formatCurrency(Math.round(result.totalSavings * 0.5))} annually into growth</span>
+                 <h5 className="text-sm sm:text-base lg:text-lg font-bold text-neural-blue-800 mb-2 sm:mb-3">What This Means for Your Business</h5>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
+                   <div className="space-y-1 sm:space-y-2">
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                       <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyber-green-500 rounded-full"></div>
+                       <span className="text-xs sm:text-sm text-gray-700">Reinvest {formatCurrency(Math.round(result.totalSavings * 0.5))} annually into growth</span>
                      </div>
-                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
-                       <span className="text-sm text-gray-700">Scale operations by {Math.round(result.averageSavingsPercentage)}% without cost increase</span>
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                       <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyber-green-500 rounded-full"></div>
+                       <span className="text-xs sm:text-sm text-gray-700">Scale operations by {Math.round(result.averageSavingsPercentage)}% without cost increase</span>
                      </div>
-                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-cyber-green-500 rounded-full"></div>
-                       <span className="text-sm text-gray-700">Improve profit margins significantly</span>
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                       <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyber-green-500 rounded-full"></div>
+                       <span className="text-xs sm:text-sm text-gray-700">Improve profit margins significantly</span>
                      </div>
                    </div>
-                   <div className="space-y-2">
-                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
-                       <span className="text-sm text-gray-700">Access specialized skills at lower cost</span>
+                   <div className="space-y-1 sm:space-y-2">
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                       <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-neural-blue-500 rounded-full"></div>
+                       <span className="text-xs sm:text-sm text-gray-700">Access specialized skills at lower cost</span>
                      </div>
-                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
-                       <span className="text-sm text-gray-700">24/7 operations across time zones</span>
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                       <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-neural-blue-500 rounded-full"></div>
+                       <span className="text-xs sm:text-sm text-gray-700">24/7 operations across time zones</span>
                      </div>
-                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-neural-blue-500 rounded-full"></div>
-                       <span className="text-sm text-gray-700">Competitive advantage through cost efficiency</span>
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                       <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-neural-blue-500 rounded-full"></div>
+                       <span className="text-xs sm:text-sm text-gray-700">Competitive advantage through cost efficiency</span>
                      </div>
                    </div>
                  </div>
@@ -1589,52 +1708,67 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
-                  <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-neural-blue-100 rounded-xl shadow-sm">
-                        <ClipboardList className="w-6 h-6 text-neural-blue-600" />
+                  <Card className="p-3 xs:p-4 sm:p-5 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                    <div className="flex items-center gap-2 xs:gap-3 mb-4 xs:mb-5 lg:mb-6">
+                      <div className="p-2 xs:p-2.5 lg:p-3 bg-neural-blue-100 rounded-lg xs:rounded-xl shadow-sm">
+                        <ClipboardList className="w-5 h-5 xs:w-5 xs:h-5 lg:w-6 lg:h-6 text-neural-blue-600" />
                       </div>
-                      <div>
-                        <h3 className="text-headline-3 font-bold text-neutral-900">Implementation Phases</h3>
-                        <p className="text-body-small text-neutral-600">Detailed step-by-step implementation roadmap</p>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg xs:text-xl lg:text-headline-3 font-bold text-neutral-900">Implementation Phases</h3>
+                        <p className="text-xs xs:text-sm lg:text-body-small text-neutral-600">Detailed step-by-step implementation roadmap</p>
                       </div>
                     </div>
-                    <div className="space-y-6">
+                    <div className="space-y-4 xs:space-y-5 lg:space-y-6">
                       {implementationPlan.detailedPlan.map((phase, index) => (
-                        <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                          <div className="flex items-center justify-between mb-4">
-                            <h5 className="text-body-large font-bold text-neutral-900">{phase.phase}</h5>
-                            <span className="text-body-small font-medium text-neural-blue-700 bg-neural-blue-100 px-3 py-1 rounded-full shadow-sm">
-                              {phase.duration}
-                            </span>
+                        <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/30 rounded-lg xs:rounded-xl p-3 xs:p-4 lg:p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+                          {/* Phase Header - Mobile Responsive */}
+                          <div className="mb-3 xs:mb-4">
+                            {/* Mobile Layout - Stacked */}
+                            <div className="block sm:hidden">
+                              <h5 className="text-base xs:text-lg font-bold text-neutral-900 mb-2">{phase.phase}</h5>
+                              <span className="inline-block text-xs xs:text-sm font-medium text-neural-blue-700 bg-neural-blue-100 px-2.5 xs:px-3 py-1 rounded-full shadow-sm">
+                                {phase.duration}
+                              </span>
+                            </div>
+                            
+                            {/* Desktop Layout - Horizontal */}
+                            <div className="hidden sm:flex sm:items-center sm:justify-between sm:gap-4">
+                              <h5 className="text-lg lg:text-body-large font-bold text-neutral-900 min-w-0">{phase.phase}</h5>
+                              <span className="text-sm lg:text-body-small font-medium text-neural-blue-700 bg-neural-blue-100 px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                {phase.duration}
+                              </span>
+                            </div>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-body-small">
-                            <div className="bg-white/70 p-4 rounded-lg">
-                              <h6 className="text-body font-bold text-neutral-800 mb-3 flex items-center gap-2">
-                                <CheckCircle2 className="w-4 h-4 text-cyber-green-600" />
+                          {/* Content Grid - Mobile First */}
+                          <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+                            {/* Objectives Section */}
+                            <div className="bg-white/70 p-3 xs:p-4 rounded-lg">
+                              <h6 className="text-sm xs:text-base lg:text-body font-bold text-neutral-800 mb-2 xs:mb-3 flex items-center gap-1.5 xs:gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-cyber-green-600 flex-shrink-0" />
                                 Objectives
                               </h6>
-                              <ul className="space-y-2">
+                              <ul className="space-y-1.5 xs:space-y-2">
                                 {phase.objectives.map((obj, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-neutral-600">
-                                    <span className="w-1 h-1 bg-cyber-green-600 rounded-full mt-2 flex-shrink-0"></span>
-                                    {obj}
+                                  <li key={idx} className="flex items-start gap-2 text-xs xs:text-sm lg:text-body-small text-neutral-600">
+                                    <span className="w-1 h-1 bg-cyber-green-600 rounded-full mt-1.5 xs:mt-2 flex-shrink-0"></span>
+                                    <span className="leading-relaxed">{obj}</span>
                                   </li>
                                 ))}
                               </ul>
                             </div>
                             
-                            <div className="bg-white/70 p-4 rounded-lg">
-                              <h6 className="text-body font-bold text-neutral-800 mb-3 flex items-center gap-2">
-                                <ArrowRight className="w-4 h-4 text-neural-blue-600" />
+                            {/* Key Activities Section */}
+                            <div className="bg-white/70 p-3 xs:p-4 rounded-lg">
+                              <h6 className="text-sm xs:text-base lg:text-body font-bold text-neutral-800 mb-2 xs:mb-3 flex items-center gap-1.5 xs:gap-2">
+                                <ArrowRight className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-neural-blue-600 flex-shrink-0" />
                                 Key Activities
                               </h6>
-                              <ul className="space-y-2">
+                              <ul className="space-y-1.5 xs:space-y-2">
                                 {phase.keyActivities.map((activity, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-neutral-600">
-                                    <span className="w-1 h-1 bg-neural-blue-600 rounded-full mt-2 flex-shrink-0"></span>
-                                    {activity}
+                                  <li key={idx} className="flex items-start gap-2 text-xs xs:text-sm lg:text-body-small text-neutral-600">
+                                    <span className="w-1 h-1 bg-neural-blue-600 rounded-full mt-1.5 xs:mt-2 flex-shrink-0"></span>
+                                    <span className="leading-relaxed">{activity}</span>
                                   </li>
                                 ))}
                               </ul>
@@ -1656,33 +1790,52 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
                   >
-                    <Card className="p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 bg-amber-100 rounded-xl shadow-sm">
-                          <Shield className="w-6 h-6 text-amber-600" />
+                    <Card className="p-3 xs:p-4 sm:p-5 lg:p-6 bg-white/80 backdrop-blur-sm border border-neural-blue-100 shadow-lg hover:shadow-neural-glow transition-all duration-300">
+                      <div className="flex items-center gap-2 xs:gap-3 mb-4 xs:mb-5 lg:mb-6">
+                        <div className="p-2 xs:p-2.5 lg:p-3 bg-amber-100 rounded-lg xs:rounded-xl shadow-sm">
+                          <Shield className="w-5 h-5 xs:w-5 xs:h-5 lg:w-6 lg:h-6 text-amber-600" />
                         </div>
-                        <div>
-                          <h3 className="text-headline-3 font-bold text-neutral-900">Implementation Risk Mitigation</h3>
-                          <p className="text-body-small text-neutral-600">Specific implementation risks and detailed mitigation strategies</p>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-lg xs:text-xl lg:text-headline-3 font-bold text-neutral-900">Implementation Risk Mitigation</h3>
+                          <p className="text-xs xs:text-sm lg:text-body-small text-neutral-600">Specific implementation risks and detailed mitigation strategies</p>
                         </div>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-3 xs:space-y-4">
                         {implementationPlan.riskAssessment.map((risk, index) => (
-                          <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/20 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                            <div className="flex items-start justify-between mb-3">
-                              <h5 className="text-body font-bold text-neutral-900">{risk.risk}</h5>
-                              <div className="flex gap-2">
-                                <span className={`text-caption font-medium px-3 py-1 rounded-full ${getRiskColor(risk.impact)}`}>
+                          <div key={index} className="border border-neural-blue-100 bg-gradient-to-br from-white to-neural-blue-50/20 rounded-lg xs:rounded-xl p-3 xs:p-4 lg:p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+                            {/* Mobile Layout - Stacked */}
+                            <div className="block sm:hidden">
+                              <h5 className="text-sm xs:text-base font-bold text-neutral-900 mb-3 leading-tight">{risk.risk}</h5>
+                              <div className="flex flex-col gap-2 mb-3">
+                                <span className={`text-xs font-medium px-2.5 py-1 rounded-full self-start ${getRiskColor(risk.impact)}`}>
                                   {risk.impact} Impact
                                 </span>
-                                <span className={`text-caption font-medium px-3 py-1 rounded-full ${getRiskColor(risk.probability)}`}>
+                                <span className={`text-xs font-medium px-2.5 py-1 rounded-full self-start ${getRiskColor(risk.probability)}`}>
                                   {risk.probability} Probability
                                 </span>
                               </div>
+                              <p className="text-xs xs:text-sm text-neutral-600 leading-relaxed">
+                                <strong className="text-neural-blue-700">Mitigation:</strong> {risk.mitigation}
+                              </p>
                             </div>
-                            <p className="text-body-small text-neutral-600">
-                              <strong className="text-neural-blue-700">Mitigation:</strong> {risk.mitigation}
-                            </p>
+
+                            {/* Desktop Layout - Horizontal */}
+                            <div className="hidden sm:block">
+                              <div className="flex items-start justify-between mb-3 gap-4">
+                                <h5 className="text-base lg:text-body font-bold text-neutral-900 min-w-0">{risk.risk}</h5>
+                                <div className="flex gap-2 flex-shrink-0">
+                                  <span className={`text-xs lg:text-caption font-medium px-3 py-1 rounded-full whitespace-nowrap ${getRiskColor(risk.impact)}`}>
+                                    {risk.impact} Impact
+                                  </span>
+                                  <span className={`text-xs lg:text-caption font-medium px-3 py-1 rounded-full whitespace-nowrap ${getRiskColor(risk.probability)}`}>
+                                    {risk.probability} Probability
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm lg:text-body-small text-neutral-600">
+                                <strong className="text-neural-blue-700">Mitigation:</strong> {risk.mitigation}
+                              </p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1873,19 +2026,19 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="space-y-8"
+            className="space-y-8 overflow-hidden"
           >
             {/* Pitch Deck Header */}
-            <Card id="pitch-header" className="p-8 bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
+            <Card id="pitch-header" className="p-3 xs:p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
               <div className="text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
-                  <Presentation className="w-4 h-4" />
+                <div className="inline-flex items-center gap-1.5 xs:gap-2 px-2.5 xs:px-3 sm:px-4 py-1.5 xs:py-2 bg-purple-100 text-purple-800 rounded-full text-xs xs:text-sm font-medium mb-3 xs:mb-4">
+                  <Presentation className="w-3 h-3 xs:w-4 xs:h-4" />
                   Executive Pitch Deck
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                <h3 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-900 mb-2 xs:mb-3">
                   Present Your Offshore Scaling Strategy
                 </h3>
-                <p className="text-gray-600 max-w-2xl mx-auto">
+                <p className="text-sm xs:text-base text-gray-600 max-w-2xl mx-auto px-2 xs:px-0">
                   A professional presentation to communicate the business case for offshore scaling to stakeholders, 
                   board members, or investors.
                 </p>
@@ -1893,47 +2046,47 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             </Card>
 
             {/* Pitch Deck Slides */}
-            <div className="grid gap-6">
+            <div className="grid gap-6 w-full min-w-0">
               {/* Slide 1: Executive Summary */}
-              <Card id="slide-1" className="p-6 border-l-4 border-l-blue-500">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
+              <Card id="slide-1" className="p-3 xs:p-4 sm:p-5 lg:p-6 border-l-4 border-l-blue-500">
+                <div className="flex items-start gap-2.5 xs:gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold text-sm xs:text-base sm:text-lg">
                     1
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">Executive Summary</h4>
-                    <div className="grid md:grid-cols-2 gap-6">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-2 xs:mb-3">Executive Summary</h4>
+                    <div className="grid gap-4 xs:gap-5 sm:gap-6 md:grid-cols-2">
                       <div>
-                        <h5 className="font-semibold text-gray-800 mb-2">The Opportunity</h5>
-                        <ul className="space-y-2 text-gray-600">
-                          <li className="flex items-start gap-2">
-                            <TrendingUp className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                            Save {formatCurrency(result.totalSavings)} annually
+                        <h5 className="font-semibold text-gray-800 mb-1.5 xs:mb-2 text-sm xs:text-base">The Opportunity</h5>
+                        <ul className="space-y-1.5 xs:space-y-2 text-gray-600">
+                          <li className="flex items-start gap-1.5 xs:gap-2">
+                            <TrendingUp className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-green-500 mt-0.5 xs:mt-1 flex-shrink-0" />
+                            <span className="text-xs xs:text-sm sm:text-base">Save {formatCurrency(result.totalSavings)} annually</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <Users className="w-4 h-4 text-blue-500 mt-1 flex-shrink-0" />
-                            Scale team to {result.totalTeamSize} members
+                          <li className="flex items-start gap-1.5 xs:gap-2">
+                            <Users className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-blue-500 mt-0.5 xs:mt-1 flex-shrink-0" />
+                            <span className="text-xs xs:text-sm sm:text-base">Scale team to {result.totalTeamSize} members</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <Target className="w-4 h-4 text-purple-500 mt-1 flex-shrink-0" />
-                            Achieve {result.estimatedROI.toFixed(1)}x ROI
+                          <li className="flex items-start gap-1.5 xs:gap-2">
+                            <Target className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-purple-500 mt-0.5 xs:mt-1 flex-shrink-0" />
+                            <span className="text-xs xs:text-sm sm:text-base">Achieve {result.estimatedROI.toFixed(1)}x ROI</span>
                           </li>
                         </ul>
                       </div>
                       <div>
-                        <h5 className="font-semibold text-gray-800 mb-2">Strategic Benefits</h5>
-                        <ul className="space-y-2 text-gray-600">
-                          <li className="flex items-start gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                            Access to specialized talent
+                        <h5 className="font-semibold text-gray-800 mb-1.5 xs:mb-2 text-sm xs:text-base">Strategic Benefits</h5>
+                        <ul className="space-y-1.5 xs:space-y-2 text-gray-600">
+                          <li className="flex items-start gap-1.5 xs:gap-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-green-500 mt-0.5 xs:mt-1 flex-shrink-0" />
+                            <span className="text-xs xs:text-sm sm:text-base">Access to specialized talent</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                            24/7 operational capability
+                          <li className="flex items-start gap-1.5 xs:gap-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-green-500 mt-0.5 xs:mt-1 flex-shrink-0" />
+                            <span className="text-xs xs:text-sm sm:text-base">24/7 operational capability</span>
                           </li>
-                          <li className="flex items-start gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 flex-shrink-0" />
-                            Competitive market advantage
+                          <li className="flex items-start gap-1.5 xs:gap-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-green-500 mt-0.5 xs:mt-1 flex-shrink-0" />
+                            <span className="text-xs xs:text-sm sm:text-base">Competitive market advantage</span>
                           </li>
                         </ul>
                       </div>
@@ -1943,14 +2096,35 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 2: Financial Impact */}
-              <Card id="slide-2" className="p-6 border-l-4 border-l-green-500">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-bold text-lg">
+              <Card id="slide-2" className="p-3 xs:p-4 sm:p-5 lg:p-6 border-l-4 border-l-green-500">
+                <div className="flex items-start gap-2.5 xs:gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center font-bold text-sm xs:text-base sm:text-lg">
                     2
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">Financial Impact</h4>
-                    <div className="grid md:grid-cols-3 gap-6">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-2 xs:mb-3">Financial Impact</h4>
+                    
+                    {/* Mobile Layout - Stacked */}
+                    <div className="grid gap-3 md:hidden">
+                      <div className="text-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <h5 className="font-semibold text-red-800 mb-1.5 text-sm">Current Australian Costs</h5>
+                        <p className="text-lg font-bold text-red-600">{formatCurrency(result.totalAustralianCost)}</p>
+                        <p className="text-xs text-red-600">per year</p>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <h5 className="font-semibold text-green-800 mb-1.5 text-sm">Offshore Costs</h5>
+                        <p className="text-lg font-bold text-green-600">{formatCurrency(result.totalPhilippineCost)}</p>
+                        <p className="text-xs text-green-600">per year</p>
+                      </div>
+                      <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h5 className="font-semibold text-blue-800 mb-1.5 text-sm">Annual Savings</h5>
+                        <p className="text-lg font-bold text-blue-600">{formatCurrency(result.totalSavings)}</p>
+                        <p className="text-xs text-blue-600">{formatPercentage(result.averageSavingsPercentage)} reduction</p>
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout - 3 Column Grid */}
+                    <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-6">
                       <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
                         <h5 className="font-semibold text-red-800 mb-2">Current Australian Costs</h5>
                         <p className="text-2xl font-bold text-red-600">{formatCurrency(result.totalAustralianCost)}</p>
@@ -1972,30 +2146,30 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 3: Team Structure */}
-              <Card id="slide-3" className="p-6 border-l-4 border-l-purple-500">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-lg">
+              <Card id="slide-3" className="p-3 xs:p-4 sm:p-5 lg:p-6 border-l-4 border-l-purple-500">
+                <div className="flex items-start gap-2.5 xs:gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-sm xs:text-base sm:text-lg">
                     3
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">Proposed Team Structure</h4>
-                                         <div className="grid md:grid-cols-2 gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-2 xs:mb-3">Proposed Team Structure</h4>
+                    <div className="grid gap-3 xs:gap-4 sm:grid-cols-2">
                        {Object.entries(result.breakdown).map(([roleId, breakdown]) => {
                          const role = ROLES[roleId as RoleId];
                          if (!role) return null;
                          
                          return (
-                           <div key={roleId} className="border border-gray-200 rounded-lg p-4">
-                             <div className="flex items-center gap-3 mb-2">
-                               <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
-                                 <Users className="w-4 h-4" />
+                           <div key={roleId} className="border border-gray-200 rounded-lg p-3 xs:p-4">
+                             <div className="flex items-center gap-2 xs:gap-3 mb-2">
+                               <div className="w-6 h-6 xs:w-8 xs:h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                 <Users className="w-3 h-3 xs:w-4 xs:h-4" />
                                </div>
-                               <div>
-                                 <h5 className="font-semibold text-gray-900">{role.title}</h5>
-                                 <p className="text-sm text-gray-600">{breakdown.teamSize} position{breakdown.teamSize > 1 ? 's' : ''}</p>
+                               <div className="min-w-0 flex-1">
+                                 <h5 className="font-semibold text-gray-900 text-sm xs:text-base leading-tight">{role.title}</h5>
+                                 <p className="text-xs xs:text-sm text-gray-600">{breakdown.teamSize} position{breakdown.teamSize > 1 ? 's' : ''}</p>
                                </div>
                              </div>
-                             <div className="text-sm space-y-1">
+                             <div className="text-xs xs:text-sm space-y-1">
                                <div className="flex justify-between">
                                  <span className="text-gray-600">Australian Cost:</span>
                                  <span className="font-medium text-red-600">{formatCurrency(breakdown.australianCost)}</span>
@@ -2018,14 +2192,14 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 4: Implementation Timeline */}
-              <Card id="slide-4" className="p-6 border-l-4 border-l-orange-500">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-lg">
+              <Card id="slide-4" className="p-3 xs:p-4 sm:p-5 lg:p-6 border-l-4 border-l-orange-500">
+                <div className="flex items-start gap-2.5 xs:gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center font-bold text-sm xs:text-base sm:text-lg">
                     4
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">Implementation Roadmap</h4>
-                    <div className="space-y-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-2 xs:mb-3">Implementation Roadmap</h4>
+                    <div className="space-y-2.5 xs:space-y-3 sm:space-y-4">
                       {[
                         { 
                           phase: 'Planning & Setup', 
@@ -2052,21 +2226,45 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                           description: 'Complete transition and optimization'
                         }
                       ].map((phase, index) => (
-                        <div key={phase.phase} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
-                          <div className={`px-3 py-1 rounded-full text-sm font-medium ${phase.color}`}>
-                            Week {index === 0 ? '1' : index === 1 ? result.implementationTimeline.planning + 1 : index === 2 ? result.implementationTimeline.planning + result.implementationTimeline.hiring + 1 : result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training + 1}-{
-                              index === 0 ? result.implementationTimeline.planning : 
-                              index === 1 ? result.implementationTimeline.planning + result.implementationTimeline.hiring :
-                              index === 2 ? result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training :
-                              result.implementationTimeline.fullImplementation
-                            }
+                        <div key={phase.phase}>
+                          {/* Mobile Layout - Stacked */}
+                          <div className="block sm:hidden border border-gray-200 rounded-lg p-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h5 className="font-semibold text-gray-900 text-sm">{phase.phase}</h5>
+                                <div className="text-xs font-medium text-gray-600">
+                                  {phase.duration} week{phase.duration > 1 ? 's' : ''}
+                                </div>
+                              </div>
+                              <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${phase.color}`}>
+                                Week {index === 0 ? '1' : index === 1 ? result.implementationTimeline.planning + 1 : index === 2 ? result.implementationTimeline.planning + result.implementationTimeline.hiring + 1 : result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training + 1}-{
+                                  index === 0 ? result.implementationTimeline.planning : 
+                                  index === 1 ? result.implementationTimeline.planning + result.implementationTimeline.hiring :
+                                  index === 2 ? result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training :
+                                  result.implementationTimeline.fullImplementation
+                                }
+                              </div>
+                              <p className="text-xs text-gray-600">{phase.description}</p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h5 className="font-semibold text-gray-900">{phase.phase}</h5>
-                            <p className="text-sm text-gray-600">{phase.description}</p>
-                          </div>
-                          <div className="text-sm font-medium text-gray-600">
-                            {phase.duration} week{phase.duration > 1 ? 's' : ''}
+
+                          {/* Desktop Layout - Horizontal */}
+                          <div className="hidden sm:flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${phase.color}`}>
+                              Week {index === 0 ? '1' : index === 1 ? result.implementationTimeline.planning + 1 : index === 2 ? result.implementationTimeline.planning + result.implementationTimeline.hiring + 1 : result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training + 1}-{
+                                index === 0 ? result.implementationTimeline.planning : 
+                                index === 1 ? result.implementationTimeline.planning + result.implementationTimeline.hiring :
+                                index === 2 ? result.implementationTimeline.planning + result.implementationTimeline.hiring + result.implementationTimeline.training :
+                                result.implementationTimeline.fullImplementation
+                              }
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-gray-900">{phase.phase}</h5>
+                              <p className="text-sm text-gray-600">{phase.description}</p>
+                            </div>
+                            <div className="text-sm font-medium text-gray-600">
+                              {phase.duration} week{phase.duration > 1 ? 's' : ''}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -2076,36 +2274,39 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 5: Risk Assessment */}
-              <Card id="slide-5" className="p-6 border-l-4 border-l-amber-500">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center font-bold text-lg">
+              <Card id="slide-5" className="p-3 xs:p-4 sm:p-5 lg:p-6 border-l-4 border-l-amber-500">
+                <div className="flex items-start gap-2.5 xs:gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center font-bold text-sm xs:text-base sm:text-lg">
                     5
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">Risk Assessment & Mitigation</h4>
-                    <div className="grid md:grid-cols-2 gap-6">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-2 xs:mb-3">Risk Assessment & Mitigation</h4>
+                    
+                    {/* Risk Level Badge */}
+                    <div className={`inline-flex items-center gap-1.5 xs:gap-2 px-2.5 xs:px-3 py-1 rounded-full text-xs xs:text-sm font-medium mb-3 xs:mb-4 ${getRiskLevelColor(result.riskAssessment.level)}`}>
+                      <Shield className="w-3 h-3 xs:w-4 xs:h-4" />
+                      {result.riskAssessment.level.charAt(0).toUpperCase() + result.riskAssessment.level.slice(1)} Risk Level
+                    </div>
+
+                    <div className="grid gap-4 xs:gap-5 sm:gap-6 md:grid-cols-2">
                       <div>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-4 ${getRiskLevelColor(result.riskAssessment.level)}`}>
-                          <Shield className="w-4 h-4" />
-                          {result.riskAssessment.level.charAt(0).toUpperCase() + result.riskAssessment.level.slice(1)} Risk Level
-                        </div>
-                        <h5 className="font-semibold text-gray-800 mb-2">Identified Risks</h5>
-                        <ul className="space-y-2">
+                        <h5 className="font-semibold text-gray-800 mb-1.5 xs:mb-2 text-sm xs:text-base">Identified Risks</h5>
+                        <ul className="space-y-1.5 xs:space-y-2">
                           {result.riskAssessment.factors.map((factor, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                              <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                              {factor}
+                            <li key={index} className="flex items-start gap-1.5 xs:gap-2 text-xs xs:text-sm text-gray-600">
+                              <AlertTriangle className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                              <span>{factor}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div>
-                        <h5 className="font-semibold text-gray-800 mb-2">Mitigation Strategies</h5>
-                        <ul className="space-y-2">
+                        <h5 className="font-semibold text-gray-800 mb-1.5 xs:mb-2 text-sm xs:text-base">Mitigation Strategies</h5>
+                        <ul className="space-y-1.5 xs:space-y-2">
                           {result.riskAssessment.mitigationStrategies.map((strategy, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                              {strategy}
+                            <li key={index} className="flex items-start gap-1.5 xs:gap-2 text-xs xs:text-sm text-gray-600">
+                              <CheckCircle2 className="w-3.5 h-3.5 xs:w-4 xs:h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                              <span>{strategy}</span>
                             </li>
                           ))}
                         </ul>
@@ -2116,44 +2317,44 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </Card>
 
               {/* Slide 6: Call to Action */}
-              <Card id="slide-6" className="p-6 border-l-4 border-l-indigo-500">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg">
+              <Card id="slide-6" className="p-3 xs:p-4 sm:p-5 lg:p-6 border-l-4 border-l-indigo-500">
+                <div className="flex items-start gap-2.5 xs:gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-sm xs:text-base sm:text-lg">
                     6
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">Recommendation & Next Steps</h4>
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6">
-                      <h5 className="text-lg font-semibold text-gray-900 mb-3">Strategic Recommendation</h5>
-                      <p className="text-gray-700 mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-base xs:text-lg sm:text-xl font-bold text-gray-900 mb-2 xs:mb-3">Recommendation & Next Steps</h4>
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 xs:p-4 sm:p-6">
+                      <h5 className="text-base xs:text-lg font-semibold text-gray-900 mb-2 xs:mb-3">Strategic Recommendation</h5>
+                      <p className="text-xs xs:text-sm sm:text-base text-gray-700 mb-3 xs:mb-4">
                         Based on our analysis, implementing an offshore scaling strategy will deliver significant cost savings 
                         of {formatCurrency(result.totalSavings)} annually while maintaining operational excellence and enabling 
                         accelerated growth.
                       </p>
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid gap-3 xs:gap-4 md:grid-cols-2">
                         <div>
-                          <h6 className="font-semibold text-gray-800 mb-2">Immediate Actions</h6>
-                          <ul className="space-y-1 text-sm text-gray-600">
-                            <li className="flex items-center gap-2">
-                              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full flex items-center justify-center">1</span>
-                              Approve offshore scaling initiative
+                          <h6 className="font-semibold text-gray-800 mb-1.5 xs:mb-2 text-sm xs:text-base">Immediate Actions</h6>
+                          <ul className="space-y-1 xs:space-y-1.5 text-xs xs:text-sm text-gray-600">
+                            <li className="flex items-center gap-1.5 xs:gap-2">
+                              <span className="w-4 h-4 xs:w-5 xs:h-5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full flex items-center justify-center flex-shrink-0">1</span>
+                              <span>Approve offshore scaling initiative</span>
                             </li>
-                            <li className="flex items-center gap-2">
-                              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full flex items-center justify-center">2</span>
-                              Begin detailed implementation planning
+                            <li className="flex items-center gap-1.5 xs:gap-2">
+                              <span className="w-4 h-4 xs:w-5 xs:h-5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full flex items-center justify-center flex-shrink-0">2</span>
+                              <span>Begin detailed implementation planning</span>
                             </li>
-                            <li className="flex items-center gap-2">
-                              <span className="w-5 h-5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full flex items-center justify-center">3</span>
-                              Initiate recruitment process
+                            <li className="flex items-center gap-1.5 xs:gap-2">
+                              <span className="w-4 h-4 xs:w-5 xs:h-5 bg-indigo-100 text-indigo-600 text-xs font-medium rounded-full flex items-center justify-center flex-shrink-0">3</span>
+                              <span>Initiate recruitment process</span>
                             </li>
                           </ul>
                         </div>
                         <div>
-                          <h6 className="font-semibold text-gray-800 mb-2">Expected Timeline</h6>
-                          <p className="text-sm text-gray-600 mb-2">
+                          <h6 className="font-semibold text-gray-800 mb-1.5 xs:mb-2 text-sm xs:text-base">Expected Timeline</h6>
+                          <p className="text-xs xs:text-sm text-gray-600 mb-1.5 xs:mb-2">
                             Full implementation: <strong>{result.implementationTimeline.fullImplementation} weeks</strong>
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs xs:text-sm text-gray-600">
                             ROI realization: <strong>Within 6 months</strong>
                           </p>
                         </div>
@@ -2174,36 +2375,36 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
-        className="mt-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-8 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden"
+        className="mt-6 sm:mt-8 lg:mt-12 -mx-3 xs:-mx-4 sm:-mx-6 lg:-mx-8 px-3 xs:px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 sm:pb-6 lg:pb-8 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
         <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
         <div className="relative z-10">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-6 justify-center items-center max-w-4xl mx-auto">
             {/* Download Button Container */}
             <Button 
               variant="primary" 
-              leftIcon={<Download className="w-5 h-5" />}
-              className="w-full sm:w-[256px] px-6 py-3 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+              leftIcon={<Download className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />}
+              className="w-full sm:w-auto sm:min-w-[240px] sm:max-w-[320px] h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 bg-neural-blue-500 hover:bg-neural-blue-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 text-sm sm:text-base lg:text-lg"
             >
               Download Complete Report
             </Button>
             
             {/* Start New Calculation + Share Icon Container */}
-            <div className="flex gap-2 items-center w-full sm:w-auto">
+            <div className="flex gap-2 sm:gap-3 items-center w-full sm:w-auto sm:min-w-[240px] sm:max-w-[320px]">
               <Button 
                 variant="outline" 
                 onClick={onRestart} 
-                leftIcon={<Calculator className="w-5 h-5" />}
-                className="flex-1 sm:min-w-[200px] sm:flex-initial px-6 py-3 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300"
+                leftIcon={<Calculator className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />}
+                className="flex-1 h-12 sm:h-14 lg:h-16 px-3 xs:px-4 sm:px-6 lg:px-8 border-2 border-neural-blue-300 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-400 hover:-translate-y-0.5 transition-all duration-300 text-sm sm:text-base lg:text-lg min-w-0"
               >
-                Start New Calculation
+                <span className="truncate">Start New Calculation</span>
               </Button>
               <Button 
                 variant="secondary" 
-                className="w-12 h-12 p-3 border-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center flex-shrink-0"
+                className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 p-2 sm:p-3 lg:p-4 border-2 border-neural-blue-200 text-neural-blue-700 hover:bg-neural-blue-50 hover:border-neural-blue-300 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center flex-shrink-0"
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
               </Button>
             </div>
           </div>
@@ -2215,117 +2416,118 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.1, duration: 0.5 }}
+        className="w-full min-w-0"
       >
-        <div className="bg-white border border-neural-blue-100 rounded-2xl p-6 sm:p-8 relative shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+        <div className="bg-white border border-neural-blue-100 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-8 relative shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 w-full min-w-0 overflow-hidden">
           <div className="relative z-10">
-                          <div className="text-center mb-6 sm:mb-8">
-                <div className="inline-flex items-center gap-2 sm:gap-3 bg-cyber-green-500 rounded-full px-4 sm:px-6 py-2 sm:py-3 mb-4 sm:mb-6 shadow-lg">
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  <span className="text-base sm:text-body-large font-bold text-white">Why Do It Yourself?</span>
+                          <div className="text-center mb-3 sm:mb-4 lg:mb-8">
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 lg:gap-3 bg-cyber-green-500 rounded-full px-2 sm:px-3 lg:px-6 py-1.5 sm:py-2 lg:py-3 mb-2 sm:mb-3 lg:mb-6 shadow-lg">
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 text-white" />
+                  <span className="text-xs sm:text-sm lg:text-body-large font-bold text-white">Why Do It Yourself?</span>
                 </div>
-                <h3 className="text-xl sm:text-display-2 font-display font-bold mb-4 text-neural-blue-900">
+                <h3 className="text-base sm:text-lg lg:text-display-2 font-display font-bold mb-2 sm:mb-3 lg:mb-4 text-neural-blue-900">
                   ScaleMate Has <span className="text-cyber-green-500">Everything</span> You Need
                 </h3>
-                <p className="text-base sm:text-body-large text-neural-blue-700 max-w-3xl mx-auto px-4 sm:px-0">
+                <p className="text-xs sm:text-sm lg:text-body-large text-neural-blue-700 max-w-3xl mx-auto px-1.5 sm:px-2 lg:px-0">
                   Stop struggling with setup, training, and management. We've thought of everything so you don't have to.
                 </p>
               </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
-              <div className="bg-neural-blue-50 rounded-2xl p-4 sm:p-6 hover:bg-neural-blue-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neural-blue-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-6 mb-4 sm:mb-6 lg:mb-10">
+              <div className="bg-neural-blue-50 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6 hover:bg-neural-blue-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-neural-blue-500 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 shadow-lg">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Role Builders</h4>
-                <p className="text-neural-blue-700 text-sm sm:text-body-small">Pre-built role descriptions, skill requirements, and performance metrics for every property management position.</p>
+                <h4 className="text-sm sm:text-base lg:text-body-large font-bold mb-1 sm:mb-2 text-neural-blue-900">Role Builders</h4>
+                <p className="text-neural-blue-700 text-xs sm:text-sm lg:text-body-small">Pre-built role descriptions, skill requirements, and performance metrics for every property management position.</p>
               </div>
 
-              <div className="bg-cyber-green-50 rounded-2xl p-4 sm:p-6 hover:bg-cyber-green-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyber-green-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
-                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="bg-cyber-green-50 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6 hover:bg-cyber-green-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-cyber-green-500 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 shadow-lg">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Readiness Assessment</h4>
-                <p className="text-neural-blue-700 text-sm sm:text-body-small">Comprehensive evaluation tools to ensure your team and processes are ready for offshore scaling.</p>
+                <h4 className="text-sm sm:text-base lg:text-body-large font-bold mb-1 sm:mb-2 text-neural-blue-900">Readiness Assessment</h4>
+                <p className="text-neural-blue-700 text-xs sm:text-sm lg:text-body-small">Comprehensive evaluation tools to ensure your team and processes are ready for offshore scaling.</p>
               </div>
 
-              <div className="bg-quantum-purple-50 rounded-2xl p-4 sm:p-6 hover:bg-quantum-purple-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-quantum-purple-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
-                  <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="bg-quantum-purple-50 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6 hover:bg-quantum-purple-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-quantum-purple-500 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 shadow-lg">
+                  <Brain className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Advanced AI Training</h4>
-                <p className="text-neural-blue-700 text-sm sm:text-body-small">Claude AI integration with custom prompts, workflows, and automation specifically for property management.</p>
+                <h4 className="text-sm sm:text-base lg:text-body-large font-bold mb-1 sm:mb-2 text-neural-blue-900">Advanced AI Training</h4>
+                <p className="text-neural-blue-700 text-xs sm:text-sm lg:text-body-small">Claude AI integration with custom prompts, workflows, and automation specifically for property management.</p>
               </div>
 
-              <div className="bg-matrix-orange-50 rounded-2xl p-4 sm:p-6 hover:bg-matrix-orange-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-matrix-orange-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
-                  <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="bg-matrix-orange-50 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6 hover:bg-matrix-orange-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-matrix-orange-500 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 shadow-lg">
+                  <Globe className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Advanced Culture Training</h4>
-                <p className="text-neural-blue-700 text-sm sm:text-body-small">Deep market knowledge training for Australian property management culture, tenant expectations, and business practices.</p>
+                <h4 className="text-sm sm:text-base lg:text-body-large font-bold mb-1 sm:mb-2 text-neural-blue-900">Advanced Culture Training</h4>
+                <p className="text-neural-blue-700 text-xs sm:text-sm lg:text-body-small">Deep market knowledge training for Australian property management culture, tenant expectations, and business practices.</p>
               </div>
 
-              <div className="bg-neural-blue-50 rounded-2xl p-4 sm:p-6 hover:bg-neural-blue-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neural-blue-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
-                  <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="bg-neural-blue-50 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6 hover:bg-neural-blue-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-neural-blue-500 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 shadow-lg">
+                  <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">Offshore Team Mastery</h4>
-                <p className="text-neural-blue-700 text-sm sm:text-body-small">Proven frameworks for managing Philippine offshore teams, communication protocols, and performance optimization.</p>
+                <h4 className="text-sm sm:text-base lg:text-body-large font-bold mb-1 sm:mb-2 text-neural-blue-900">Offshore Team Mastery</h4>
+                <p className="text-neural-blue-700 text-xs sm:text-sm lg:text-body-small">Proven frameworks for managing Philippine offshore teams, communication protocols, and performance optimization.</p>
               </div>
 
-              <div className="bg-cyber-green-50 rounded-2xl p-4 sm:p-6 hover:bg-cyber-green-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyber-green-500 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg">
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="bg-cyber-green-50 rounded-lg sm:rounded-2xl p-3 sm:p-4 lg:p-6 hover:bg-cyber-green-100 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-cyber-green-500 rounded-lg sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 shadow-lg">
+                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <h4 className="text-base sm:text-body-large font-bold mb-2 text-neural-blue-900">10X Growth System</h4>
-                <p className="text-neural-blue-700 text-sm sm:text-body-small">Complete methodology combining AI automation with offshore talent to achieve exponential business growth.</p>
+                <h4 className="text-sm sm:text-base lg:text-body-large font-bold mb-1 sm:mb-2 text-neural-blue-900">10X Growth System</h4>
+                <p className="text-neural-blue-700 text-xs sm:text-sm lg:text-body-small">Complete methodology combining AI automation with offshore talent to achieve exponential business growth.</p>
               </div>
             </div>
 
             {/* Main CTA */}
             <div className="text-center">
-              <div className="bg-neural-blue-50 border border-neural-blue-200 rounded-2xl p-6 sm:p-8 mb-6 shadow-lg">
-                <h4 className="text-xl sm:text-headline-2 font-display font-bold mb-4 text-neural-blue-900">
+              <div className="bg-neural-blue-50 border border-neural-blue-200 rounded-lg sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 shadow-lg">
+                <h4 className="text-lg sm:text-xl lg:text-headline-2 font-display font-bold mb-3 sm:mb-4 text-neural-blue-900">
                   There's Nothing We Haven't Thought Of
                 </h4>
-                <p className="text-base sm:text-body-large text-neural-blue-700 mb-6">
+                <p className="text-sm sm:text-base lg:text-body-large text-neural-blue-700 mb-4 sm:mb-6">
                   We combine cutting-edge AI with proven offshore team strategies to deliver everything you need for explosive growth.
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-6">
-                  <div className="flex items-center gap-2 text-cyber-green-600">
-                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-sm sm:text-body font-bold">FREE to Sign Up</span>
+                <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4 justify-center items-center mb-4 sm:mb-6">
+                  <div className="flex items-center gap-1 sm:gap-2 text-cyber-green-600">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm lg:text-body font-bold">FREE to Sign Up</span>
                   </div>
-                  <div className="flex items-center gap-2 text-neural-blue-600">
-                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-sm sm:text-body font-bold">Advanced Features Available</span>
+                  <div className="flex items-center gap-1 sm:gap-2 text-neural-blue-600">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm lg:text-body font-bold text-center">Advanced Features Available</span>
                   </div>
-                  <div className="flex items-center gap-2 text-quantum-purple-600">
-                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="text-sm sm:text-body font-bold">Complete Done-For-You Service</span>
+                  <div className="flex items-center gap-1 sm:gap-2 text-quantum-purple-600">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm lg:text-body font-bold text-center">Complete Done-For-You Service</span>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <button className="w-full sm:w-auto bg-cyber-green-500 hover:bg-cyber-green-600 text-white font-bold text-lg sm:text-xl px-8 sm:px-12 py-3 sm:py-4 rounded-2xl hover:-translate-y-0.5 transition-all duration-300 shadow-lg hover:shadow-xl">
-                    🚀 Start Your 10X Journey FREE
+                <div className="space-y-3 sm:space-y-4">
+                  <button className="w-full sm:w-auto bg-cyber-green-500 hover:bg-cyber-green-600 text-white font-bold text-sm xs:text-base sm:text-lg lg:text-xl px-3 xs:px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-2xl hover:-translate-y-0.5 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <span className="inline-block">🚀 Start Your 10X Journey FREE</span>
                   </button>
                   
-                  <p className="text-sm sm:text-body-small text-neural-blue-700">
+                  <p className="text-xs sm:text-sm lg:text-body-small text-neural-blue-700 px-2 xs:px-0">
                     Join thousands of property managers already scaling with ScaleMate
                   </p>
                 </div>
               </div>
 
               {/* Success Message */}
-              <div className="bg-cyber-green-50 border border-cyber-green-200 rounded-2xl p-6 shadow-lg">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-cyber-green-500 rounded-full flex items-center justify-center shadow-md">
-                    <CheckCircle2 className="w-5 h-5 text-white" />
+              <div className="bg-cyber-green-50 border border-cyber-green-200 rounded-lg sm:rounded-2xl p-4 sm:p-6 shadow-lg">
+                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-cyber-green-500 rounded-full flex items-center justify-center shadow-md">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-white" />
                   </div>
-                  <h5 className="text-headline-3 font-bold text-cyber-green-700">Success is on the Other Side!</h5>
+                  <h5 className="text-base sm:text-lg lg:text-headline-3 font-bold text-cyber-green-700">Success is on the Other Side!</h5>
                 </div>
-                <p className="text-body text-neural-blue-700">
+                <p className="text-sm sm:text-base lg:text-body text-neural-blue-700">
                   Stop doing it the hard way. Let ScaleMate handle the complexity while you focus on growing your business.
                 </p>
               </div>
@@ -2336,17 +2538,17 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
     </div> {/* Close main content area */}
 
     {/* Floating Navigation Button */}
-    <div className="fixed bottom-20 right-4 z-50 group/tooltip">
+    <div className="fixed bottom-20 right-2 xs:right-4 z-50 group/tooltip">
       <motion.button
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1, duration: 0.3 }}
         onClick={() => setShowTableOfContents(!showTableOfContents)}
-        className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-3 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
+        className="group bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white p-2.5 xs:p-3 rounded-xl shadow-lg hover:shadow-neural-glow transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-neural-blue-500/50 focus:ring-offset-2"
         aria-label="Quick navigation"
       >
         <svg 
-          className="w-5 h-5 transform group-hover:-translate-y-0.5 transition-transform duration-200" 
+          className="w-4 h-4 xs:w-5 xs:h-5 transform group-hover:-translate-y-0.5 transition-transform duration-200" 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"
@@ -2376,9 +2578,9 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             }}
             className="absolute bottom-full right-0 mb-2 pointer-events-none"
           >
-            <div className="bg-gradient-to-r from-cyber-green-500 to-emerald-500 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+            <div className="bg-gradient-to-r from-cyber-green-500 to-emerald-500 text-white text-xs xs:text-sm px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg shadow-lg whitespace-nowrap">
               Quick Navigation
-              <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-cyber-green-500"></div>
+              <div className="absolute top-full right-2 xs:right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-cyber-green-500"></div>
             </div>
           </motion.div>
         )}
@@ -2400,7 +2602,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed bottom-32 right-4 w-80 bg-white/95 backdrop-blur-lg border border-neural-blue-200 rounded-2xl shadow-2xl z-50"
+            className="fixed bottom-32 right-2 xs:right-4 w-[calc(100vw-1rem)] xs:w-80 max-w-sm bg-white/95 backdrop-blur-lg border border-neural-blue-200 rounded-2xl shadow-2xl z-50"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4">

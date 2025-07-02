@@ -102,9 +102,9 @@ export function LocationStep({
             ) : getEffectiveLocation?.() ? (
               <div className="flex flex-col items-center gap-6 w-full max-w-4xl">
                 {/* Location Display and Change Button in Same Row */}
-                <div className="flex items-center gap-4 w-full">
+                <div className="flex flex-col md:flex-row items-center gap-4 w-full">
                   {/* Location Display */}
-                  <div className="flex items-center gap-4 px-8 bg-white rounded-xl border border-blue-200 shadow-sm flex-1 justify-center min-w-0 h-16">
+                  <div className="flex items-center gap-4 px-8 bg-white rounded-xl border border-blue-200 shadow-sm flex-1 justify-center min-w-0 h-16 w-full md:w-auto">
                     <span className="text-3xl">🌏</span>
                     <div className="text-center">
                       <div className="font-semibold text-neutral-900 text-xl">
@@ -126,7 +126,7 @@ export function LocationStep({
                   {/* Change Button */}
                   <button
                     onClick={onLocationEditStart}
-                    className="px-6 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-xl hover:bg-blue-50 bg-white shadow-sm text-base whitespace-nowrap flex-shrink-0 h-16"
+                    className="px-6 text-blue-600 hover:text-blue-700 transition-colors font-medium flex items-center gap-2 border border-blue-300 rounded-xl hover:bg-blue-50 bg-white shadow-sm text-base whitespace-nowrap flex-shrink-0 h-16 w-full md:w-auto justify-center"
                   >
                     <Edit3 className="w-4 h-4" />
                     Change Location
@@ -143,8 +143,8 @@ export function LocationStep({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-4 w-full max-w-4xl">
-                <div className="flex items-center gap-3 px-6 py-4 bg-white rounded-xl border border-neutral-200 flex-1 justify-center shadow-sm min-w-0">
+              <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-4xl">
+                <div className="flex items-center gap-3 px-6 py-4 bg-white rounded-xl border border-neutral-200 flex-1 justify-center shadow-sm min-w-0 w-full md:w-auto">
                   <Globe className="w-5 h-5 text-neutral-500" />
                   <span className="text-neutral-700 font-medium text-base">
                     {locationError || "Unable to detect location"}
@@ -152,7 +152,7 @@ export function LocationStep({
                 </div>
                 <button
                   onClick={onLocationEditStart}
-                  className="px-6 py-4 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-xl hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow transition-all duration-200 font-medium text-base whitespace-nowrap flex-shrink-0 shadow-lg"
+                  className="px-6 py-4 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-xl hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow transition-all duration-200 font-medium text-base whitespace-nowrap flex-shrink-0 shadow-lg w-full md:w-auto justify-center"
                 >
                   Set Location Manually
                 </button>
