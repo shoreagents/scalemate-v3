@@ -26,7 +26,7 @@ const EXCHANGE_RATE_DECIMAL_PLACES = 4; // Round to 4 decimal places (0.01764 â†
  */
 function roundExchangeRate(rate: number): number {
   const multiplier = Math.pow(10, EXCHANGE_RATE_DECIMAL_PLACES);
-  return Math.round(rate * multiplier) / multiplier;
+  return (rate * multiplier) / multiplier;
 }
 
 // Load cached exchange rates from localStorage
@@ -260,10 +260,10 @@ export async function getDirectExchangeRate(fromCurrency: string, toCurrency: st
       
       if (rate && typeof rate === 'number' && !isNaN(rate) && rate > 0) {
         console.log('âœ… Got live rate:', rate);
-        // Round to 8 decimal places and cache the successful rate
-        const roundedRate = Math.round(rate * 100000000) / 100000000;
-        directRateCache.set(cacheKey, { rate: roundedRate, timestamp: Date.now() });
-        return roundedRate;
+        // Cache the successful rate (keeping full precision)
+        const fullPrecisionRate = rate;
+        directRateCache.set(cacheKey, { rate: fullPrecisionRate, timestamp: Date.now() });
+        return fullPrecisionRate;
       }
     } catch (error) {
       console.warn(`Failed to fetch direct rate from ${api.url}:`, error);

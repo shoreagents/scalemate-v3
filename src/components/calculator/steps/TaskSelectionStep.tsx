@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RoleId, CustomTask, TaskComplexity } from '@/types';
+import { RoleId, CustomTask, TaskComplexity, LocationData, ManualLocation } from '@/types';
 import { ROLES } from '@/utils/rolesData';
 import { Button } from '@/components/ui/Button';
 import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, X, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -12,23 +12,58 @@ interface TaskSelectionStepProps {
   selectedTasks: Record<string, boolean>;
   customTasks: Record<RoleId, readonly CustomTask[]>;
   onChange: (selectedTasks: Record<string, boolean>, customTasks: Record<RoleId, readonly CustomTask[]>) => void;
+  
+  // Dynamic roles data
+  roles?: Record<string, any>;
+  isLoadingRoles?: boolean;
+  rolesError?: string | null;
+  isUsingDynamicRoles?: boolean;
+  
+  // Location data for AI indicator
+  userLocation?: LocationData;
+  manualLocation?: ManualLocation | null;
 }
 
 export function TaskSelectionStep({ 
   selectedRoles, 
   selectedTasks, 
   customTasks, 
-  onChange 
+  onChange,
+  
+  // Dynamic roles data
+  roles,
+  isLoadingRoles = false,
+  rolesError = null,
+  isUsingDynamicRoles = false,
+  
+  // Location data for AI indicator
+  userLocation,
+  manualLocation
 }: TaskSelectionStepProps) {
   // Helper function to get role data from all sources
   const getRoleData = (roleId: RoleId) => {
-    // First check ROLES (now includes tasks)
-    if (roleId in ROLES) {
-      const enhancedRole = ROLES[roleId as keyof typeof ROLES];
+    console.log('🔍 [TaskSelectionStep] Getting role data for:', roleId, {
+      rolesExists: !!roles,
+      rolesCount: roles ? Object.keys(roles).length : 0,
+      isUsingDynamicRoles,
+      isLoadingRoles
+    });
+    
+    // Use dynamic roles if available, otherwise fall back to static ROLES
+    const availableRoles = roles || ROLES;
+    
+    if (roleId in availableRoles) {
+      const enhancedRole = availableRoles[roleId as keyof typeof availableRoles];
+      console.log('✅ [TaskSelectionStep] Found role data with tasks:', {
+        roleId,
+        tasksCount: enhancedRole.tasks?.length || 0,
+        isDynamic: !!roles
+      });
       return enhancedRole;
     }
     
     // Fallback for unknown roles
+    console.log('📋 [TaskSelectionStep] Using fallback data for unknown role:', roleId);
     return {
       id: roleId,
       title: `${roleId} Role`,
@@ -89,7 +124,7 @@ export function TaskSelectionStep({
     if (!input?.name.trim() || !input?.description.trim()) return;
 
     const newCustomTask: CustomTask = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       name: input.name.trim(),
       description: input.description.trim(),
       estimatedComplexity: input.complexity,
@@ -134,7 +169,7 @@ export function TaskSelectionStep({
 
   const getSelectedTasksCount = (roleId: RoleId) => {
     const role = getRoleData(roleId);
-    const standardTasks = role.tasks ? role.tasks.filter(task => 
+    const standardTasks = role.tasks ? role.tasks.filter((task: any) => 
       selectedTasks[`${roleId}-${task.id}`]
     ).length : 0;
     const customTasksCount = customTasks[roleId]?.length || 0;
@@ -227,51 +262,31 @@ export function TaskSelectionStep({
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
           <h2 className="text-headline-1 text-neutral-900">Task Selection</h2>
-        </div>
-        <p className="text-body-large text-neutral-600">
-          Choose which tasks you&apos;d like to offshore for each role. You can also add custom tasks.
-        </p>
-        
-        {/* Task Complexity Guide */}
-        <div className="mt-6 mb-4 p-6 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden">
-          {/* Moving glow effects */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
-          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
-          
-          <div className="relative z-10">
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-neural-blue-900 ">
-                Task Complexity Guide
-              </h3>
-              <p className="text-sm text-gray-800">
-                Each task is labeled with its complexity level to help you understand requirements
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="inline-flex px-3 py-2 bg-green-100 text-green-700 font-semibold rounded-full items-center mb-2">
-                  Easy Task
-                </div>
-                <p className="text-xs text-gray-600">Simple, routine work requiring basic skills</p>
-              </div>
-              <div>
-                <div className="inline-flex px-3 py-2 bg-yellow-100 text-yellow-700 font-semibold rounded-full items-center mb-2">
-                  Standard Task
-                </div>
-                <p className="text-xs text-gray-600">Moderate skill required with some experience</p>
-              </div>
-              <div>
-                <div className="inline-flex px-3 py-2 bg-red-100 text-red-700 font-semibold rounded-full items-center mb-2">
-                  Complex Task
-                </div>
-                <p className="text-xs text-gray-600">Advanced expertise and specialized knowledge needed</p>
-              </div>
-            </div>
+          {/* AI Indicator beside title */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+            isUsingDynamicRoles 
+              ? 'bg-purple-50 border border-purple-200'
+              : 'bg-gray-50 border border-gray-200'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isLoadingRoles 
+                ? 'bg-purple-500 animate-pulse'
+                : isUsingDynamicRoles 
+                  ? 'bg-purple-500'
+                  : 'bg-gray-500'
+            }`}></div>
+            <span className={`text-xs font-medium ${
+              isUsingDynamicRoles 
+                ? 'text-purple-700'
+                : 'text-gray-700'
+            }`}>
+              Powered by AI
+            </span>
           </div>
         </div>
-
-
+        <p className="text-body-large text-neutral-600">
+          Choose which tasks you'd like to offshore for each role. You can also add custom tasks.
+        </p>
       </div>
 
       {/* Role Task Lists */}
@@ -325,7 +340,7 @@ export function TaskSelectionStep({
                     <div className="p-6 space-y-4">
                       {/* Standard Tasks */}
                       <div className="space-y-3">
-                        {getPaginatedTasks(roleId).map((task) => {
+                        {getPaginatedTasks(roleId).map((task: any) => {
                           const taskKey = `${roleId}-${task.id}`;
                           const isSelected = selectedTasks[taskKey];
 

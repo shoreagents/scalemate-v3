@@ -42,7 +42,7 @@ interface ExperienceStepProps {
   roleExperienceDistribution: Record<string, RoleExperienceDistribution>;
   userLocation?: LocationData;
   manualLocation?: ManualLocation | null;
-  rolesSalaryComparison?: any;
+  roles?: any;
   onRoleExperienceDistributionChange: (roleExperienceDistribution: Record<string, RoleExperienceDistribution>) => void;
   onCalculate: () => void;
   isCalculating: boolean;
@@ -56,7 +56,7 @@ export function ExperienceStep({
   roleExperienceDistribution,
   userLocation,
   manualLocation,
-  rolesSalaryComparison,
+  roles,
   onRoleExperienceDistributionChange,
   isUsingDynamicRoles = false
 }: ExperienceStepProps) {
@@ -117,11 +117,13 @@ export function ExperienceStep({
 
   // Get all available roles (predefined + custom)
   const allRoles = React.useMemo(() => {
-    const predefinedRoles = Object.values(ROLES);
+    // Use roles prop if available, otherwise fall back to static ROLES
+    const availableRoles = roles || ROLES;
+    const predefinedRoles = Object.values(availableRoles) as any[];
     const customRolesList = Object.values(customRoles);
     
     return [...predefinedRoles, ...customRolesList];
-  }, [customRoles]);
+  }, [roles, customRoles]);
 
   // Get exchange rate on mount and when location changes
   useEffect(() => {
@@ -225,8 +227,10 @@ export function ExperienceStep({
   }, [selectedRoles, allRoles, teamSize, roleExperienceDistribution]);
 
   // Helper function to get experience levels from roles
-  const getExperienceLevels = () => {
-    const firstRole = Object.values(ROLES)[0];
+  const getExperienceLevels = (): any[] => {
+    // Use dynamic roles if available, otherwise fall back to static ROLES
+    const availableRoles = roles || ROLES;
+    const firstRole = Object.values(availableRoles)[0] as any;
     return firstRole?.experienceLevels || [];
   };
 
@@ -255,7 +259,7 @@ export function ExperienceStep({
   };
 
   const getTotalSavings = async () => {
-    const savings = await calculateMultiLevelSavings(activeRoles, allRoles, userLocation, manualLocation, rolesSalaryComparison);
+    const savings = await calculateMultiLevelSavings(activeRoles, allRoles, userLocation, manualLocation, roles);
     setTotalSavings(savings);
     return savings;
   };
@@ -267,14 +271,14 @@ export function ExperienceStep({
     if (allRolesConfigured) {
       getTotalSavings();
     }
-  }, [activeRoles, allRoles, userLocation, manualLocation, rolesSalaryComparison, allRolesConfigured]);
+  }, [activeRoles, allRoles, userLocation, manualLocation, roles, allRolesConfigured]);
 
   const getTotalLocalCost = () => {
-    return calculateMultiLevelLocalCost(activeRoles, allRoles, userLocation, manualLocation, rolesSalaryComparison);
+    return calculateMultiLevelLocalCost(activeRoles, allRoles, userLocation, manualLocation, roles);
   };
 
   const getTotalPhilippinesCost = () => {
-    return calculateMultiLevelPhilippinesCost(activeRoles, allRoles, rolesSalaryComparison);
+    return calculateMultiLevelPhilippinesCost(activeRoles, allRoles, roles);
   };
 
   // Update async calculations when dependencies change
@@ -289,7 +293,7 @@ export function ExperienceStep({
           const roleData = allRoles.find(r => r.id === role.id);
           if (!roleData) continue;
           // TypeScript assertion: roleData is guaranteed to exist after the null check
-          const safeRoleData = roleData!
+          const safeRoleData = roleData;
           
           // Individual level displays
           newIndividualDisplays[role.id] = {} as Record<ExperienceLevel, any>;
@@ -302,7 +306,7 @@ export function ExperienceStep({
                 memberCount, 
                 userLocation, 
                 manualLocation, 
-                rolesSalaryComparison, 
+                roles, 
                 savingsView
               );
             }
@@ -314,7 +318,7 @@ export function ExperienceStep({
             role.distribution, 
             userLocation, 
             manualLocation, 
-            rolesSalaryComparison, 
+            roles, 
             savingsView
           );
         }
@@ -325,7 +329,7 @@ export function ExperienceStep({
           allRoles, 
           userLocation, 
           manualLocation, 
-          rolesSalaryComparison
+          roles
         );
         
         setIndividualLevelDisplays(newIndividualDisplays);
@@ -337,7 +341,7 @@ export function ExperienceStep({
     };
     
     updateCalculations();
-  }, [activeRoles, userLocation, manualLocation, rolesSalaryComparison, savingsView]);
+      }, [activeRoles, userLocation, manualLocation, roles, savingsView]);
 
   return (
     <div className="space-y-8">
@@ -345,6 +349,25 @@ export function ExperienceStep({
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-2">
           <h2 className="text-headline-1 text-neutral-900">Experience Level</h2>
+          {/* AI Indicator beside title */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+            isUsingDynamicRoles 
+              ? 'bg-purple-50 border border-purple-200'
+              : 'bg-gray-50 border border-gray-200'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isUsingDynamicRoles 
+                ? 'bg-purple-500'
+                : 'bg-gray-500'
+            }`}></div>
+            <span className={`text-xs font-medium ${
+              isUsingDynamicRoles 
+                ? 'text-purple-700'
+                : 'text-gray-700'
+            }`}>
+              Powered by AI
+            </span>
+          </div>
         </div>
         <p className="text-body-large text-neutral-600 mb-4">
           Assign team members to different experience levels for each role. Mix and match to optimize your team composition.
@@ -354,7 +377,7 @@ export function ExperienceStep({
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-neutral-900">
           Configure Each Role ({activeRoles.length} role{activeRoles.length !== 1 ? 's' : ''})
-        </h3>
+          </h3>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-neutral-600">View:</span>
             <div className="flex bg-neutral-100 rounded-lg p-1">
@@ -437,9 +460,9 @@ export function ExperienceStep({
 
               {/* Experience Level Distribution - 3 Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {getExperienceLevels().map((option) => {
-                  const currentCount = distribution[option.level];
-                  const savings = roleData ? calculateRoleLevelSavings(roleData, option.level, userLocation, manualLocation, rolesSalaryComparison) : 0;
+                {getExperienceLevels().map((option: any) => {
+                  const currentCount = distribution[option.level as ExperienceLevel];
+                  const savings = roleData ? calculateRoleLevelSavings(roleData, option.level, userLocation, manualLocation, roles) : 0;
                   const totalSavingsForLevel = savings * currentCount;
                   const canDecrease = currentCount > 0;
                   const canIncrease = distribution.totalAssigned < distribution.totalRequired;
@@ -520,7 +543,7 @@ export function ExperienceStep({
                                     <div className="text-sm font-bold text-green-900">
                                       {effectiveLocation ? (effectiveLocation.currencySymbol || '$') : '$'}
                                       {(() => {
-                                        const display = individualLevelDisplays[role.id]?.[option.level];
+                                        const display = individualLevelDisplays[role.id]?.[option.level as ExperienceLevel];
                                         if (display) {
                                           return display.localCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                                         }
@@ -535,7 +558,7 @@ export function ExperienceStep({
                                 <div className="text-right">
                                   <div className="text-sm font-bold text-green-900">
                                     ₱{(() => {
-                                      const display = individualLevelDisplays[role.id]?.[option.level];
+                                      const display = individualLevelDisplays[role.id]?.[option.level as ExperienceLevel];
                                       if (display) {
                                         return display.philippineCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                                       }
@@ -544,7 +567,7 @@ export function ExperienceStep({
                                   </div>
                                   <div className="text-xs text-green-600">
                                     {(() => {
-                                      const display = individualLevelDisplays[role.id]?.[option.level];
+                                      const display = individualLevelDisplays[role.id]?.[option.level as ExperienceLevel];
                                       if (display) {
                                         return `≈ ${effectiveLocation ? (effectiveLocation.currencySymbol || '$') : '$'}${display.philippineCostConverted.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
                                       }
@@ -560,7 +583,7 @@ export function ExperienceStep({
                                     <div className="text-lg font-bold text-green-600">
                                       {effectiveLocation ? (effectiveLocation.currencySymbol || '$') : '$'}
                                       {(() => {
-                                        const display = individualLevelDisplays[role.id]?.[option.level];
+                                        const display = individualLevelDisplays[role.id]?.[option.level as ExperienceLevel];
                                         if (display) {
                                           return display.savings.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                                         }
@@ -569,7 +592,7 @@ export function ExperienceStep({
                                     </div>
                                     <div className="text-xs text-green-600">
                                       {(() => {
-                                        const display = individualLevelDisplays[role.id]?.[option.level];
+                                        const display = individualLevelDisplays[role.id]?.[option.level as ExperienceLevel];
                                         if (display) {
                                           return `${display.savingsPercentage.toFixed(1)}% Savings`;
                                         }
@@ -707,21 +730,21 @@ export function ExperienceStep({
                                 <div className="flex flex-wrap gap-2 justify-center">
                                   {role.distribution.entry > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 text-gray-700 text-xs font-medium gap-1 border border-gray-200">
-                                      <span className="mr-1">{getExperienceLevels().find(level => level.level === 'entry')?.icon}</span>
+                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'entry')?.icon}</span>
                                       Entry Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-700 font-bold text-xs">{role.distribution.entry}</span>
                                     </span>
                                   )}
                                   {role.distribution.moderate > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium gap-1 border border-blue-200">
-                                      <span className="mr-1">{getExperienceLevels().find(level => level.level === 'moderate')?.icon}</span>
+                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'moderate')?.icon}</span>
                                       Mid Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-700 font-bold text-xs">{role.distribution.moderate}</span>
                                     </span>
                                   )}
                                   {role.distribution.experienced > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-medium gap-1 border border-purple-200">
-                                      <span className="mr-1">{getExperienceLevels().find(level => level.level === 'experienced')?.icon}</span>
+                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'experienced')?.icon}</span>
                                       Senior Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-purple-200 text-purple-700 font-bold text-xs">{role.distribution.experienced}</span>
                                     </span>
@@ -741,21 +764,21 @@ export function ExperienceStep({
                                 <div className="flex flex-wrap gap-2 justify-center">
                                   {role.distribution.entry > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 text-gray-700 text-xs font-medium gap-1 border border-gray-200">
-                                      <span className="mr-1">{getExperienceLevels().find(level => level.level === 'entry')?.icon}</span>
+                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'entry')?.icon}</span>
                                       Entry Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-700 font-bold text-xs">{role.distribution.entry}</span>
                                     </span>
                                   )}
                                   {role.distribution.moderate > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium gap-1 border border-blue-200">
-                                      <span className="mr-1">{getExperienceLevels().find(level => level.level === 'moderate')?.icon}</span>
+                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'moderate')?.icon}</span>
                                       Mid Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-700 font-bold text-xs">{role.distribution.moderate}</span>
                                     </span>
                                   )}
                                   {role.distribution.experienced > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-medium gap-1 border border-purple-200">
-                                      <span className="mr-1">{getExperienceLevels().find(level => level.level === 'experienced')?.icon}</span>
+                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'experienced')?.icon}</span>
                                       Senior Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-purple-200 text-purple-700 font-bold text-xs">{role.distribution.experienced}</span>
                                     </span>
@@ -785,7 +808,7 @@ export function ExperienceStep({
                 </div>
                 <div className="text-xs text-blue-500">
                   ≈ {effectiveLocation?.currencySymbol || '$'}
-                  {formatCostForView(totalPhilippinesCostConverted, savingsView).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} {effectiveLocation?.currency || 'USD'}
+                  {formatCostForView(totalPhilippinesCostConverted, savingsView).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </div>
               </div>
               <div>
@@ -802,43 +825,6 @@ export function ExperienceStep({
           </div>
         </motion.div>
       )}
-
-      {/* Status Messages */}
-      <AnimatePresence>
-        {!allRolesConfigured && activeRoles.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
-            onClick={() => {
-              setHighlightIncompleteRoles(true);
-              setTimeout(() => setHighlightIncompleteRoles(false), 3000);
-              // Scroll to first incomplete role
-              const firstIncompleteRole = activeRoles.find(role => !role.distribution.isComplete);
-              if (firstIncompleteRole) {
-                const element = incompleteRoleRefs.current[firstIncompleteRole.id];
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-              }
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
-                  Complete All Role Assignments
-                </h3>
-                <p className="text-sm text-neural-blue-600">
-                  Click to highlight incomplete roles and scroll to the first one
-                </p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
     </div>
   );

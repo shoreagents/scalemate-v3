@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PortfolioSize, PortfolioIndicator } from '@/types';
 import { ManualLocation, LocationData } from '@/types/location';
 import { getPortfolioIndicators, getStaticPortfolioIndicators } from '@/utils/quoteCalculatorData';
-import { getStaticRoles, getStaticRolesSalaryComparison, ROLES } from '@/utils/rolesData';
+import { getStaticRoles, ROLES } from '@/utils/rolesData';
 import { getCurrencySymbol, getDisplayCurrencyByCountry, getCurrencyByCountry } from '@/utils/currency';
 
 // Re-export for convenience
@@ -13,7 +13,6 @@ interface UseQuoteCalculatorDataResult {
   portfolioCurrency: string;
   portfolioCurrencySymbol: string;
   roles: typeof ROLES;
-  rolesSalaryComparison: ReturnType<typeof getStaticRolesSalaryComparison>;
   isLoading: boolean;
   isLoadingRoles: boolean;
   error: string | null;
@@ -32,7 +31,6 @@ export function useQuoteCalculatorData(
   const [portfolioCurrency, setPortfolioCurrency] = useState<string>('USD');
   const [portfolioCurrencySymbol, setPortfolioCurrencySymbol] = useState<string>('$');
   const [roles, setRoles] = useState<typeof ROLES>(getStaticRoles());
-  const [rolesSalaryComparison, setRolesSalaryComparison] = useState<ReturnType<typeof getStaticRolesSalaryComparison>>(getStaticRolesSalaryComparison());
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,9 +193,7 @@ export function useQuoteCalculatorData(
       // No location available, use static data
       console.log('📋 No location data, using static roles data');
       const staticRoles = getStaticRoles();
-      const staticSalary = getStaticRolesSalaryComparison();
       setRoles(staticRoles);
-      setRolesSalaryComparison(staticSalary);
       setIsUsingDynamicRoles(false);
       setIsLoadingRoles(false);
       processedRolesLocationRef.current = null;
@@ -213,8 +209,7 @@ export function useQuoteCalculatorData(
         console.log('📡 [HOOK] Calling /api/anthropic/roles with:', {
           country: effectiveLocation.country,
           countryName: effectiveLocation.countryName,
-          currency: effectiveLocation.currency,
-          requestType: 'all'
+          currency: effectiveLocation.currency
         });
         
         const response = await fetch('/api/anthropic/roles', {
@@ -223,8 +218,7 @@ export function useQuoteCalculatorData(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            location: effectiveLocation,
-            requestType: 'all'
+            location: effectiveLocation
           })
         });
 
@@ -236,15 +230,12 @@ export function useQuoteCalculatorData(
             ai: apiData.ai,
             fallback: apiData.fallback,
             cache: apiData.cache,
-            requestType: apiData.requestType,
-            roles: apiData.roles ? Object.keys(apiData.roles) : 'N/A',
-            salaryComparison: apiData.rolesSalaryComparison ? Object.keys(apiData.rolesSalaryComparison) : 'N/A'
+            roles: apiData.roles ? Object.keys(apiData.roles) : 'N/A'
           });
           
-          if (apiData.roles && apiData.rolesSalaryComparison) {
+          if (apiData.roles) {
             console.log('✅ [HOOK] Using dynamic roles data from API for:', effectiveLocation.countryName || effectiveLocation.country);
             setRoles(apiData.roles);
-            setRolesSalaryComparison(apiData.rolesSalaryComparison);
             setIsUsingDynamicRoles(true);
             
             // Mark this location as processed for roles
@@ -260,9 +251,7 @@ export function useQuoteCalculatorData(
       // Fallback to static data
       console.log('📋 Using static roles data (fallback)');
       const staticRoles = getStaticRoles();
-      const staticSalary = getStaticRolesSalaryComparison();
       setRoles(staticRoles);
-      setRolesSalaryComparison(staticSalary);
       setIsUsingDynamicRoles(false);
       
       // Mark this location as processed for roles
@@ -275,9 +264,7 @@ export function useQuoteCalculatorData(
       // Fallback to static data
       console.log('📋 Error occurred, falling back to static data');
       const staticRoles = getStaticRoles();
-      const staticSalary = getStaticRolesSalaryComparison();
       setRoles(staticRoles);
-      setRolesSalaryComparison(staticSalary);
       setIsUsingDynamicRoles(false);
     } finally {
       setIsLoadingRoles(false);
@@ -309,7 +296,6 @@ export function useQuoteCalculatorData(
     portfolioCurrency,
     portfolioCurrencySymbol,
     roles,
-    rolesSalaryComparison,
     isLoading,
     isLoadingRoles,
     error,

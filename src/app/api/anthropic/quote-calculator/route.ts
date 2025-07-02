@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrencySymbol } from '@/utils/currency';
 import {
-  getStaticPortfolioIndicators
+  getStaticPortfolioIndicators,
+  getPortfolioIndicators
 } from '@/utils/quoteCalculatorData';
 import { LocationData } from '@/types/location';
 import { promises as fs } from 'fs';
@@ -112,45 +113,38 @@ function generatePortfolioPrompt(location: LocationData) {
   // JSON template for the prompt (AI generates actual property count ranges)
   const jsonTemplate = sizeCategories.map(category => {
     return `    "${category}": {
-      "min": [minimum property count for ${category} portfolio in ${countryName}],
-      "max": [maximum property count for ${category} portfolio in ${countryName}],
-      "description": "[${countryName}-specific description for ${category} portfolio in English]",
+      "min": [min count],
+      "max": [max count],
+      "description": "[description]",
       "recommendedTeamSize": {
-        "assistantPropertyManager": [number based on ${countryName} market],
-        "leasingCoordinator": [number based on ${countryName} market],
-        "marketingSpecialist": [number based on ${countryName} market]
+        "assistantPropertyManager": [number],
+        "leasingCoordinator": [number],
+        "marketingSpecialist": [number]
       },
-      "averageRevenue": { "min": [min revenue in ${currency} for ${category}], "max": [max revenue in ${currency} for ${category}] }
+      "averageRevenue": { "min": [min annual revenue], "max": [max annual revenue] }
     }`;
   }).join(',\n');
 
-  return `You are a property management industry expert specializing in ${countryName}. Generate portfolio indicators for the ${countryName} market as of ${currentDate}.
+  return `You are a property management industry expert specializing in ${countryName}. Generate accurate portfolio data for ${currentDate}.
 
-CONTEXT:
-- Country: ${countryName}
-- Currency: ${currency} (${currencySymbol})
-- Current Date: ${currentDate}
-- Target: Property management companies considering offshore teams
+Context: ${countryName}, ${currency} (${currencySymbol})
 
-PORTFOLIO CATEGORIES:
-- small (entry-level portfolios)
-- medium (growing portfolios) 
-- large (established portfolios)
-- enterprise (major portfolios)
+Portfolio categories (entry → enterprise): small, medium, large, enterprise
 
-TASK: Generate portfolio indicators for each category, including:
-1. min/max property counts based on ${countryName} market conditions
-2. ${countryName}-specific descriptions in English
-3. recommendedTeamSize based on ${countryName} market needs
-4. averageRevenue ranges in ${currency}
+Requirements:
+1. Property counts: Research realistic ranges for ${countryName} market size and conditions
+2. Descriptions: Include local regulations, market dynamics, and business context
+3. Team sizes: Base on ${countryName} property management staffing standards
+4. Revenue: Current ${countryName} market rates and property management fees (ANNUAL/YEARLY amounts)
 
-IMPORTANT: 
-- Generate realistic property count ranges for ${countryName} market - do NOT use fixed ranges like 500-999. Consider local market conditions, property management industry size, and typical portfolio sizes in ${countryName}.
-- All descriptions must be written in English, even for non-English speaking countries.
+Quality standards:
+- Use actual ${countryName} property management industry data
+- Reflect local market conditions and business practices
+- Ensure progressive scaling across portfolio sizes
+- Apply current ${currency} market rates
+- All revenue figures must be ANNUAL (per year) amounts
 
-Do NOT include tier or implementationComplexity in your response.
-
-Respond with ONLY a valid JSON object in this exact format:
+Return ONLY valid JSON:
 {
 ${jsonTemplate}
 }`;
@@ -266,8 +260,8 @@ export async function POST(request: NextRequest) {
           throw new Error('Failed to parse generated data');
         }
 
-        // Inject static tier and implementationComplexity
-        const staticData = getStaticPortfolioIndicators();
+        // Inject static tier and implementationComplexity using location-specific data
+        const { data: staticData, currency, currencySymbol } = await getPortfolioIndicators(location);
         const categories = ['small', 'medium', 'large', 'enterprise'] as const;
         
         // Map new categories to static data structure
@@ -320,14 +314,14 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         console.error('❌ [QUOTE-CALCULATOR] Error getting AI portfolio data:', error);
-        // Fallback to static data
-        console.log('🔄 [QUOTE-CALCULATOR] Falling back to static portfolio data for:', countryName);
-        const staticData = getStaticPortfolioIndicators();
+        // Fallback to location-specific static data
+        console.log('🔄 [QUOTE-CALCULATOR] Falling back to location-specific portfolio data for:', countryName);
+        const { data: staticData, currency, currencySymbol } = await getPortfolioIndicators(location);
         
         console.log('📊 [QUOTE-CALCULATOR] Fallback response includes:', {
           portfolioSizes: Object.keys(staticData),
-          currency: 'USD',
-          currencySymbol: '$',
+          currency,
+          currencySymbol,
           fallback: true
         });
         
@@ -337,8 +331,8 @@ export async function POST(request: NextRequest) {
           location: location,
           generatedAt: new Date().toISOString(),
           requestType,
-          currency: 'USD',
-          currencySymbol: '$',
+          currency,
+          currencySymbol,
           fallback: true
         });
       }

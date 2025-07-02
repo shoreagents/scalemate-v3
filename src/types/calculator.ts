@@ -243,7 +243,7 @@ export interface RoleSavings {
   readonly roleName: string;
   readonly teamSize: number;
   readonly experienceLevel: ExperienceLevel;
-  readonly australianCost: number;
+  readonly localCost: number;
   readonly philippineCost: number;
   readonly savings: number;
   readonly savingsPercentage: number;
@@ -256,7 +256,7 @@ export interface RoleSavings {
 
 export interface CalculationResult {
   readonly totalSavings: number;
-  readonly totalAustralianCost: number;
+  readonly totalLocalCost: number;
   readonly totalPhilippineCost: number;
   readonly breakdown: Record<RoleId, RoleSavings>;
   readonly portfolioTier: BusinessTier;

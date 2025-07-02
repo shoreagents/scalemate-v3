@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel } from '@/types';
-import { ManualLocation, IPLocationData, LocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
+import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel, CustomRole, CustomTask, RoleExperienceDistribution, ManualPortfolioData, PortfolioSize, PortfolioIndicator, LocationData } from '@/types';
+import { ManualLocation, IPLocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
 import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { getDisplayCurrencyByCountryWithAPIFallback, getCurrencySymbol } from '@/utils/currency';
@@ -94,7 +94,7 @@ export function OffshoreCalculator({
 }: OffshoreCalculatorProps) {
   // Generate unique session ID
   function generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   // Default form data
@@ -188,7 +188,6 @@ export function OffshoreCalculator({
     portfolioCurrency,
     portfolioCurrencySymbol,
     roles,
-    rolesSalaryComparison, 
     isLoadingRoles, 
     rolesError,
     isLoading: isLoadingPortfolio,
@@ -691,7 +690,7 @@ export function OffshoreCalculator({
       }
       
       console.log('🚀 OffshoreCalculator: Calling calculateSavings with dynamic data:', {
-        hasDynamicSalaryData: !!rolesSalaryComparison,
+        hasDynamicRoles: !!roles,
         userLocation: formData.userLocation?.country,
         manualLocation: manualLocation?.country,
         isLoadingRoles,
@@ -702,7 +701,7 @@ export function OffshoreCalculator({
         formData, 
         Object.values(formData.portfolioIndicators || {}),
         formData.userLocation || (manualLocation ? getEffectiveLocationForManual(manualLocation) : undefined),
-        rolesSalaryComparison as unknown as Readonly<Record<string, LocalMultiCountryRoleSalaryData>> // Pass dynamic salary data from API
+        roles // Pass dynamic roles data from API (with embedded salary data)
       );
       setCalculationResult(result);
       setProcessingStage('');
@@ -739,15 +738,15 @@ export function OffshoreCalculator({
       case 1: return formData.portfolioSize !== '';
       case 2: return Object.values(formData.selectedRoles).some(Boolean);
       case 3: {
-        // Check that each selected role has at least one task
+        // Check that each selected role has at least one checked task
         const selectedRoles = Object.entries(formData.selectedRoles)
           .filter(([, selected]: [string, boolean]) => selected)
           .map(([roleId]: [string, boolean]) => roleId);
         
         return selectedRoles.every((roleId: string) => {
-          // Check if this role has any selected tasks
-          const hasSelectedTasks = Object.keys(formData.selectedTasks).some(taskKey => 
-            taskKey.startsWith(`${roleId}-`)
+          // Check if this role has any checked tasks
+          const hasSelectedTasks = Object.entries(formData.selectedTasks).some(
+            ([taskKey, isChecked]) => taskKey.startsWith(`${roleId}-`) && isChecked
           );
           
           // Check if this role has any custom tasks
@@ -773,7 +772,7 @@ export function OffshoreCalculator({
   };
 
   // Memoized onChange handler for PortfolioStep
-  const handlePortfolioChange = useCallback((portfolioSize: string, manualData?: any, portfolioIndicators?: any) => {
+  const handlePortfolioChange = useCallback((portfolioSize: string, manualData?: ManualPortfolioData, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => {
     updateFormData({ 
       portfolioSize, 
       ...(manualData !== undefined && { manualPortfolioData: manualData }),
@@ -782,7 +781,7 @@ export function OffshoreCalculator({
   }, []);
 
   // Memoized onChange handler for RoleSelectionStep
-  const handleRoleSelectionChange = useCallback((selectedRoles: any, teamSize: any, customRoles: any, userLocation?: any) => {
+  const handleRoleSelectionChange = useCallback((selectedRoles: Record<string, boolean>, teamSize: Record<string, number>, customRoles: Record<string, CustomRole>, userLocation?: LocationData) => {
     updateFormData({ 
       selectedRoles, 
       teamSize, 
@@ -792,7 +791,7 @@ export function OffshoreCalculator({
   }, []);
 
   // Memoized onChange handler for TaskSelectionStep
-  const handleTaskSelectionChange = useCallback((selectedTasks: any, customTasks: any) => {
+  const handleTaskSelectionChange = useCallback((selectedTasks: Record<string, boolean>, customTasks: Record<string, readonly CustomTask[]>) => {
     updateFormData({ selectedTasks, customTasks });
   }, []);
 
@@ -801,11 +800,11 @@ export function OffshoreCalculator({
     updateFormData({ experienceLevel });
   }, []);
 
-  const handleRoleExperienceChange = useCallback((roleExperienceLevels: any) => {
+  const handleRoleExperienceChange = useCallback((roleExperienceLevels: Record<string, ExperienceLevel>) => {
     updateFormData({ roleExperienceLevels });
   }, []);
 
-  const handleRoleExperienceDistributionChange = useCallback((roleExperienceDistribution: any) => {
+  const handleRoleExperienceDistributionChange = useCallback((roleExperienceDistribution: Record<string, RoleExperienceDistribution>) => {
     updateFormData({ roleExperienceDistribution });
   }, []);
 
@@ -837,6 +836,7 @@ export function OffshoreCalculator({
             isLoadingIndicators={isLoadingPortfolio}
             portfolioCurrency={portfolioCurrency}
             portfolioCurrencySymbol={portfolioCurrencySymbol}
+            isUsingDynamicData={isUsingDynamicData}
           />
         );
       case 2:
@@ -849,7 +849,6 @@ export function OffshoreCalculator({
             {...(manualLocation && { manualLocation })}
             onChange={handleRoleSelectionChange}
             roles={roles}
-            rolesSalaryComparison={rolesSalaryComparison}
             isLoadingRoles={isLoadingRoles}
             rolesError={rolesError}
             isUsingDynamicRoles={isUsingDynamicRoles}
@@ -862,6 +861,12 @@ export function OffshoreCalculator({
             selectedTasks={formData.selectedTasks}
             customTasks={formData.customTasks}
             onChange={handleTaskSelectionChange}
+            roles={roles}
+            isLoadingRoles={isLoadingRoles}
+            rolesError={rolesError}
+            isUsingDynamicRoles={isUsingDynamicRoles}
+            {...(formData.userLocation && { userLocation: formData.userLocation })}
+            {...(manualLocation && { manualLocation })}
           />
         );
       case 4:
@@ -873,7 +878,7 @@ export function OffshoreCalculator({
             roleExperienceDistribution={formData.roleExperienceDistribution || {}}
             {...(formData.userLocation && { userLocation: formData.userLocation })}
             {...(manualLocation && { manualLocation })}
-            rolesSalaryComparison={rolesSalaryComparison}
+            roles={roles}
             onRoleExperienceDistributionChange={handleRoleExperienceDistributionChange}
             onCalculate={calculateSavingsAsync}
             isCalculating={isCalculating}

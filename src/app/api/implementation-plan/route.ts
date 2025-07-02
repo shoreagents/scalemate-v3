@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     
     Financial Analysis:
     - Total Annual Savings: $${calculationResult.totalSavings?.toLocaleString() || '0'}
-    - Total Australian Cost: $${calculationResult.totalAustralianCost?.toLocaleString() || '0'}
+    - Total Local Cost: $${calculationResult.totalLocalCost?.toLocaleString() || '0'}
     - Total Philippine Cost: $${calculationResult.totalPhilippineCost?.toLocaleString() || '0'}
     - Average Savings Percentage: ${calculationResult.averageSavingsPercentage || 0}%
     - Estimated ROI: ${calculationResult.estimatedROI || 0}%

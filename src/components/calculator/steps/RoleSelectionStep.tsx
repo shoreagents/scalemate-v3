@@ -29,6 +29,21 @@ import {
   calculateAllRoleRatesAndSummary
 } from '@/utils/calculations';
 
+/**
+ * Precise number formatting that preserves exact decimal values without rounding
+ */
+function formatNumberPrecise(num: number, options: { showDecimals?: boolean } = {}): string {
+  const { showDecimals = true } = options;
+  
+  if (!showDecimals) {
+    // Truncate instead of round to show exact mathematical result
+    const truncated = Math.trunc(num);
+    return truncated.toLocaleString();
+  }
+  
+  return num.toLocaleString();
+}
+
 interface RoleSelectionStepProps {
   selectedRoles: Record<string, boolean>;
   customRoles: Record<string, CustomRole>;
@@ -44,7 +59,6 @@ interface RoleSelectionStepProps {
   
   // Data passed from parent to avoid duplicate API calls
   roles: Record<string, any>;
-  rolesSalaryComparison: any;
   isLoadingRoles: boolean;
   rolesError: string | null;
   isUsingDynamicRoles: boolean;
@@ -91,10 +105,9 @@ export function RoleSelectionStep({
   
   // Data from parent
     roles, 
-    rolesSalaryComparison, 
     isLoadingRoles, 
     rolesError, 
-    isUsingDynamicRoles 
+    isUsingDynamicRoles
 }: RoleSelectionStepProps) {
   // All dynamic data now passed as props from parent to avoid duplicate API calls
   
@@ -206,15 +219,40 @@ export function RoleSelectionStep({
 
   // All available roles (predefined + additional + custom) - Limited to first 3
   const allRoles = useMemo(() => {
-    const predefinedRoles = roles ? Object.values(roles).slice(0, 3) as RoleData[] : []; // Only first 3 roles
+    // Smart fallback logic based on API state
+    let availableRoles;
+    
+    console.log('🔍 [RoleSelectionStep] Determining data source:', {
+      isLoadingRoles,
+      rolesExists: !!roles,
+      rolesCount: roles ? Object.keys(roles).length : 0,
+      isUsingDynamicRoles,
+      rolesError
+    });
+    
+    if (isLoadingRoles) {
+      // While loading, use static roles to prevent layout shifts
+      availableRoles = ROLES;
+      console.log('📋 [RoleSelectionStep] Using static roles (loading)');
+    } else if (roles && Object.keys(roles).length > 0) {
+      // AI data is available and valid - use dynamic roles
+      availableRoles = roles;
+      console.log('✅ [RoleSelectionStep] Using dynamic roles:', Object.keys(roles));
+    } else {
+      // AI failed or no data - use static roles as fallback
+      availableRoles = ROLES;
+      console.log('📋 [RoleSelectionStep] Using static roles (fallback)');
+    }
+    
+    const predefinedRoles = Object.values(availableRoles).slice(0, 3) as RoleData[];
     const customRolesList = Object.values(customRoles || {}) as RoleData[];
     
     return [...predefinedRoles, ...customRolesList];
-  }, [roles, customRoles]);
+  }, [roles, customRoles, isLoadingRoles, isUsingDynamicRoles, rolesError]);
 
   // Remove the local getSavingsForRole function and replace with centralized version
   const getRoleSavings = async (role: any) => {
-    return await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, rolesSalaryComparison);
+    return await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, roles);
   };
 
   // Add state for role savings
@@ -228,7 +266,7 @@ export function RoleSelectionStep({
       for (const role of allRoles) {
         if (role.id) {
           try {
-            const savings = await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, rolesSalaryComparison);
+            const savings = await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, roles);
             newSavings[role.id] = savings;
           } catch (error) {
             console.error('Error calculating savings for role:', role.id, error);
@@ -246,7 +284,7 @@ export function RoleSelectionStep({
     };
 
     updateRoleSavings();
-  }, [allRoles, teamSize, locationCacheKey, rolesSalaryComparison]);
+  }, [allRoles, teamSize, locationCacheKey, roles]);
 
   // Helper function to get cached savings for a role
   const getCachedRoleSavings = (role: any) => {
@@ -260,7 +298,7 @@ export function RoleSelectionStep({
 
   // Update total savings calculation to use centralized function
   const getTotalSavings = () => {
-    return calculateTotalSavings(selectedRoles, teamSize, allRoles, stableUserLocation, stableManualLocation, rolesSalaryComparison);
+    return calculateTotalSavings(selectedRoles, teamSize, allRoles, stableUserLocation, stableManualLocation, roles);
   };
 
   // Update sorting logic to use cached savings
@@ -327,7 +365,7 @@ export function RoleSelectionStep({
 
   const handleTeamSizeChange = (roleId: string, change: number) => {
     const currentSize = teamSize[roleId] || 1; // Default to 1 for unselected roles
-    const newSize = Math.max(0, Math.min(10, currentSize + change));
+    const newSize = Math.max(0, currentSize + change); // Removed the upper limit of 10
     
     const newTeamSize = {
       ...teamSize,
@@ -358,7 +396,7 @@ export function RoleSelectionStep({
       optionalSkills: [],
       estimatedSalary: {
         local: customRoleForm.estimatedSalary,
-        philippine: Math.round(customRoleForm.estimatedSalary * 0.3 * 100) / 100 // Rough 70% savings estimate, rounded to 2 decimal places
+                  philippine: customRoleForm.estimatedSalary * 0.3 // Rough 70% savings estimate
       },
       complexity: 'medium',
       createdAt: new Date(),
@@ -407,7 +445,7 @@ export function RoleSelectionStep({
               currentTeamSize, 
               targetCurrency, 
               searchFilters.savingsView, 
-              rolesSalaryComparison
+              roles
             );
             newConversions[role.id] = conversion;
           } catch (error) {
@@ -421,7 +459,7 @@ export function RoleSelectionStep({
     };
 
     updatePhpConversions();
-  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, rolesSalaryComparison]);
+  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, roles]);
 
   // Update summary Philippines cost conversion
   useEffect(() => {
@@ -433,10 +471,10 @@ export function RoleSelectionStep({
           teamSize,
           stableUserLocation,
           stableManualLocation,
-          rolesSalaryComparison,
+          roles,
           searchFilters.savingsView
         );
-        const convertedCost = `≈ ${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}${summary.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${stableManualLocation?.currency || stableUserLocation?.currency || 'USD'}`;
+        const convertedCost = `≈ ${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}${summary.totalPhilippinesCost.toLocaleString()}`;
         setSummaryPhilippinesCostConverted(convertedCost);
       } catch (error) {
         console.error('Error updating summary Philippines cost:', error);
@@ -445,7 +483,7 @@ export function RoleSelectionStep({
     };
 
     updateSummaryPhilippinesCost();
-  }, [selectedRoles, teamSize, allRoles, searchFilters.savingsView, locationCacheKey, rolesSalaryComparison]);
+  }, [selectedRoles, teamSize, allRoles, searchFilters.savingsView, locationCacheKey, roles]);
 
   const [roleDisplaySavings, setRoleDisplaySavings] = useState<Record<string, { displayAmount: number; percentage: string }>>({});
 
@@ -463,7 +501,7 @@ export function RoleSelectionStep({
               searchFilters.savingsView,
               stableUserLocation,
               stableManualLocation,
-              rolesSalaryComparison
+              roles
             );
             newDisplaySavings[role.id] = displayData;
           } catch (error) {
@@ -474,7 +512,7 @@ export function RoleSelectionStep({
       setRoleDisplaySavings(newDisplaySavings);
     };
     updateRoleDisplaySavings();
-  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, rolesSalaryComparison]);
+  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, roles]);
 
   // State for role rates and summary
   const [roleRates, setRoleRates] = useState<Record<string, { local: number; phConverted: number }>>({});
@@ -503,7 +541,7 @@ export function RoleSelectionStep({
           teamSize,
           stableUserLocation,
           stableManualLocation,
-          rolesSalaryComparison,
+          roles,
           searchFilters.savingsView
         );
         
@@ -521,7 +559,7 @@ export function RoleSelectionStep({
       }
     };
     updateRoleRatesAndSummary();
-  }, [allRoles, selectedRoles, teamSize, locationCacheKey, rolesSalaryComparison, searchFilters.savingsView]);
+  }, [allRoles, selectedRoles, teamSize, locationCacheKey, roles, searchFilters.savingsView]);
 
   return (
     <div>
@@ -531,6 +569,27 @@ export function RoleSelectionStep({
           <h2 className="text-headline-1 text-neutral-900">
             Role Selection
           </h2>
+          {/* AI Indicator beside title */}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+            isUsingDynamicRoles 
+              ? 'bg-purple-50 border border-purple-200'
+              : 'bg-gray-50 border border-gray-200'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isLoadingRoles 
+                ? 'bg-purple-500 animate-pulse'
+                : isUsingDynamicRoles 
+                  ? 'bg-purple-500'
+                  : 'bg-gray-500'
+            }`}></div>
+            <span className={`text-xs font-medium ${
+              isUsingDynamicRoles 
+                ? 'text-purple-700'
+                : 'text-gray-700'
+            }`}>
+              Powered by AI
+            </span>
+          </div>
         </div>
         <p className="text-body-large text-neutral-600">
           Search from our comprehensive role library or create custom roles. 
@@ -730,7 +789,7 @@ export function RoleSelectionStep({
           const isSelected = selectedRoles[role.id];
           const currentTeamSize = teamSize[role.id] || 1;
           const savings = getCachedRoleSavings(role);
-          const costs = calculateRoleCosts(role, currentTeamSize, userLocation, manualLocation, rolesSalaryComparison, searchFilters.savingsView);
+          const costs = calculateRoleCosts(role, currentTeamSize, userLocation, manualLocation, roles, searchFilters.savingsView);
           
           return (
             <motion.div
@@ -806,7 +865,7 @@ export function RoleSelectionStep({
                           </span>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-900">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.local.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{formatNumberPrecise(roleRates[role.id]?.local ?? 0, { showDecimals: false })}
                             </div>
                           </div>
                         </div>
@@ -816,7 +875,7 @@ export function RoleSelectionStep({
                         <div className="text-right">
                           <div className="text-sm font-bold text-green-900">
                             ₱{(() => {
-                              const roleSalaryData = rolesSalaryComparison?.[role.id];
+                              const roleSalaryData = roles?.[role.id]?.salary;
                               const philippineData = roleSalaryData?.Philippines;
                               if (philippineData) {
                                 const entryPH = philippineData.entry.base * currentTeamSize;
@@ -824,17 +883,17 @@ export function RoleSelectionStep({
                                 const experiencedPH = philippineData.experienced.base * currentTeamSize;
                                 const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
                                 const displayRate = searchFilters.savingsView === 'monthly' 
-                                  ? Math.round(avgPH / 12 * 100) / 100
-                                  : Math.round(avgPH * 100) / 100;
-                                return displayRate.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                                  ? avgPH / 12
+                : avgPH;
+                                                                  return formatNumberPrecise(displayRate, { showDecimals: false });
                               }
                               return '0';
                             })()}
                           </div>
                           <div className="text-xs text-green-600">
-                            {roleRates[role.id]?.phConverted && (
+                            {roleRates[role.id]?.phConverted !== undefined && (
                               <span>
-                                ≈ {getEffectiveCurrencySymbol(userLocation, manualLocation)}{roleRates[role.id]?.phConverted.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                ≈ {getEffectiveCurrencySymbol(userLocation, manualLocation)}{formatNumberPrecise(roleRates[role.id]?.phConverted ?? 0, { showDecimals: false })}
                               </span>
                             )}
                           </div>
@@ -845,12 +904,24 @@ export function RoleSelectionStep({
                           <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
                           <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{((roleRates[role.id]?.local || 0) - (roleRates[role.id]?.phConverted || 0)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{(() => {
+                                const local = roleRates[role.id]?.local ?? 0;
+                                const phConverted = roleRates[role.id]?.phConverted ?? 0;
+                                const savings = Math.trunc(local) - Math.trunc(phConverted);
+                                return formatNumberPrecise(savings, { showDecimals: false });
+                              })()}
                             </div>
                             <div className="text-xs text-green-600">
-                              {(roleRates[role.id]?.local || 0) > 0
-                                ? `${((((roleRates[role.id]?.local || 0) - (roleRates[role.id]?.phConverted || 0)) / (roleRates[role.id]?.local || 1)) * 100).toFixed(1)}% Savings`
-                                : '0.0% savings'}
+                              {(() => {
+                                const local = Math.trunc(roleRates[role.id]?.local ?? 0);
+                                const phConverted = Math.trunc(roleRates[role.id]?.phConverted ?? 0);
+                                if (local > 0) {
+                                  const savings = local - phConverted;
+                                  const percentage = (savings / local) * 100;
+                                  return `${percentage.toFixed(1)}% Savings`;
+                                }
+                                return '0.0% savings';
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -898,7 +969,6 @@ export function RoleSelectionStep({
                               handleTeamSizeChange(role.id, 1);
                             }}
                             className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors"
-                            disabled={currentTeamSize >= 10}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -993,7 +1063,7 @@ export function RoleSelectionStep({
                         {getDisplayCountryName(userLocation, manualLocation)} {displayPeriod} Cost
                       </div>
                       <div className="text-xl font-bold text-red-600">
-                        {currencySymbol}{summaryData.totalLocalCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        {currencySymbol}{formatNumberPrecise(summaryData.totalLocalCost ?? 0, { showDecimals: false })}
                       </div>
                     </div>
                     
@@ -1002,10 +1072,10 @@ export function RoleSelectionStep({
                         Philippines {displayPeriod} Cost
                       </div>
                       <div className="text-xl font-bold text-blue-600">
-                        ₱{summaryData.totalPhilippinesCostPHP.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        ₱{formatNumberPrecise(summaryData.totalPhilippinesCostPHP ?? 0, { showDecimals: false })}
                       </div>
                       <div className="text-xs text-blue-500">
-                        ≈ {currencySymbol}{summaryData.totalPhilippinesCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} {manualLocation?.currency || userLocation?.currency || 'USD'}
+                        {summaryPhilippinesCostConverted}
                       </div>
                     </div>
                     
@@ -1014,7 +1084,7 @@ export function RoleSelectionStep({
                          {displayPeriod} Savings
                       </div>
                       <div className="text-xl font-bold text-green-600">
-                        {currencySymbol}{summaryData.totalSavings.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        {currencySymbol}{formatNumberPrecise(summaryData.totalSavings ?? 0, { showDecimals: false })}
                       </div>
                       <div className="text-xs text-green-500">
                         {summaryData.percentage.toFixed(1)}% Savings

@@ -11,9 +11,52 @@ import {
   PortfolioIndicator,
   LocationData
 } from '@/types';
-import { ROLES, TASK_COMPLEXITY_MULTIPLIERS, getRoleSalaryForCountry } from './rolesData';
+import { ROLES, TASK_COMPLEXITY_MULTIPLIERS } from './rolesData';
 import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol, getDisplayCurrencyByCountry } from './currency';
 import { ManualLocation } from '@/types/location';
+
+/**
+ * Precise number formatting that preserves exact decimal values without rounding
+ * Truncates instead of rounding to show the true mathematical result
+ */
+function formatNumberPrecise(num: number, options: { 
+  maximumFractionDigits?: number;
+  minimumFractionDigits?: number;
+  currency?: boolean;
+  showDecimals?: boolean;
+} = {}): string {
+  const { maximumFractionDigits = 3, minimumFractionDigits = 0, showDecimals = true } = options;
+  
+  if (!showDecimals) {
+    // Truncate instead of round to show exact mathematical result
+    // Ensure no floating-point precision issues by using Math.trunc
+    const truncated = Math.trunc(Number(num));
+    return truncated.toLocaleString();
+  }
+  
+  // Convert to string to avoid floating point precision issues
+  const numStr = num.toString();
+  const [integerPart, decimalPart = ''] = numStr.split('.');
+  
+  // Parse integer part with thousand separators
+  const formattedInteger = parseInt(integerPart || '0').toLocaleString();
+  
+  if (!decimalPart || minimumFractionDigits === 0 && maximumFractionDigits === 0) {
+    return formattedInteger;
+  }
+  
+  // Truncate decimal part to desired precision without rounding
+  const truncatedDecimal = decimalPart.slice(0, maximumFractionDigits);
+  
+  if (truncatedDecimal.length === 0) {
+    return formattedInteger;
+  }
+  
+  // Pad with zeros if needed for minimum fraction digits
+  const paddedDecimal = truncatedDecimal.padEnd(minimumFractionDigits, '0');
+  
+  return `${formattedInteger}.${paddedDecimal}`;
+}
 
 // Rename the local type
 export type LocalMultiCountryRoleSalaryData = {
@@ -30,13 +73,22 @@ export type LocalMultiCountryRoleSalaryData = {
 };
 
 /**
+ * Helper function to extract salary data from nested roles.salary structure
+ * This replaces the separate rolesSalaryComparison structure
+ */
+const getSalaryDataFromRoles = (roles: any, roleId: string) => {
+  const role = roles?.[roleId];
+  return role?.salary || null;
+};
+
+/**
  * Helper function to get salary data with currency conversion
  * Now accepts dynamic salary data from AI API
  */
 const getSalaryData = (
   roleId: RoleId, 
   userCountry?: string, 
-  dynamicSalaryData?: Readonly<Record<string, LocalMultiCountryRoleSalaryData>>
+  dynamicRoles?: any
 ) => {
   // Use dynamic data if available, otherwise fall back to static data
   // Create salary data from ROLES structure for backward compatibility
@@ -44,8 +96,20 @@ const getSalaryData = (
   Object.entries(ROLES).forEach(([roleId, role]) => {
     staticSalaryData[roleId] = role.salary as unknown as LocalMultiCountryRoleSalaryData;
   });
-  const salaryDataSource: Record<string, LocalMultiCountryRoleSalaryData> = dynamicSalaryData || staticSalaryData;
-  const multiCountryData = salaryDataSource[roleId];
+  
+  // Extract salary data from roles structure
+  const salaryDataSource: Record<string, LocalMultiCountryRoleSalaryData> = {};
+  if (dynamicRoles) {
+    Object.keys(dynamicRoles).forEach(roleId => {
+      const salaryData = getSalaryDataFromRoles(dynamicRoles, roleId);
+      if (salaryData) {
+        salaryDataSource[roleId] = salaryData as unknown as LocalMultiCountryRoleSalaryData;
+      }
+    });
+  }
+  
+  const finalSalaryData = Object.keys(salaryDataSource).length > 0 ? salaryDataSource : staticSalaryData;
+  const multiCountryData = finalSalaryData[roleId];
   
   if (!multiCountryData) {
     console.warn(`No salary data found for role: ${roleId}`);
@@ -55,8 +119,13 @@ const getSalaryData = (
   // Default to United States if no country specified
   const effectiveCountry = (userCountry || 'United States') as string;
   
-  // Use the new helper function to get country data with USA fallback
-  const countryData = getRoleSalaryForCountry(roleId, effectiveCountry);
+  // Get country data with USA fallback from the final salary data source
+  let countryData = multiCountryData[effectiveCountry as keyof typeof multiCountryData];
+  if (!countryData) {
+    console.log('📊 No salary data for country:', effectiveCountry, '- falling back to USA data');
+    countryData = multiCountryData["United States" as keyof typeof multiCountryData];
+  }
+  
   const philippineData = multiCountryData.Philippines;
   
   // Only return null if we can't get either country data (with fallback) or Philippine data
@@ -71,16 +140,8 @@ const getSalaryData = (
   }
 
   return {
-    local: {
-      entry: { base: countryData.entry.base, total: countryData.entry.total },
-      moderate: { base: countryData.moderate.base, total: countryData.moderate.total },
-      experienced: { base: countryData.experienced.base, total: countryData.experienced.total }
-    },
-    philippine: {
-      entry: { base: philippineData.entry.base, total: philippineData.entry.total },
-      moderate: { base: philippineData.moderate.base, total: philippineData.moderate.total },
-      experienced: { base: philippineData.experienced.base, total: philippineData.experienced.total }
-    }
+    local: countryData,
+    philippine: philippineData
   };
 };
 
@@ -93,7 +154,7 @@ export const calculateSavings = async (
   formData: FormData,
   portfolioIndicators: PortfolioIndicator[],
   userLocation?: LocationData,
-  dynamicSalaryData?: Readonly<Record<string, LocalMultiCountryRoleSalaryData>>
+  dynamicRoles?: any
 ): Promise<CalculationResult> => {
   if (!Object.keys(formData.selectedRoles || {}).length) {
     return {
@@ -108,22 +169,22 @@ export const calculateSavings = async (
       estimatedROI: 0,
       implementationTimeline: { planning: 0, hiring: 0, training: 0, fullImplementation: 0 },
       riskAssessment: { level: 'low', factors: [], mitigationStrategies: [] },
-      totalAustralianCost: 0,
+      totalLocalCost: 0,
       totalPhilippineCost: 0
     };
   }
 
   console.log('🧮 calculateSavings called with:', {
     userCountry: userLocation?.country,
-    hasDynamicData: !!dynamicSalaryData,
-    dynamicDataKeys: dynamicSalaryData ? Object.keys(dynamicSalaryData) : []
+    hasDynamicData: !!dynamicRoles,
+    dynamicDataKeys: dynamicRoles ? Object.keys(dynamicRoles) : []
   });
 
   const selectedRoles = Object.entries(formData.selectedRoles)
     .filter(([_, selected]) => selected)
     .map(([roleId]) => roleId as RoleId);
 
-  let totalAustralianCost = 0;
+  let totalLocalCost = 0;
   let totalPhilippineCost = 0;
   let totalSelectedTasks = 0;
   let totalCustomTasks = 0;
@@ -135,7 +196,7 @@ export const calculateSavings = async (
   for (const roleId of selectedRoles) {
     const teamSize = formData.teamSize[roleId] || 1;
     const roleData = ROLES[roleId as keyof typeof ROLES];
-    const roleSalaryData = getSalaryData(roleId, userLocation?.country, dynamicSalaryData);
+    const roleSalaryData = getSalaryData(roleId, userLocation?.country, dynamicRoles);
     
     if (!roleData || !roleSalaryData) {
       console.warn(`Missing data for role: ${roleId}`);
@@ -151,7 +212,7 @@ export const calculateSavings = async (
         estimatedROI: 0,
         implementationTimeline: { planning: 0, hiring: 0, training: 0, fullImplementation: 0 },
         riskAssessment: { level: 'low', factors: [], mitigationStrategies: [] },
-        totalAustralianCost: 0,
+        totalLocalCost: 0,
         totalPhilippineCost: 0
       };
     }
@@ -159,7 +220,7 @@ export const calculateSavings = async (
     // Get experience distribution for this role
     const experienceDistribution = formData.roleExperienceDistribution?.[roleId];
     
-    let australianCost = 0;
+    let localCost = 0;
     let philippineCost = 0;
     let weightedExperienceLevel: ExperienceLevel = 'moderate'; // Default for legacy support
     
@@ -175,7 +236,7 @@ export const calculateSavings = async (
           const localSalary = roleSalaryData.local[level];
           const philippineSalary = roleSalaryData.philippine[level];
           
-          australianCost += localSalary.base * memberCount;
+          localCost += localSalary.base * memberCount;
           
           // Convert Philippine salary from PHP to user's local currency using live API
           const phpToUsd = philippineSalary.base / await getBestExchangeRateMultiplier('PHP');
@@ -203,7 +264,7 @@ export const calculateSavings = async (
       const localSalary = roleSalaryData.local[experienceLevel];
       const philippineSalary = roleSalaryData.philippine[experienceLevel];
       
-      australianCost = localSalary.base * teamSize;
+      localCost = localSalary.base * teamSize;
       
       // Convert Philippine salary from PHP to user's local currency using live API
       const phpToUsd = philippineSalary.base / await getBestExchangeRateMultiplier('PHP');
@@ -247,8 +308,8 @@ export const calculateSavings = async (
     const adjustedPhilippineCost = philippineCost * complexityFactor;
 
     // Calculate savings
-    const savings = australianCost - adjustedPhilippineCost;
-    const savingsPercentage = australianCost > 0 ? (savings / australianCost) * 100 : 0;
+    const savings = localCost - adjustedPhilippineCost;
+    const savingsPercentage = localCost > 0 ? (savings / localCost) * 100 : 0;
 
     // Estimate implementation time (days)
     const implementationTime = calculateImplementationTimeMultiLevel(
@@ -278,7 +339,7 @@ export const calculateSavings = async (
       roleName: roleData.title,
       teamSize,
       experienceLevel: weightedExperienceLevel,
-      australianCost,
+      localCost,
       philippineCost: adjustedPhilippineCost,
       savings,
       savingsPercentage,
@@ -289,16 +350,16 @@ export const calculateSavings = async (
       riskFactors
     };
 
-    totalAustralianCost += australianCost;
+    totalLocalCost += localCost;
     totalPhilippineCost += adjustedPhilippineCost;
     totalSelectedTasks += selectedTasksForRole;
     totalCustomTasks += customTasksForRole;
     totalTeamSize += teamSize;
   }
 
-  const totalSavings = totalAustralianCost - totalPhilippineCost;
-  const averageSavingsPercentage = totalAustralianCost > 0 
-    ? (totalSavings / totalAustralianCost) * 100 
+  const totalSavings = totalLocalCost - totalPhilippineCost;
+  const averageSavingsPercentage = totalLocalCost > 0 
+    ? (totalSavings / totalLocalCost) * 100 
     : 0;
 
   // Get portfolio tier
@@ -332,7 +393,7 @@ export const calculateSavings = async (
     estimatedROI,
     implementationTimeline,
     riskAssessment,
-    totalAustralianCost,
+    totalLocalCost,
     totalPhilippineCost
   };
 };
@@ -367,9 +428,7 @@ const calculateImplementationTimeMultiLevel = (
     ) / totalMembers;
   }
 
-  return Math.round(
-    (baseTime + teamSizeMultiplier + taskComplexityMultiplier) * weightedMultiplier
-  );
+  return (baseTime + teamSizeMultiplier + taskComplexityMultiplier) * weightedMultiplier;
 };
 
 /**
@@ -510,7 +569,7 @@ const calculateLeadScore = (
   const taskScore = Math.min(20, (totalSelectedTasks + totalCustomTasks) * 2);
   score += taskScore;
 
-  return Math.min(100, Math.round(score));
+  return Math.min(100, score);
 };
 
 /**
@@ -524,7 +583,7 @@ const calculateROI = (totalSavings: number, totalPhilippineCost: number): number
   const setupCosts = totalPhilippineCost * 0.2;
   const totalInvestment = totalPhilippineCost + setupCosts;
   
-  return Math.round((totalSavings / totalInvestment) * 100);
+  return (totalSavings / totalInvestment) * 100;
 };
 
 /**
@@ -559,13 +618,11 @@ const calculateImplementationTimeline = (
   const teamSizeMultiplier = Math.min(2, 1 + (totalTeamSize - 1) * 0.2);
 
   return {
-    planning: Math.round(basePlanningWeeks[portfolioTier] * teamSizeMultiplier),
-    hiring: Math.round(baseHiringWeeks[portfolioTier] * teamSizeMultiplier),
-    training: Math.round(baseTrainingWeeks[portfolioTier] * teamSizeMultiplier),
-    fullImplementation: Math.round(
-      (basePlanningWeeks[portfolioTier] + baseHiringWeeks[portfolioTier] + baseTrainingWeeks[portfolioTier]) * 
+    planning: basePlanningWeeks[portfolioTier] * teamSizeMultiplier,
+    hiring: baseHiringWeeks[portfolioTier] * teamSizeMultiplier,
+    training: baseTrainingWeeks[portfolioTier] * teamSizeMultiplier,
+    fullImplementation: (basePlanningWeeks[portfolioTier] + baseHiringWeeks[portfolioTier] + baseTrainingWeeks[portfolioTier]) * 
       teamSizeMultiplier
-    )
   };
 };
 
@@ -627,7 +684,7 @@ export const calculateDisplaySavings = (
   savingsView: 'annual' | 'monthly',
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): {
   displayAmount: number;
   percentage: string;
@@ -636,7 +693,7 @@ export const calculateDisplaySavings = (
   // Use display currency logic to ensure consistency with fallback data
   const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
   
-  const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
+  const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
   const localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
   const philippineData = roleSalaryData?.Philippines;
   
@@ -670,8 +727,8 @@ export const calculateDisplaySavings = (
   const experiencedTotal = experiencedSavings * teamSize;
   const averageTotal = (entryTotal + moderateTotal + experiencedTotal) / 3;
   const displayAmount = savingsView === 'monthly' 
-            ? Math.round((averageTotal / 12) * 100000000) / 100000000
-        : Math.round(averageTotal * 100000000) / 100000000;
+            ? averageTotal / 12
+        : averageTotal;
   
   // Calculate percentage
   let percentage = '';
@@ -693,7 +750,7 @@ export const calculateIndividualRoleSavingsSync = (
   role: any,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): {
   entry: number;
   moderate: number;
@@ -704,7 +761,7 @@ export const calculateIndividualRoleSavingsSync = (
   // Use display currency logic to ensure consistency with fallback data
   const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
   
-  const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
+  const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
   const localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
   const philippineData = roleSalaryData?.Philippines;
   
@@ -738,10 +795,10 @@ export const calculateIndividualRoleSavingsSync = (
   const average = (entry + moderate + experienced) / 3;
   
   return {
-    entry: Math.round(entry * 100000000) / 100000000,
-    moderate: Math.round(moderate * 100000000) / 100000000,
-    experienced: Math.round(experienced * 100000000) / 100000000,
-    range: `${getCurrencySymbol(effectiveCurrency)}${Math.round(average * 100000000) / 100000000}`
+    entry: entry,
+    moderate: moderate,
+    experienced: experienced,
+    range: `${getCurrencySymbol(effectiveCurrency)}${average}`
   };
 };
 
@@ -756,7 +813,7 @@ export const calculateAllRoleRatesAndSummary = async (
   teamSize: Record<string, number>,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any,
+  roles?: any,
   savingsView: 'annual' | 'monthly' = 'annual'
 ): Promise<{
   roleRates: Record<string, { local: number; phConverted: number }>;
@@ -771,8 +828,16 @@ export const calculateAllRoleRatesAndSummary = async (
 }> => {
   const roleRates: Record<string, { local: number; phConverted: number }> = {};
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
+  
+  // Check if we have salary data for this country
+  const supportedCountries = ['Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines', 'United States'];
+  const isCountrySupported = supportedCountries.includes(effectiveCountry);
+  
   // Use display currency logic to ensure consistency with fallback data
-  const targetCurrency = getDisplayCurrencyByCountry(effectiveCountry);
+  // For unsupported countries, use USD since we fall back to USA salary data
+  const targetCurrency = isCountrySupported 
+    ? getDisplayCurrencyByCountry(effectiveCountry)
+    : 'USD';
   
   try {
     // Get exchange rate once for all calculations
@@ -782,9 +847,14 @@ export const calculateAllRoleRatesAndSummary = async (
     // Calculate rates for each role
     for (const role of allRoles) {
       if (role.id) {
-        const roleSalaryData = rolesSalaryComparison?.[role.id];
-        // Use the new helper function to get local salary data with USA fallback
-        const localData = getRoleSalaryForCountry(role.id, effectiveCountry);
+        const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
+        // Use dynamic salary data from AI API, with fallback to USA if country not found
+        let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
+        if (!localData) {
+          console.log('📊 No salary data for country:', effectiveCountry, '- falling back to USA data from AI');
+          localData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
+        }
+        
         const philippineData = roleSalaryData?.Philippines;
         const currentTeamSize = teamSize[role.id] || 1;
         
@@ -796,6 +866,7 @@ export const calculateAllRoleRatesAndSummary = async (
           const avgLocal = (entryLocal + moderateLocal + experiencedLocal) / 3;
           
           // PH converted average multiplied by team size
+          // Use exact mathematical calculation for each level
                 const entryPH = philippineData.entry.base * directRate * currentTeamSize;
       const moderatePH = philippineData.moderate.base * directRate * currentTeamSize;
       const experiencedPH = philippineData.experienced.base * directRate * currentTeamSize;
@@ -805,7 +876,7 @@ export const calculateAllRoleRatesAndSummary = async (
           const monthlyDivisor = savingsView === 'monthly' ? 12 : 1;
           roleRates[role.id] = { 
             local: avgLocal / monthlyDivisor, 
-            phConverted: avgPH / monthlyDivisor 
+            phConverted: avgPH / monthlyDivisor
           };
         } else {
           roleRates[role.id] = { local: 0, phConverted: 0 };
@@ -815,8 +886,6 @@ export const calculateAllRoleRatesAndSummary = async (
     
     // Calculate summary totals
     let totalLocalCost = 0;
-    let totalPhilippinesCost = 0;
-    let totalSavings = 0;
     let totalPhilippinesCostPHP = 0;
     
     Object.entries(selectedRoles)
@@ -824,38 +893,45 @@ export const calculateAllRoleRatesAndSummary = async (
       .forEach(([roleId]) => {
         const roleRate = roleRates[roleId];
         if (roleRate) {
-          totalLocalCost += roleRate.local;
-          totalPhilippinesCost += roleRate.phConverted;
-          totalSavings += (roleRate.local - roleRate.phConverted);
+          // Use truncated values to ensure mathematical consistency with displayed amounts
+          const truncatedLocal = Math.trunc(roleRate.local);
+          totalLocalCost += truncatedLocal;
         }
         
         // Calculate original PHP amount for summary
         const role = allRoles.find(r => r.id === roleId);
         const size = teamSize[roleId] || 1;
-        const roleSalaryData = rolesSalaryComparison?.[role?.id];
+        const roleSalaryData = getSalaryDataFromRoles(roles, role?.id);
         const philippineData = roleSalaryData?.Philippines;
         if (philippineData) {
-                  const entryPH = philippineData.entry.base * size;
-        const moderatePH = philippineData.moderate.base * size;
-        const experiencedPH = philippineData.experienced.base * size;
+          const entryPH = philippineData.entry.base * size;
+          const moderatePH = philippineData.moderate.base * size;
+          const experiencedPH = philippineData.experienced.base * size;
           const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
           const displayRate = savingsView === 'monthly' 
-            ? Math.round((avgPH / 12) * 100000000) / 100000000
-            : Math.round(avgPH * 100000000) / 100000000;
-          totalPhilippinesCostPHP += displayRate;
+            ? avgPH / 12
+            : avgPH;
+          // Use truncated value to ensure mathematical consistency with displayed amounts
+          totalPhilippinesCostPHP += Math.trunc(displayRate);
         }
       });
+    
+    // Convert the TOTAL PHP amount once (not sum of individual conversions)
+    // Use exact mathematical calculation and truncate to avoid any rounding
+    const exactTotalConversion = totalPhilippinesCostPHP * directRate;
+    const totalPhilippinesCost = Math.trunc(exactTotalConversion);
+    const totalSavings = totalLocalCost - totalPhilippinesCost;
     
     const percentage = totalLocalCost > 0 ? (totalSavings / totalLocalCost) * 100 : 0;
     
     return {
       roleRates,
       summary: {
-        totalLocalCost,
-        totalPhilippinesCost,
-        totalSavings,
+        totalLocalCost: totalLocalCost,
+        totalPhilippinesCost: totalPhilippinesCost,
+        totalSavings: totalSavings,
         percentage,
-        totalPhilippinesCostPHP
+        totalPhilippinesCostPHP: totalPhilippinesCostPHP
       }
     };
   } catch (error) {
@@ -882,7 +958,7 @@ export const calculateIndividualRoleSavings = async (
   role: any,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): Promise<{
   entry: number;
   moderate: number;
@@ -892,11 +968,19 @@ export const calculateIndividualRoleSavings = async (
   try {
     // Get effective country: manual location takes priority over auto-detected
     const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
-    // Use display currency logic to ensure consistency with fallback data
-    const targetCurrency = getDisplayCurrencyByCountry(effectiveCountry);
     
-    if (role.type === 'predefined' && role.id && rolesSalaryComparison) {
-      const roleSalaryData = rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison];
+    // Check if we have salary data for this country
+    const supportedCountries = ['Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines', 'United States'];
+    const isCountrySupported = supportedCountries.includes(effectiveCountry);
+    
+    // Use display currency logic to ensure consistency with fallback data
+    // For unsupported countries, use USD since we fall back to USA salary data
+    const targetCurrency = isCountrySupported 
+      ? getDisplayCurrencyByCountry(effectiveCountry)
+      : 'USD';
+    
+    if (role.type === 'predefined' && role.id && roles) {
+      const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
       if (!roleSalaryData) {
         return {
           entry: 0,
@@ -906,8 +990,12 @@ export const calculateIndividualRoleSavings = async (
         };
       }
       
-      // Use the new helper function to get local salary data with USA fallback
-      let localSalaryData = getRoleSalaryForCountry(role.id, effectiveCountry);
+      // Use dynamic salary data from AI API, with fallback to USA if country not found
+      let localSalaryData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
+      if (!localSalaryData) {
+        console.log('📊 No salary data for country:', effectiveCountry, '- falling back to USA data from AI');
+        localSalaryData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
+      }
       
       let philippineSalaryData = roleSalaryData.Philippines;
       
@@ -929,7 +1017,7 @@ export const calculateIndividualRoleSavings = async (
           entry: entrySavings,
           moderate: moderateSavings,
           experienced: experiencedSavings,
-          range: `$${Math.round(((entrySavings + moderateSavings + experiencedSavings) / 3) * 100000000) / 100000000}`
+          range: `$${(entrySavings + moderateSavings + experiencedSavings) / 3}`
         };
       }
     }
@@ -967,7 +1055,7 @@ export const calculateRoleCosts = (
   teamSize: number,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any,
+  roles?: any,
   savingsView: 'annual' | 'monthly' = 'annual'
 ): {
   localCost: string;
@@ -976,8 +1064,8 @@ export const calculateRoleCosts = (
 } => {
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
   
-  if (role.type === 'predefined' && role.id && rolesSalaryComparison) {
-    const roleSalaryData = rolesSalaryComparison[role.id as keyof typeof rolesSalaryComparison];
+  if (role.type === 'predefined' && role.id && roles) {
+    const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
     if (!roleSalaryData) {
       return {
         localCost: '$0',
@@ -985,8 +1073,12 @@ export const calculateRoleCosts = (
       };
     }
     
-    // Use the new helper function to get local salary data with USA fallback
-    let localData = getRoleSalaryForCountry(role.id, effectiveCountry);
+    // Use dynamic salary data from AI API, with fallback to USA if country not found
+    let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
+    if (!localData) {
+      console.log('📊 No salary data for country:', effectiveCountry, '- falling back to USA data from AI');
+      localData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
+    }
     
     let philippineSalaryData = roleSalaryData.Philippines;
     
@@ -997,8 +1089,8 @@ export const calculateRoleCosts = (
     const experiencedRate = localData.experienced.base * teamSize;
       const averageRate = (entryRate + moderateRate + experiencedRate) / 3;
       const displayRate = savingsView === 'monthly' 
-        ? Math.round((averageRate / 12) * 100000000) / 100000000
-        : Math.round(averageRate * 100000000) / 100000000;
+        ? averageRate / 12
+        : averageRate;
       
       // Calculate Philippine cost
               const phEntryRate = philippineSalaryData.entry.base * teamSize;
@@ -1006,12 +1098,12 @@ export const calculateRoleCosts = (
         const phExperiencedRate = philippineSalaryData.experienced.base * teamSize;
       const phAverageRate = (phEntryRate + phModerateRate + phExperiencedRate) / 3;
       const phDisplayRate = savingsView === 'monthly' 
-        ? Math.round((phAverageRate / 12) * 100000000) / 100000000
-        : Math.round(phAverageRate * 100000000) / 100000000;
+        ? phAverageRate / 12
+        : phAverageRate;
       
       return {
-        localCost: `$${displayRate.toLocaleString()}`,
-        philippineCost: `₱${phDisplayRate.toLocaleString()}`
+        localCost: `$${formatNumberPrecise(displayRate, { showDecimals: false })}`,
+        philippineCost: `₱${formatNumberPrecise(phDisplayRate, { showDecimals: false })}`
       };
     }
   }
@@ -1023,20 +1115,20 @@ export const calculateRoleCosts = (
     const experiencedEstimate = role.estimatedSalary.local * 1.2 * teamSize;
     const averageEstimate = (entryEstimate + moderateEstimate + experiencedEstimate) / 3;
     const displayRate = savingsView === 'monthly' 
-      ? Math.round((averageEstimate / 12) * 100000000) / 100000000
-      : Math.round(averageEstimate * 100000000) / 100000000;
+      ? averageEstimate / 12
+      : averageEstimate;
     
     const phEntryEstimate = role.estimatedSalary.philippine * 0.8 * teamSize;
     const phModerateEstimate = role.estimatedSalary.philippine * teamSize;
     const phExperiencedEstimate = role.estimatedSalary.philippine * 1.2 * teamSize;
     const phAverageEstimate = (phEntryEstimate + phModerateEstimate + phExperiencedEstimate) / 3;
     const phDisplayRate = savingsView === 'monthly' 
-      ? Math.round((phAverageEstimate / 12) * 100000000) / 100000000
-      : Math.round(phAverageEstimate * 100000000) / 100000000;
+      ? phAverageEstimate / 12
+      : phAverageEstimate;
     
     return {
-      localCost: `$${displayRate.toLocaleString()}`,
-      philippineCost: `₱${phDisplayRate.toLocaleString()}`
+      localCost: `$${formatNumberPrecise(displayRate, { showDecimals: false })}`,
+      philippineCost: `₱${formatNumberPrecise(phDisplayRate, { showDecimals: false })}`
     };
   }
   
@@ -1055,7 +1147,7 @@ export const calculateTotalSavings = (
   allRoles: any[],
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): number => {
   let totalSavings = 0;
   
@@ -1066,7 +1158,7 @@ export const calculateTotalSavings = (
       const size = teamSize[roleId] || 1;
       if (!role) return;
       
-      const savings = calculateIndividualRoleSavingsSync(role, userLocation, manualLocation, rolesSalaryComparison);
+      const savings = calculateIndividualRoleSavingsSync(role, userLocation, manualLocation, roles);
       const entryTotal = savings.entry * size;
       const moderateTotal = savings.moderate * size;
       const experiencedTotal = savings.experienced * size;
@@ -1086,10 +1178,10 @@ export const calculatePhpConversionDisplay = async (
   teamSize: number,
   targetCurrency: string,
   savingsView: 'annual' | 'monthly',
-  rolesSalaryComparison?: any
+  roles?: any
 ): Promise<string> => {
   try {
-    const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
+    const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
     const philippineData = roleSalaryData?.Philippines;
     
     if (!philippineData) {
@@ -1102,14 +1194,19 @@ export const calculatePhpConversionDisplay = async (
     const experiencedRate = philippineData.experienced.base * teamSize;
     const averageRate = (entryRate + moderateRate + experiencedRate) / 3;
     const displayRate = savingsView === 'monthly' 
-      ? Math.round((averageRate / 12) * 100000000) / 100000000
-      : Math.round(averageRate * 100000000) / 100000000;
+      ? averageRate / 12
+      : averageRate;
     
     // Get direct exchange rate
     const directRate = await getDirectExchangeRate('PHP', targetCurrency);
-    const convertedAmount = Math.round((displayRate * directRate) * 100000000) / 100000000;
     
-    return `≈ ${getCurrencySymbol(targetCurrency)}${convertedAmount.toLocaleString()} ${targetCurrency}`;
+    // Do exact mathematical calculation to avoid floating-point precision issues
+    const exactConversion = displayRate * directRate;
+    
+    // Truncate to show exact mathematical result without any rounding
+    const truncatedAmount = Math.trunc(exactConversion);
+    
+    return `≈ ${getCurrencySymbol(targetCurrency)}${truncatedAmount.toLocaleString()}`;
   } catch (error) {
     console.error('Error converting PHP for role:', role.id, error);
     return 'Converting...';
@@ -1125,7 +1222,7 @@ export const calculateMultiLevelSavings = async (
   allRoles: any[],
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): Promise<number> => {
   let totalSavings = 0;
   
@@ -1137,7 +1234,7 @@ export const calculateMultiLevelSavings = async (
     const distribution = role.distribution;
     
     // Get salary data
-    const roleSalaryData = rolesSalaryComparison?.[roleData.id as keyof typeof rolesSalaryComparison];
+    const roleSalaryData = getSalaryDataFromRoles(roles, roleData.id);
     const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
     
     // Try to get local salary data, fall back to supported countries if not found
@@ -1212,7 +1309,7 @@ export const calculateMultiLevelLocalCost = (
   allRoles: any[],
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): number => {
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
   
@@ -1224,7 +1321,7 @@ export const calculateMultiLevelLocalCost = (
     const distribution = role.distribution;
     
     // Get salary data
-    const roleSalaryData = rolesSalaryComparison?.[roleData.id as keyof typeof rolesSalaryComparison];
+    const roleSalaryData = getSalaryDataFromRoles(roles, roleData.id);
     
     // Try to get local salary data, fall back to supported countries if not found
     let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
@@ -1274,7 +1371,7 @@ export const calculateMultiLevelLocalCost = (
 export const calculateMultiLevelPhilippinesCost = (
   activeRoles: Array<{ id: string; distribution: RoleExperienceDistribution }>,
   allRoles: any[],
-  rolesSalaryComparison?: any
+  roles?: any
 ): number => {
   return activeRoles.reduce((total, role) => {
     const roleData = allRoles.find(r => r.id === role.id);
@@ -1284,7 +1381,7 @@ export const calculateMultiLevelPhilippinesCost = (
     const distribution = role.distribution;
     
     // Get salary data
-    const roleSalaryData = rolesSalaryComparison?.[roleData.id as keyof typeof rolesSalaryComparison];
+    const roleSalaryData = getSalaryDataFromRoles(roles, roleData.id);
     const philippineData = roleSalaryData?.Philippines;
     
     if (philippineData) {
@@ -1321,9 +1418,9 @@ export const calculateRoleLevelSavings = (
   experienceLevel: ExperienceLevel,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): number => {
-  const savings = calculateIndividualRoleSavingsSync(role, userLocation, manualLocation, rolesSalaryComparison);
+  const savings = calculateIndividualRoleSavingsSync(role, userLocation, manualLocation, roles);
   return savings[experienceLevel];
 };
 
@@ -1337,7 +1434,7 @@ export const calculateIndividualLevelDisplay = async (
   memberCount: number,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any,
+  roles?: any,
   savingsView: 'annual' | 'monthly' = 'annual'
 ): Promise<{
   localCost: number;
@@ -1347,7 +1444,7 @@ export const calculateIndividualLevelDisplay = async (
   savingsPercentage: number;
 }> => {
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
-  const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
+  const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
   
   // Try to get local salary data, fall back to supported countries if not found
   let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
@@ -1388,7 +1485,9 @@ export const calculateIndividualLevelDisplay = async (
       conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
     }
     
-    const totalPhilippineCostConverted = Math.round(totalPhilippineCost * conversionRate);
+    // Use exact mathematical calculation and truncate to avoid rounding
+    const exactConversion = totalPhilippineCost * conversionRate;
+    const totalPhilippineCostConverted = Math.trunc(exactConversion);
     
     const savings = totalLocalCost - totalPhilippineCostConverted;
     const savingsPercentage = totalLocalCost > 0 ? (savings / totalLocalCost) * 100 : 0;
@@ -1424,7 +1523,7 @@ export const calculateRoleBreakdownDisplay = async (
   distribution: RoleExperienceDistribution,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any,
+  roles?: any,
   savingsView: 'annual' | 'monthly' = 'annual'
 ): Promise<{
   localCost: number;
@@ -1434,7 +1533,7 @@ export const calculateRoleBreakdownDisplay = async (
   savingsPercentage: number;
 }> => {
   const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
-  const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
+  const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
   
   // Try to get local salary data, fall back to supported countries if not found
   let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
@@ -1481,7 +1580,9 @@ export const calculateRoleBreakdownDisplay = async (
       conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
     }
     
-    const totalPhilippineCostConverted = Math.round(totalPhilippineCost * conversionRate);
+    // Use exact mathematical calculation and truncate to avoid rounding
+    const exactConversion = totalPhilippineCost * conversionRate;
+    const totalPhilippineCostConverted = Math.trunc(exactConversion);
     
     const savings = totalLocalCost - totalPhilippineCostConverted;
     const savingsPercentage = totalLocalCost > 0 ? (savings / totalLocalCost) * 100 : 0;
@@ -1517,9 +1618,9 @@ export const getRoleSalaryDisplay = async (
   experienceLevel: ExperienceLevel,
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  roles?: any
 ): Promise<string> => {
-  const roleSalaryData = rolesSalaryComparison?.[role.id as keyof typeof rolesSalaryComparison];
+  const roleSalaryData = getSalaryDataFromRoles(roles, role.id);
   const philippineData = roleSalaryData?.Philippines;
   
   if (philippineData && philippineData[experienceLevel]) {
@@ -1540,10 +1641,12 @@ export const getRoleSalaryDisplay = async (
       conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
     }
     
-    const convertedSalary = Math.round(phpSalary * conversionRate);
+    // Use exact mathematical calculation and truncate to avoid rounding
+    const exactConversion = phpSalary * conversionRate;
+    const convertedSalary = Math.trunc(exactConversion);
     
     const currencySymbol = getCurrencySymbol(effectiveCurrency);
-    return `₱${phpSalary.toLocaleString()} (${currencySymbol}${convertedSalary.toLocaleString()})`;
+    return `₱${formatNumberPrecise(phpSalary, { showDecimals: false })} (${currencySymbol}${formatNumberPrecise(convertedSalary, { showDecimals: false })})`;
   }
   
   // Fallback for custom roles or roles without salary data
@@ -1568,10 +1671,12 @@ export const getRoleSalaryDisplay = async (
     conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
   }
   
-  const convertedAmount = Math.round(phpAmount * conversionRate);
+  // Use exact mathematical calculation and truncate to avoid rounding
+  const exactConversion = phpAmount * conversionRate;
+  const convertedAmount = Math.trunc(exactConversion);
   
   const currencySymbol = getCurrencySymbol(effectiveCurrency);
-  return `₱${phpAmount.toLocaleString()} (${currencySymbol}${convertedAmount.toLocaleString()})`;
+  return `₱${formatNumberPrecise(phpAmount, { showDecimals: false })} (${currencySymbol}${formatNumberPrecise(convertedAmount, { showDecimals: false })})`;
 };
 
 /**
@@ -1601,7 +1706,9 @@ export const calculateTotalPhilippinesCostConverted = async (
     conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
   }
   
-  return Math.round(totalPhpCost * conversionRate);
+  // Use exact mathematical calculation and truncate to avoid rounding
+  const exactConversion = totalPhpCost * conversionRate;
+  return Math.trunc(exactConversion);
 };
 
 /**
@@ -1623,5 +1730,5 @@ export const formatCostForView = (
   amount: number,
   savingsView: 'annual' | 'monthly'
 ): number => {
-  return savingsView === 'monthly' ? Math.round(amount / 12) : amount;
+  return savingsView === 'monthly' ? amount / 12 : amount;
 };

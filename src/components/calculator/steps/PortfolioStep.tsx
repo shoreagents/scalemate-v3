@@ -34,6 +34,7 @@ interface PortfolioStepProps {
   isLoadingIndicators?: boolean;
   portfolioCurrency?: string;
   portfolioCurrencySymbol?: string;
+  isUsingDynamicData?: boolean;
 }
 
 export function PortfolioStep({ 
@@ -59,7 +60,8 @@ export function PortfolioStep({
   portfolioIndicators,
   isLoadingIndicators = false,
   portfolioCurrency,
-  portfolioCurrencySymbol
+  portfolioCurrencySymbol,
+  isUsingDynamicData
 }: PortfolioStepProps) {
   
   // Debug logging (can be removed in production)
@@ -198,16 +200,13 @@ export function PortfolioStep({
     let highestMax = 0;
 
     sortedIndicators.forEach(([size, indicator]) => {
-      const minM = (indicator.averageRevenue.min / 1000000);
-      const maxM = (indicator.averageRevenue.max / 1000000);
-      
       // Track the highest maximum revenue for the + option
       if (indicator.averageRevenue.max > highestMax) {
         highestMax = indicator.averageRevenue.max;
       }
       
-      // Create label based on actual averageRevenue from portfolio indicators - always show range
-      const label = `${currencySymbol}${minM.toFixed(1)}M - ${currencySymbol}${maxM.toFixed(1)}M`;
+      // Create label based on actual averageRevenue from portfolio indicators - show exact amounts
+                    const label = `${currencySymbol}${indicator.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - ${currencySymbol}${indicator.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
       
       // Use the average of min and max as the stored value
       const avgRevenue = (indicator.averageRevenue.min + indicator.averageRevenue.max) / 2;
@@ -217,8 +216,7 @@ export function PortfolioStep({
 
     // Add "+ option" for amounts higher than the highest maximum
     if (highestMax > 0) {
-      const highestMaxM = (highestMax / 1000000);
-      const plusLabel = `${currencySymbol}${highestMaxM.toFixed(1)}M+`;
+                  const plusLabel = `${currencySymbol}${highestMax.toLocaleString(undefined, { maximumFractionDigits: 0 })}+`;
       // Use 1.5x the highest max as the stored value for the + option
       const plusValue = highestMax * 1.5;
       
@@ -233,9 +231,32 @@ export function PortfolioStep({
             {/* Header */}
       <div className="text-center mb-8">
         <div className="mb-6">
-          <h2 className="text-headline-1 text-neutral-900 text-center">
-            Portfolio Size
-          </h2>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h2 className="text-headline-1 text-neutral-900 text-center">
+              Portfolio Size
+            </h2>
+            {/* AI Indicator beside title */}
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+              isUsingDynamicData 
+                ? 'bg-purple-50 border border-purple-200'
+                : 'bg-gray-50 border border-gray-200'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                isLoadingIndicators 
+                  ? 'bg-purple-500 animate-pulse'
+                  : isUsingDynamicData 
+                    ? 'bg-purple-500'
+                    : 'bg-gray-500'
+              }`}></div>
+              <span className={`text-xs font-medium ${
+                isUsingDynamicData 
+                  ? 'text-purple-700'
+                  : 'text-gray-700'
+              }`}>
+                Powered by AI
+              </span>
+            </div>
+          </div>
         </div>
         
         {/* Location Section with Background */}
@@ -334,7 +355,7 @@ export function PortfolioStep({
         </motion.div>
         
         <div className="text-center mt-8 mb-6">
-          <p className="text-body-large text-neutral-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-body-large text-neutral-600">
           Select a range or provide exact details for more accurate recommendations and savings calculations.
         </p>
         </div>
@@ -461,11 +482,11 @@ export function PortfolioStep({
                           </div>
                         </div>
                         {/* Revenue Range - Fixed Position at Bottom */}
-                        <div className="flex items-center justify-between text-xs text-neutral-500 pt-3 border-t border-neutral-100">
+                        <div className="pt-3 border-t border-neutral-100 text-xs text-neutral-500">
                           <span>Revenue Range:</span>
-                          <span className="font-medium">
-                            {getEffectiveCurrencySymbol(locationData, manualLocation)}{Math.round(option.averageRevenue.min / 1000000)}M - {getEffectiveCurrencySymbol(locationData, manualLocation)}{Math.round(option.averageRevenue.max / 1000000)}M
-                          </span>
+                          <div className="font-bold mt-1">
+                            {getEffectiveCurrencySymbol(locationData, manualLocation)}{option.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - {getEffectiveCurrencySymbol(locationData, manualLocation)}{option.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
                         </div>
                       </button>
                     </motion.div>

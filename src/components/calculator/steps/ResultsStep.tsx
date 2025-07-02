@@ -45,6 +45,21 @@ import {
   TrendingUpIcon
 } from 'lucide-react';
 
+/**
+ * Precise number formatting that preserves exact decimal values without rounding
+ */
+function formatNumberPrecise(num: number, options: { showDecimals?: boolean } = {}): string {
+  const { showDecimals = true } = options;
+  
+  if (!showDecimals) {
+    // Truncate instead of round to show exact mathematical result
+    const truncated = Math.trunc(num);
+    return truncated.toLocaleString();
+  }
+  
+  return num.toLocaleString();
+}
+
 interface ResultsStepProps {
   result: CalculationResult;
   formData: FormData;
@@ -187,7 +202,7 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                             <div className="grid grid-cols-2 gap-4 text-body-small">
                               <div className="p-3 bg-neural-blue-50/50 rounded-lg">
                                 <p className="text-neutral-600 mb-1">Australian Cost</p>
-                                <p className="font-bold text-neutral-900">${role.australianCost.toLocaleString()}/year</p>
+                                <p className="font-bold text-neutral-900">${role.localCost.toLocaleString()}/year</p>
                               </div>
                               <div className="p-3 bg-cyber-green-50/50 rounded-lg">
                                 <p className="text-neutral-600 mb-1">Philippine Cost</p>
@@ -247,21 +262,21 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
                                       <div 
                                         className="bg-green-500 transition-all duration-500"
                                         style={{ width: `${(experienceDistribution.entry / experienceDistribution.totalAssigned) * 100}%` }}
-                                        title={`${experienceDistribution.entry} Entry Level (${Math.round((experienceDistribution.entry / experienceDistribution.totalAssigned) * 100)}%)`}
+                                        title={`${experienceDistribution.entry} Entry Level (${((experienceDistribution.entry / experienceDistribution.totalAssigned) * 100).toFixed(0)}%)`}
                                       />
                                     )}
                                     {experienceDistribution.moderate > 0 && (
                                       <div 
                                         className="bg-blue-500 transition-all duration-500"
                                         style={{ width: `${(experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100}%` }}
-                                        title={`${experienceDistribution.moderate} Mid-Level (${Math.round((experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100)}%)`}
+                                        title={`${experienceDistribution.moderate} Mid-Level (${((experienceDistribution.moderate / experienceDistribution.totalAssigned) * 100).toFixed(0)}%)`}
                                       />
                                     )}
                                     {experienceDistribution.experienced > 0 && (
                                       <div 
                                         className="bg-purple-500 transition-all duration-500"
                                         style={{ width: `${(experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100}%` }}
-                                        title={`${experienceDistribution.experienced} Senior Level (${Math.round((experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100)}%)`}
+                                        title={`${experienceDistribution.experienced} Senior Level (${((experienceDistribution.experienced / experienceDistribution.totalAssigned) * 100).toFixed(0)}%)`}
                                       />
                                     )}
                                   </div>
@@ -318,7 +333,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
     true // Auto-fetch on component mount
   );
 
-  const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
+  const formatCurrency = (amount: number) => `$${formatNumberPrecise(amount, { showDecimals: false })}`;
   const formatPercentage = (percentage: number) => `${percentage.toFixed(1)}%`;
 
   const getRiskLevelColor = (level: string) => {
@@ -533,7 +548,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                       <h4 className="font-semibold text-green-700 mb-1">Entry Level</h4>
                       <p className="text-sm text-neutral-600">Fresh talent, cost-effective</p>
                       <p className="text-xs text-green-600 font-medium mt-1">
-                        {Math.round((totalEntry / totalMembers) * 100)}% of team
+                        {((totalEntry / totalMembers) * 100).toFixed(0)}% of team
                       </p>
                     </div>
                     
@@ -547,7 +562,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                       <h4 className="font-semibold text-blue-700 mb-1">Mid-Level</h4>
                       <p className="text-sm text-neutral-600">Experienced professionals</p>
                       <p className="text-xs text-blue-600 font-medium mt-1">
-                        {Math.round((totalModerate / totalMembers) * 100)}% of team
+                        {((totalModerate / totalMembers) * 100).toFixed(0)}% of team
                       </p>
                     </div>
                     
@@ -561,7 +576,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                       <h4 className="font-semibold text-purple-700 mb-1">Senior Level</h4>
                       <p className="text-sm text-neutral-600">Leadership & expertise</p>
                       <p className="text-xs text-purple-600 font-medium mt-1">
-                        {Math.round((totalExperienced / totalMembers) * 100)}% of team
+                        {((totalExperienced / totalMembers) * 100).toFixed(0)}% of team
                       </p>
                     </div>
                   </div>
@@ -579,21 +594,21 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                         <div 
                           className="bg-gradient-to-r from-green-500 to-green-600 transition-all duration-700"
                           style={{ width: `${(totalEntry / totalMembers) * 100}%` }}
-                          title={`${totalEntry} Entry Level members (${Math.round((totalEntry / totalMembers) * 100)}%)`}
+                          title={`${totalEntry} Entry Level members (${((totalEntry / totalMembers) * 100).toFixed(0)}%)`}
                         />
                       )}
                       {totalModerate > 0 && (
                         <div 
                           className="bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-700"
                           style={{ width: `${(totalModerate / totalMembers) * 100}%` }}
-                          title={`${totalModerate} Mid-Level members (${Math.round((totalModerate / totalMembers) * 100)}%)`}
+                          title={`${totalModerate} Mid-Level members (${((totalModerate / totalMembers) * 100).toFixed(0)}%)`}
                         />
                       )}
                       {totalExperienced > 0 && (
                         <div 
                           className="bg-gradient-to-r from-purple-500 to-purple-600 transition-all duration-700"
                           style={{ width: `${(totalExperienced / totalMembers) * 100}%` }}
-                          title={`${totalExperienced} Senior Level members (${Math.round((totalExperienced / totalMembers) * 100)}%)`}
+                          title={`${totalExperienced} Senior Level members (${((totalExperienced / totalMembers) * 100).toFixed(0)}%)`}
                         />
                       )}
                     </div>
@@ -628,7 +643,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                 <Globe className="w-10 h-10 text-red-600 mx-auto mb-3" />
                 <p className="text-body-small font-medium text-red-800 mb-2">Australian Workforce</p>
                 <p className="text-headline-3 font-bold text-red-600">
-                  {formatCurrency(result.totalAustralianCost)}
+                  {formatCurrency(result.totalLocalCost)}
                 </p>
                 <p className="text-caption text-red-600 mt-1">per year</p>
               </div>
@@ -1412,7 +1427,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                     <div className="grid md:grid-cols-3 gap-6">
                       <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
                         <h5 className="font-semibold text-red-800 mb-2">Current Australian Costs</h5>
-                        <p className="text-2xl font-bold text-red-600">{formatCurrency(result.totalAustralianCost)}</p>
+                        <p className="text-2xl font-bold text-red-600">{formatCurrency(result.totalLocalCost)}</p>
                         <p className="text-sm text-red-600">per year</p>
                       </div>
                       <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -1457,7 +1472,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                              <div className="text-sm space-y-1">
                                <div className="flex justify-between">
                                  <span className="text-gray-600">Australian Cost:</span>
-                                 <span className="font-medium text-red-600">{formatCurrency(breakdown.australianCost)}</span>
+                                 <span className="font-medium text-red-600">{formatCurrency(breakdown.localCost)}</span>
                                </div>
                                <div className="flex justify-between">
                                  <span className="text-gray-600">Offshore Cost:</span>
