@@ -889,14 +889,12 @@ export function getDisplayCurrencyByCountry(countryName: string): string {
     'Philippines',
     'United States'
   ];
-  
   // If country is supported, use its actual currency
   if (supportedCountries.includes(countryName)) {
     return getCurrencyByCountry(countryName);
   }
-  
-  // For unsupported countries, default to USD
-  return 'USD';
+  // For unsupported countries, use their actual local currency
+  return getCurrencyByCountry(countryName);
 }
 
 /**

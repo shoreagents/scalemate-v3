@@ -259,8 +259,8 @@ export function TaskSelectionStep({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
+      <div className="text-center mb-12">
+        <div className="flex items-center justify-center gap-3 mb-4">
           <h2 className="text-headline-1 text-neutral-900">Task Selection</h2>
           {/* AI Indicator beside title */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${

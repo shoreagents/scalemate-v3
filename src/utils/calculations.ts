@@ -12,7 +12,7 @@ import {
   LocationData
 } from '@/types';
 import { ROLES, TASK_COMPLEXITY_MULTIPLIERS } from './rolesData';
-import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol, getDisplayCurrencyByCountry } from './currency';
+import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol, getDisplayCurrencyByCountry, getDisplayCurrencyByCountryWithAPIFallback } from './currency';
 import { ManualLocation } from '@/types/location';
 
 /**
@@ -814,7 +814,8 @@ export const calculateAllRoleRatesAndSummary = async (
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
   roles?: any,
-  savingsView: 'annual' | 'monthly' = 'annual'
+  savingsView: 'annual' | 'monthly' = 'annual',
+  isUsingDynamicRoles?: boolean
 ): Promise<{
   roleRates: Record<string, { local: number; phConverted: number }>;
   summary: {
@@ -834,10 +835,8 @@ export const calculateAllRoleRatesAndSummary = async (
   const isCountrySupported = supportedCountries.includes(effectiveCountry);
   
   // Use display currency logic to ensure consistency with fallback data
-  // For unsupported countries, use USD since we fall back to USA salary data
-  const targetCurrency = isCountrySupported 
-    ? getDisplayCurrencyByCountry(effectiveCountry)
-    : 'USD';
+  // For unsupported countries, use actual currency when AI is working, USD when AI fails
+  const targetCurrency = getDisplayCurrencyByCountryWithAPIFallback(effectiveCountry, !isUsingDynamicRoles);
   
   try {
     // Get exchange rate once for all calculations
@@ -974,10 +973,8 @@ export const calculateIndividualRoleSavings = async (
     const isCountrySupported = supportedCountries.includes(effectiveCountry);
     
     // Use display currency logic to ensure consistency with fallback data
-    // For unsupported countries, use USD since we fall back to USA salary data
-    const targetCurrency = isCountrySupported 
-      ? getDisplayCurrencyByCountry(effectiveCountry)
-      : 'USD';
+    // For unsupported countries, use actual currency when AI is working, USD when AI fails
+    const targetCurrency = getDisplayCurrencyByCountryWithAPIFallback(effectiveCountry, false);
     
     if (role.type === 'predefined' && role.id && roles) {
       const roleSalaryData = getSalaryDataFromRoles(roles, role.id);

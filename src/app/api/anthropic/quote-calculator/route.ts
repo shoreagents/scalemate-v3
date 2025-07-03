@@ -144,6 +144,8 @@ Quality standards:
 - Apply current ${currency} market rates
 - All revenue figures must be ANNUAL (per year) amounts
 
+Respond ONLY in English.
+
 Return ONLY valid JSON:
 {
 ${jsonTemplate}

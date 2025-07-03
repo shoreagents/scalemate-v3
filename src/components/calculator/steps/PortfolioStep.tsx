@@ -3,29 +3,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
-import { ManualLocation, IPLocationData } from '@/types/location';
 
 import { useQuoteCalculatorData, getDisplayCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
-import { Building, TrendingUp, Users, Edit3, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3, Globe } from 'lucide-react';
-import { LocationSelector } from '@/components/common/LocationSelector';
+import { getDisplayCurrencyByCountryWithAPIFallback } from '@/utils/currency';
+import { Building, TrendingUp, Users, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { LocationData, ManualLocation } from '@/types/location';
 
 interface PortfolioStepProps {
   value: PortfolioSize | '';
   manualData?: ManualPortfolioData | undefined;
-  locationData?: IPLocationData | null;
-  isLoadingLocation?: boolean;
-  locationError?: string | null;
-  isEditingLocation?: boolean;
-  manualLocation?: ManualLocation | null;
-  tempLocation?: ManualLocation;
-
-  onLocationEditStart?: () => void;
-  onLocationEditSave?: () => void;
-  onLocationEditCancel?: () => void;
-  onLocationReset?: () => void;
-  onTempLocationChange?: (location: ManualLocation) => void;
-  getEffectiveLocation?: () => IPLocationData | { country_name: string; country: string; currency: string; currencySymbol: string; } | null | undefined;
   onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => void;
   showPortfolioGridSkeleton?: boolean;
   
@@ -35,24 +22,15 @@ interface PortfolioStepProps {
   portfolioCurrency?: string;
   portfolioCurrencySymbol?: string;
   isUsingDynamicData?: boolean;
+  
+  // Location data for currency handling
+  userLocation?: LocationData;
+  manualLocation?: ManualLocation | null;
 }
 
 export function PortfolioStep({ 
   value, 
   manualData, 
-  locationData,
-  isLoadingLocation = false,
-  locationError,
-  isEditingLocation = false,
-  manualLocation,
-  tempLocation,
-
-  onLocationEditStart,
-  onLocationEditSave,
-  onLocationEditCancel,
-  onLocationReset,
-  onTempLocationChange,
-  getEffectiveLocation,
   onChange,
   showPortfolioGridSkeleton = false,
   
@@ -61,12 +39,13 @@ export function PortfolioStep({
   isLoadingIndicators = false,
   portfolioCurrency,
   portfolioCurrencySymbol,
-  isUsingDynamicData
+  isUsingDynamicData,
+  
+  // Location data
+  userLocation,
+  manualLocation
 }: PortfolioStepProps) {
   
-  // Debug logging (can be removed in production)
-  // console.log('🔄 PortfolioStep render:', { isEditingLocation, manualLocation: manualLocation?.country || 'none' });
-
   const [showPreciseInput, setShowPreciseInput] = useState(value === 'manual');
   const [manualInput, setManualInput] = useState<ManualPortfolioData>(
     manualData || {
@@ -74,33 +53,6 @@ export function PortfolioStep({
       currentTeamSize: 0
     }
   );
-
-  // Transform IPLocationData to LocationData with useMemo to prevent recreation
-  const transformedLocationData = useMemo(() => {
-    const result = locationData ? {
-    country: locationData.country_code,
-    countryName: locationData.country_name,
-    currency: locationData.currency,
-    currencySymbol: getCurrencySymbol(locationData.currency),
-    detected: true
-  } : locationData;
-
-    // console.log('🔍 PortfolioStep transformedLocationData MEMO:', result?.countryName || 'none');
-    
-    return result;
-  }, [locationData?.country_code, locationData?.country_name, locationData?.currency]);
-  
-  // Tracking effects (can be removed in production)
-  // useEffect(() => { console.log('🔄 transformedLocationData changed:', transformedLocationData?.countryName || 'none'); }, [transformedLocationData]);
-  // useEffect(() => { console.log('🔄 manualLocation changed:', manualLocation?.country || 'none'); }, [manualLocation]);
-
-  // Memoized callback for location changes to prevent infinite loops
-  const handleLocationChange = useCallback((location: { country: string }) => {
-    onTempLocationChange?.({
-      country: location.country,
-      currency: getDisplayCurrencyByCountry(location.country)
-    });
-  }, [onTempLocationChange]);
 
   // Portfolio indicators now passed as props from parent to avoid duplicate API calls
 
@@ -112,9 +64,25 @@ export function PortfolioStep({
     ...data
   }));
 
-  // Note: Removed useEffect that called onChange when portfolioIndicators changed
-  // This was causing infinite re-renders because the parent already has access to portfolioIndicators
-  // via the useQuoteCalculatorData hook and doesn't need them passed back via onChange
+  // Currency handling function - same pattern as RoleSelectionStep
+  const getEffectiveCurrencySymbol = (userLocation?: LocationData, manualLocation?: ManualLocation | null) => {
+    let currency: string;
+    
+    // Manual location takes priority over auto-detected location
+    if (manualLocation?.country) {
+      currency = getDisplayCurrencyByCountryWithAPIFallback(manualLocation.country, !isUsingDynamicData);
+    } 
+    // Fallback to auto-detected location if no manual selection
+    else if (userLocation?.currency) {
+      currency = userLocation.currency;
+    }
+    // Default fallback
+    else {
+      currency = 'USD';
+    }
+    
+    return getCurrencySymbol(currency);
+  };
 
   const handlePresetSelection = (portfolioSize: PortfolioSize) => {
     setShowPreciseInput(false);
@@ -137,8 +105,6 @@ export function PortfolioStep({
     onChange('');
   };
 
-
-
   const getPortfolioIconColor = (tier: string) => {
     switch (tier) {
       case 'growing': return 'text-emerald-500';
@@ -149,43 +115,10 @@ export function PortfolioStep({
     }
   };
 
-
-
-
-
-  const getEffectiveCurrencySymbol = (locationData?: IPLocationData | null, manualLocation?: ManualLocation | null) => {
-    // If portfolio indicators are still loading, return placeholder or loading state
-    if (isLoadingIndicators) {
-      return '$'; // Return default until API completes
-    }
-    
-    // Use portfolio currency symbol if available (this is the correct currency for the data)
-    if (portfolioCurrencySymbol) {
-      return portfolioCurrencySymbol;
-    }
-    
-    // Fallback to location-based detection only if portfolio currency is not available
-    let currency: string;
-    
-    // Manual location takes priority over auto-detected location
-    if (manualLocation?.country) {
-      currency = getDisplayCurrencyByCountry(manualLocation.country);
-    } 
-    // Fallback to auto-detected location if no manual selection
-    else if (locationData?.currency) {
-      currency = locationData.currency;
-    }
-    // Default fallback
-    else {
-      currency = 'USD';
-    }
-    
-    return getCurrencySymbol(currency);
-  };
-
   // Generate dynamic revenue options from portfolio indicators
   const getRevenueOptions = () => {
-    const currencySymbol = getEffectiveCurrencySymbol(locationData, manualLocation);
+    // Use effective currency symbol (same logic as RoleSelectionStep)
+    const currencySymbol = getEffectiveCurrencySymbol(userLocation, manualLocation);
     
     // Start with prefer not to disclose option
     const options: Array<{ value: number | null; label: string }> = [
@@ -198,41 +131,32 @@ export function PortfolioStep({
       .sort((a, b) => a[1].min - b[1].min);
 
     let highestMax = 0;
-
-    sortedIndicators.forEach(([size, indicator]) => {
-      // Track the highest maximum revenue for the + option
+    for (const [, indicator] of sortedIndicators) {
       if (indicator.averageRevenue.max > highestMax) {
         highestMax = indicator.averageRevenue.max;
       }
-      
-      // Create label based on actual averageRevenue from portfolio indicators - show exact amounts
-                    const label = `${currencySymbol}${indicator.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - ${currencySymbol}${indicator.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-      
-      // Use the average of min and max as the stored value
-      const avgRevenue = (indicator.averageRevenue.min + indicator.averageRevenue.max) / 2;
-      
-      options.push({ value: avgRevenue, label });
-    });
-
-    // Add "+ option" for amounts higher than the highest maximum
-    if (highestMax > 0) {
-                  const plusLabel = `${currencySymbol}${highestMax.toLocaleString(undefined, { maximumFractionDigits: 0 })}+`;
-      // Use 1.5x the highest max as the stored value for the + option
-      const plusValue = highestMax * 1.5;
-      
-      options.push({ value: plusValue, label: plusLabel });
     }
 
-    return options;
+    // Generate revenue ranges
+    const ranges = [
+      { min: 0, max: 100000, label: `Under ${currencySymbol}100k` },
+      { min: 100000, max: 500000, label: `${currencySymbol}100k - ${currencySymbol}500k` },
+      { min: 500000, max: 1000000, label: `${currencySymbol}500k - ${currencySymbol}1M` },
+      { min: 1000000, max: 5000000, label: `${currencySymbol}1M - ${currencySymbol}5M` },
+      { min: 5000000, max: 10000000, label: `${currencySymbol}5M - ${currencySymbol}10M` },
+      { min: 10000000, max: highestMax, label: `Over ${currencySymbol}10M` }
+    ];
+
+    return [...options, ...ranges.map(range => ({ value: range.min, label: range.label }))];
   };
 
   return (
     <div className="mx-auto" style={{ maxWidth: '1400px' }}>
-            {/* Header */}
-      <div className="text-center mb-8">
+      {/* Header */}
+      <div className="text-center mb-12">
         <div className="mb-6">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <h2 className="text-headline-1 text-neutral-900 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <h2 className="text-headline-1 text-neutral-900">
               Portfolio Size
             </h2>
             {/* AI Indicator beside title */}
@@ -257,107 +181,24 @@ export function PortfolioStep({
               </span>
             </div>
           </div>
+          
+          <p className="text-body-large text-neutral-600">
+            Tell us about your property portfolio size and management structure.
+          </p>
         </div>
-        
-        {/* Location Section with Background */}
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 p-6 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden"
+          transition={{ duration: 0.5 }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
-          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
-          
-          <div className="relative z-10">
-          <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
-              Where is your property management business primarily located?
-            </h3>
-              <p className="text-sm text-gray-800">
-              We'll use this to show you accurate cost comparisons and savings calculations in your local currency.
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            {/* Location Display or Error/Loading */}
-            {getEffectiveLocation?.() ? (
-              <>
-                {/* Location Display */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neural-blue-200 shadow-sm">
-                  <span className="text-lg">🌏</span>
-                  <span className="font-medium text-neutral-900">
-                    {getEffectiveLocation?.()?.country_name}
-                  </span>
-                </div>
-                
-                {/* Change Button */}
-                <button
-                  onClick={onLocationEditStart}
-                    className="px-4 py-2 text-neural-blue-600 hover:text-neural-blue-700 transition-colors font-medium flex items-center gap-2 border border-neural-blue-300 rounded-lg hover:bg-neural-blue-100 bg-white shadow-sm"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  Change Location
-                </button>
-                
-                {manualLocation && (
-                  <button
-                    onClick={onLocationReset}
-                    className="text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors"
-                  >
-                    Use Current Location
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Error or Loading State */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
-                  {isLoadingLocation ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-neural-blue-500 border-t-transparent"></div>
-                  ) : null}
-                  {isLoadingLocation ? (
-                    <span className="text-neutral-700 font-medium">
-                      Detecting your location...
-                    </span>
-                  ) : (
-                    <span className="text-neutral-700 font-medium">
-                      {locationError || 'Unable to detect location'}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Set Location Manually Button - Always Visible */}
-                <Button
-                  onClick={onLocationEditStart}
-                  variant="neural-primary"
-                >
-                  Set Location Manually
-                </Button>
-              </>
-            )}
-          </div>
-          
-          {/* Location Edit Modal */}
-          {isEditingLocation && (
-            <div className="mt-6">
-              <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
-                <LocationSelector
-                  initialLocation={tempLocation || { country: '', currency: getDisplayCurrencyByCountry('') }}
-                    onLocationChange={handleLocationChange}
-                  onCancel={onLocationEditCancel || (() => {})}
-                  onSave={onLocationEditSave || (() => {})}
-                  showPreview={false}
-                />
-              </div>
-            </div>
-          )}
-        </div>
         </motion.div>
         
         <div className="text-center mt-8 mb-6">
-          <p className="text-body-large text-neutral-600">
-          Select a range or provide exact details for more accurate recommendations and savings calculations.
-        </p>
+          {/* Instructional text removed as requested */}
         </div>
       </div>
 
@@ -420,7 +261,7 @@ export function PortfolioStep({
                       <button
                         onClick={() => handlePresetSelection(option.value)}
                         className={`
-                          w-full h-full p-6 rounded-xl border-2 text-left transition-all duration-200 flex flex-col
+                          w-full h-full p-6 rounded-xl border-2 text-left flex flex-col
                           ${isSelected 
                             ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
                             : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
@@ -485,7 +326,7 @@ export function PortfolioStep({
                         <div className="pt-3 border-t border-neutral-100 text-xs text-neutral-500">
                           <span>Revenue Range:</span>
                           <div className="font-bold mt-1">
-                            {getEffectiveCurrencySymbol(locationData, manualLocation)}{option.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - {getEffectiveCurrencySymbol(locationData, manualLocation)}{option.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </div>
                         </div>
                       </button>
@@ -495,22 +336,22 @@ export function PortfolioStep({
               </div>
             )}
             {/* Need More Precision Card */}
-                             <button
-                 onClick={handleShowPreciseInput}
-                 className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
-               >
-                                 <div className="flex items-center justify-between">
-                   <div className="text-left">
-                     <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
-                       Want more accurate results?
-                     </h3>
-                     <p className="text-sm text-neural-blue-600">
-                       Tell us your exact numbers for personalized recommendations and precise savings estimates
-                     </p>
-                   </div>
-                   <ArrowRight className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
-                 </div>
-              </button>
+            <button
+              onClick={handleShowPreciseInput}
+              className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-left">
+                  <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
+                    Want more accurate results?
+                  </h3>
+                  <p className="text-sm text-neural-blue-600">
+                    Tell us your exact numbers for personalized recommendations and precise savings estimates
+                  </p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
+              </div>
+            </button>
           </div>
         ) : (
           <motion.div
@@ -520,7 +361,7 @@ export function PortfolioStep({
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-                                     {/* Header */}
+            {/* Header */}
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <BarChart3 className="w-5 h-5 text-brand-primary-600" />
@@ -534,101 +375,71 @@ export function PortfolioStep({
             {/* Three Input Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {/* Property Count Card */}
-              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 transition-all duration-200 hover:border-brand-primary-300 hover:bg-brand-primary-25">
+              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 hover:border-brand-primary-300 hover:bg-brand-primary-25">
                 <div className="flex items-center gap-2 mb-4">
                   <Building className="w-5 h-5 text-brand-primary-600" />
-                  <h4 className="text-lg font-semibold text-neutral-900">Properties</h4>
+                  <h4 className="text-lg font-semibold text-neutral-900">Property Count</h4>
                 </div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Number of Properties <span className="text-red-500">*</span>
-                </label>
                 <input
                   type="number"
-                  min="1"
-                  placeholder="e.g., 1,250"
                   value={manualInput.propertyCount || ''}
                   onChange={(e) => handleManualInputChange('propertyCount', parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-brand-primary-500 transition-colors"
+                  className="w-full p-3 border border-neutral-300 rounded-lg text-lg font-medium text-neutral-900 focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                  placeholder="0"
+                  min="0"
                 />
+                <p className="text-sm text-neutral-500 mt-2">Total properties under management</p>
               </div>
 
-              {/* Team Size Card */}
-              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 transition-all duration-200 hover:border-brand-primary-300 hover:bg-brand-primary-25">
+              {/* Current Team Size Card */}
+              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 hover:border-brand-primary-300 hover:bg-brand-primary-25">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-brand-primary-600" />
-                  <h4 className="text-lg font-semibold text-neutral-900">Team Size</h4>
+                  <h4 className="text-lg font-semibold text-neutral-900">Current Team Size</h4>
                 </div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Current Team Size <span className="text-red-500">*</span>
-                </label>
                 <input
                   type="number"
-                  min="1"
-                  placeholder="e.g., 8"
                   value={manualInput.currentTeamSize || ''}
                   onChange={(e) => handleManualInputChange('currentTeamSize', parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-brand-primary-500 transition-colors"
+                  className="w-full p-3 border border-neutral-300 rounded-lg text-lg font-medium text-neutral-900 focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                  placeholder="0"
+                  min="0"
                 />
-                <p className="text-xs text-neutral-500 mt-2">
-                  Include all property management staff
-                </p>
+                <p className="text-sm text-neutral-500 mt-2">Full-time employees currently</p>
               </div>
 
               {/* Annual Revenue Card */}
-              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 transition-all duration-200 hover:border-brand-primary-300 hover:bg-brand-primary-25">
+              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 hover:border-brand-primary-300 hover:bg-brand-primary-25">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-5 h-5 text-brand-primary-600" />
-                  <h4 className="text-lg font-semibold text-neutral-900">Revenue</h4>
+                  <h4 className="text-lg font-semibold text-neutral-900">Annual Revenue</h4>
                 </div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Annual Revenue Range (Optional)
-                </label>
-                <div className="relative">
-                  <select
-                    value={manualInput.annualRevenue || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      handleManualInputChange('annualRevenue', value ? parseFloat(value) : undefined);
-                    }}
-                    className="w-full pl-4 pr-12 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-brand-primary-500 transition-colors appearance-none bg-white"
-                  >
-                    {getRevenueOptions().map(({ value, label }, index) => (
-                      <option key={index} value={value || ''}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <ChevronDown className="w-5 h-5 text-neutral-400" />
-                  </div>
-                </div>
-                <p className="text-xs text-neutral-500 mt-2">
-                  Based on your location's market data
-                </p>
+                <select
+                  value={manualInput.annualRevenue || ''}
+                  onChange={(e) => handleManualInputChange('annualRevenue', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full p-3 border border-neutral-300 rounded-lg text-lg font-medium text-neutral-900 focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                >
+                  <option value="">Select range...</option>
+                  {getRevenueOptions().map((option) => (
+                    <option key={option.label} value={option.value || ''}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-neutral-500 mt-2">Annual revenue range</p>
               </div>
             </div>
 
-
-
-                                     {/* Back to Quick Select Button */}
-            <div className="mt-6 max-w-2xl mx-auto">
-               <button
-                 onClick={handleBackToQuickSelect}
-                 className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-all duration-200 group"
-               >
-                 <div className="flex items-center justify-between">
-                   <div className="text-left">
-                     <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
-                       Back to quick select
-                     </h3>
-                     <p className="text-sm text-neural-blue-600">
-                       Choose from our pre-defined portfolio size ranges instead
-                     </p>
-                   </div>
-                   <ArrowLeft className="w-5 h-5 text-neural-blue-500 group-hover:-translate-x-1 transition-transform duration-200" />
-                 </div>
-               </button>
-      </div>
+            {/* Back to Quick Select Button */}
+            <div className="text-center">
+              <button
+                onClick={handleBackToQuickSelect}
+                className="text-brand-primary-600 hover:text-brand-primary-700 font-medium flex items-center gap-2 mx-auto"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Quick Select
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

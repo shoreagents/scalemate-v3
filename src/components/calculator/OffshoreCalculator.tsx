@@ -31,6 +31,7 @@ import {
   Globe
 } from 'lucide-react';
 import Link from 'next/link';
+import { LocationStep } from './steps/LocationStep';
 
 
 
@@ -268,14 +269,10 @@ export function OffshoreCalculator({
       // Check cache first - this makes the effect idempotent
       const cachedData = getCachedLocation();
       if (cachedData) {
-        if (!isCancelled) {
-          // Add a small delay to show skeleton even for cached data
-          await new Promise(resolve => setTimeout(resolve, 300));
           if (!isCancelled) {
             setLocationData(cachedData);
             setIsLoadingLocation(false);
             console.log('📍 Using cached location:', cachedData.country_name);
-          }
         }
         return;
       }
@@ -288,9 +285,6 @@ export function OffshoreCalculator({
         if (!isCancelled) {
         setLocationError(null);
         }
-        
-        // Add a small delay to make skeleton visible
-        await new Promise(resolve => setTimeout(resolve, 500));
         
         if (isCancelled) return;
         
@@ -390,222 +384,6 @@ export function OffshoreCalculator({
     }
   };
 
-  // Skeleton Loader Components
-  const PortfolioStepSkeleton = () => (
-    <div className="mx-auto" style={{ maxWidth: '1400px' }}>
-      {/* Skeleton for portfolio options only */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="relative h-full">
-            <div className="w-full h-full p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col">
-              {/* Portfolio Size - Fixed Height */}
-              <div className="mb-4">
-                <div className="h-6 bg-gray-200 rounded mb-1 animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
-              </div>
-              
-              {/* Description - Auto-adjusting Container */}
-              <div className="flex-1 mb-4">
-                <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
-              </div>
-              
-              {/* Stats Grid - Fixed Position */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center p-3 rounded-lg bg-white/80">
-                  <div className="flex items-center justify-center mb-1">
-                    <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
-                    <div className="h-4 bg-gray-200 rounded w-8 animate-pulse" />
-                  </div>
-                  <div className="h-3 bg-gray-200 rounded w-16 mx-auto animate-pulse" />
-                </div>
-                
-                <div className="text-center p-3 rounded-lg bg-white/80">
-                  <div className="flex items-center justify-center mb-1">
-                    <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
-                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
-                  </div>
-                  <div className="h-3 bg-gray-200 rounded w-20 mx-auto animate-pulse" />
-                </div>
-              </div>
-              
-              {/* Revenue Range - Fixed Position at Bottom */}
-              <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
-                <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
-                <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* Need More Precision Card - Show immediately */}
-      <div className="max-w-2xl mx-auto">
-        <div className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50">
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
-                Want more accurate results?
-              </h3>
-              <p className="text-sm text-neural-blue-600">
-                Tell us your exact numbers for personalized recommendations and precise savings estimates
-              </p>
-            </div>
-            <div className="w-5 h-5 text-neural-blue-500">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const RoleSelectionStepSkeleton = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-8 bg-gray-200 rounded-lg w-3/4 mx-auto mb-2 animate-pulse" />
-        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse" />
-      </div>
-      
-      {/* Search and Filters Skeleton */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col min-[468px]:flex-row gap-4">
-          <div className="flex-1 relative">
-            <div className="w-full h-12 bg-gray-200 rounded-lg animate-pulse" />
-          </div>
-          <div className="h-12 bg-gray-200 rounded-lg w-40 animate-pulse" />
-        </div>
-        
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
-          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
-          <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-          <div className="flex-1"></div>
-          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="relative h-full">
-            <div className="p-6 rounded-xl border-2 border-neutral-200 bg-white h-full flex flex-col">
-              {/* Role Header */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 bg-gray-200 rounded w-12 animate-pulse" />
-                </div>
-                <div className="h-5 bg-gray-200 rounded mb-1 animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
-              </div>
-              
-              {/* Enhanced Savings Preview */}
-              <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
-                <div className="text-center mb-3">
-                  <div className="h-4 bg-gray-200 rounded w-32 mx-auto animate-pulse" />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
-                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
-                    <div className="text-right">
-                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
-                      <div className="h-3 bg-gray-200 rounded w-12 animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="border-t border-green-300 pt-2 mt-2">
-                    <div className="flex items-center justify-between">
-                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-                      <div className="text-right">
-                        <div className="h-5 bg-gray-200 rounded w-20 animate-pulse" />
-                        <div className="h-3 bg-gray-200 rounded w-16 animate-pulse" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const TaskSelectionStepSkeleton = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-8 bg-gray-200 rounded-lg w-3/4 mx-auto mb-2 animate-pulse" />
-        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse" />
-      </div>
-      
-      <div className="space-y-6">
-        {[1, 2].map((role) => (
-          <div key={role} className="border border-neutral-200 rounded-xl overflow-hidden">
-            <div className="p-4 bg-neutral-50">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
-                <div className="h-5 bg-gray-200 rounded flex-1 animate-pulse" />
-              </div>
-            </div>
-            <div className="p-6 space-y-3">
-              {[1, 2, 3].map((task) => (
-                <div key={task} className="p-4 border border-neutral-200 rounded-lg">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-5 bg-gray-200 rounded flex-1 animate-pulse" />
-                  </div>
-                  <div className="ml-8">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const ExperienceStepSkeleton = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-8 bg-gray-200 rounded-lg w-3/4 mx-auto mb-2 animate-pulse" />
-        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse" />
-      </div>
-      
-      <div className="space-y-6">
-        {[1, 2].map((role) => (
-          <div key={role} className="p-6 border border-neutral-200 rounded-xl">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
-              <div className="h-6 bg-gray-200 rounded flex-1 animate-pulse" />
-            </div>
-            <div className="space-y-3">
-              {[1, 2, 3].map((level) => (
-                <div key={level} className="p-4 border border-neutral-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
-                    <div className="h-5 bg-gray-200 rounded w-16 animate-pulse" />
-                  </div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   // Initialize analytics tracking
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -620,7 +398,7 @@ export function OffshoreCalculator({
 
   // Disable global exit intent when user completes the calculator
   useEffect(() => {
-    if (formData.currentStep === 5 && calculationResult) {
+    if (formData.currentStep === 6 && calculationResult) {
       exitIntentContext.disable();
       console.log('🎯 Calculator completed - exit intent disabled');
     }
@@ -653,7 +431,7 @@ export function OffshoreCalculator({
   };
 
   const nextStep = () => {
-    if (formData.currentStep < 5) {
+    if (formData.currentStep < 6) {
       updateFormData({ currentStep: (formData.currentStep + 1) as CalculatorStep });
       // Scroll to top of the page to show the new step
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -706,8 +484,8 @@ export function OffshoreCalculator({
       setCalculationResult(result);
       setProcessingStage('');
       
-      // Advance to step 5 (results) after calculation is complete
-      updateFormData({ currentStep: 5 });
+      // Advance to step 6 (results) after calculation is complete
+      updateFormData({ currentStep: 6 });
       analytics.trackEvent('calculation_complete', { 
         result
       });
@@ -735,39 +513,27 @@ export function OffshoreCalculator({
 
   const canProceedFromStep = (step: CalculatorStep): boolean => {
     switch (step) {
-      case 1: return formData.portfolioSize !== '';
-      case 2: return Object.values(formData.selectedRoles).some(Boolean);
-      case 3: {
-        // Check that each selected role has at least one checked task
-        const selectedRoles = Object.entries(formData.selectedRoles)
-          .filter(([, selected]: [string, boolean]) => selected)
-          .map(([roleId]: [string, boolean]) => roleId);
-        
-        return selectedRoles.every((roleId: string) => {
-          // Check if this role has any checked tasks
-          const hasSelectedTasks = Object.entries(formData.selectedTasks).some(
-            ([taskKey, isChecked]) => taskKey.startsWith(`${roleId}-`) && isChecked
-          );
-          
-          // Check if this role has any custom tasks
-          const hasCustomTasks = formData.customTasks[roleId] && formData.customTasks[roleId].length > 0;
-          
-          return hasSelectedTasks || hasCustomTasks;
-        });
-      }
-      case 4: {
-        // NEW: Multi-level experience validation
-        const selectedRoles = Object.entries(formData.selectedRoles)
-          .filter(([, selected]: [string, boolean]) => selected)
-          .map(([roleId]: [string, boolean]) => roleId);
-        
-        // Check if all selected roles have complete experience distribution
-        return selectedRoles.every((roleId: string) => {
-          const distribution = formData.roleExperienceDistribution?.[roleId];
-          return distribution && distribution.isComplete;
-        });
-      }
-      default: return true;
+      case 1: // Location step
+        return !!getEffectiveLocation();
+      case 2: // Portfolio step
+        return formData.portfolioSize !== '' || !!(formData.manualPortfolioData && Object.keys(formData.manualPortfolioData).length > 0);
+      case 3: // Role selection step
+        return Object.entries(formData.selectedRoles).some(([, selected]) => selected === true);
+      case 4: // Task selection step
+        return Object.values(formData.selectedTasks).some(selected => selected === true);
+      case 5: // Experience step
+        return Object.keys(formData.roleExperienceDistribution).length > 0;
+      default:
+        return false;
+    }
+  };
+
+  const handleStepClick = (step: CalculatorStep) => {
+    // Only allow navigation to steps that are accessible
+    // Users can go to any step up to the current step or completed steps
+    if (step <= formData.currentStep || canProceedFromStep((step - 1) as CalculatorStep)) {
+      updateFormData({ currentStep: step });
+      onStepChange?.(step);
     }
   };
 
@@ -809,15 +575,10 @@ export function OffshoreCalculator({
   }, []);
 
   const renderStep = () => {
-    // Debug logging (can be removed in production)
-    // console.log('🔍 renderStep debug:', { isLoadingLocation, isLoadingPortfolio, currentStep: formData.currentStep });
-    
     switch (formData.currentStep) {
       case 1:
         return (
-          <PortfolioStep
-            value={formData.portfolioSize}
-            manualData={formData.manualPortfolioData}
+          <LocationStep
             locationData={locationData}
             isLoadingLocation={isLoadingLocation}
             locationError={locationError}
@@ -830,16 +591,24 @@ export function OffshoreCalculator({
             onLocationReset={resetToAutoLocation}
             onTempLocationChange={setTempLocation}
             getEffectiveLocation={getEffectiveLocation}
+          />
+        );
+      case 2:
+        return (
+          <PortfolioStep
+            value={formData.portfolioSize}
+            manualData={formData.manualPortfolioData}
             onChange={handlePortfolioChange}
-            showPortfolioGridSkeleton={(isLoadingLocation || isLoadingPortfolio) && formData.currentStep === 1}
             portfolioIndicators={portfolioIndicators}
             isLoadingIndicators={isLoadingPortfolio}
             portfolioCurrency={portfolioCurrency}
             portfolioCurrencySymbol={portfolioCurrencySymbol}
             isUsingDynamicData={isUsingDynamicData}
+            {...(formData.userLocation && { userLocation: formData.userLocation })}
+            {...(manualLocation && { manualLocation })}
           />
         );
-      case 2:
+      case 3:
         return (
           <RoleSelectionStep
             selectedRoles={formData.selectedRoles}
@@ -854,7 +623,7 @@ export function OffshoreCalculator({
             isUsingDynamicRoles={isUsingDynamicRoles}
           />
         );
-      case 3:
+      case 4:
         return (
           <TaskSelectionStep
             selectedRoles={formData.selectedRoles}
@@ -869,7 +638,7 @@ export function OffshoreCalculator({
             {...(manualLocation && { manualLocation })}
           />
         );
-      case 4:
+      case 5:
         return (
           <ExperienceStep
             selectedRoles={formData.selectedRoles}
@@ -885,7 +654,7 @@ export function OffshoreCalculator({
             isUsingDynamicRoles={isUsingDynamicRoles}
           />
         );
-      case 5:
+      case 6:
         return (
           <ResultsStep
             result={calculationResult!}
@@ -900,11 +669,12 @@ export function OffshoreCalculator({
 
   const getStepDescription = (step: CalculatorStep): string => {
     const descriptions = {
-      1: 'Tell us about your property portfolio size and management structure',
-      2: 'Select the roles you want to offshore and team size requirements',
-      3: 'Choose specific tasks for each role to get accurate cost projections',
-      4: 'Set experience requirements to match your quality standards',
-      5: 'Your comprehensive savings breakdown and implementation guide'
+      1: 'Set your business location for accurate cost comparisons',
+      2: 'Tell us about your property portfolio size and management structure',
+      3: 'Select the roles you want to offshore and team size requirements',
+      4: 'Choose specific tasks for each role to get accurate cost projections',
+      5: 'Set experience requirements to match your quality standards',
+      6: 'Your comprehensive savings breakdown and implementation guide'
     };
     return descriptions[step] || '';
   };
@@ -930,13 +700,14 @@ export function OffshoreCalculator({
         </div>
 
         {/* Step Indicator */}
-        <div className="my-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+2rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
+        <div className="my-12 -mx-[50vw] ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] px-[50vw] pl-[calc(50vw-50%+1.5rem)] pr-[calc(50vw-50%+1.5rem)] lg:pl-[calc(50vw-50%+2rem)] lg:pr-[calc(50vw-50%+1.5rem)] pt-8 pb-2 bg-neural-blue-50/30 border-y border-neural-blue-100/50 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
           <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
           <div className="relative z-10">
             <StepIndicator 
               currentStep={formData.currentStep} 
               completedSteps={[]}
+              onStepClick={handleStepClick}
             />
           </div>
         </div>
@@ -955,7 +726,7 @@ export function OffshoreCalculator({
         </AnimatePresence>
 
         {/* Navigation */}
-        {formData.currentStep < 5 && (
+        {formData.currentStep < 6 && (
           <Card 
             variant="neural-elevated" 
             className="mt-8 p-6"
@@ -991,10 +762,10 @@ export function OffshoreCalculator({
                 
                 <div className="flex items-center gap-4">
                   <div className="text-sm text-neural-blue-600 font-medium">
-                    Step {formData.currentStep} of 5
+                    Step {formData.currentStep} of 6
                   </div>
                   
-                  {formData.currentStep < 4 && (
+                  {formData.currentStep < 5 && (
                     <Button
                       variant="neural-primary"
                       onClick={nextStep}
@@ -1012,11 +783,11 @@ export function OffshoreCalculator({
               <div className="flex sm:hidden flex-col items-center gap-4">
                 {/* Step counter at top */}
                 <div className="text-sm text-neural-blue-600 font-medium">
-                  Step {formData.currentStep} of 5
+                  Step {formData.currentStep} of 6
                 </div>
                 
                 {/* Continue button */}
-                {formData.currentStep < 4 && (
+                {formData.currentStep < 5 && (
                   <Button
                     variant="neural-primary"
                     onClick={nextStep}

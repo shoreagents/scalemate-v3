@@ -472,7 +472,8 @@ export function RoleSelectionStep({
           stableUserLocation,
           stableManualLocation,
           roles,
-          searchFilters.savingsView
+          searchFilters.savingsView,
+          isUsingDynamicRoles
         );
         const convertedCost = `≈ ${getEffectiveCurrencySymbol(stableUserLocation, stableManualLocation)}${summary.totalPhilippinesCost.toLocaleString()}`;
         setSummaryPhilippinesCostConverted(convertedCost);
@@ -542,7 +543,8 @@ export function RoleSelectionStep({
           stableUserLocation,
           stableManualLocation,
           roles,
-          searchFilters.savingsView
+          searchFilters.savingsView,
+          isUsingDynamicRoles
         );
         
         if (error) {
@@ -564,8 +566,8 @@ export function RoleSelectionStep({
   return (
     <div>
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-2">
+      <div className="text-center mb-12">
+        <div className="flex items-center justify-center gap-3 mb-4">
           <h2 className="text-headline-1 text-neutral-900">
             Role Selection
           </h2>
@@ -800,7 +802,7 @@ export function RoleSelectionStep({
             >
               <div
                 className={`
-                  p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer h-full flex flex-col
+                  p-6 rounded-xl border-2 cursor-pointer h-full flex flex-col
                   ${isSelected 
                     ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
                     : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'

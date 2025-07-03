@@ -347,7 +347,7 @@ export function ExperienceStep({
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
+        <div className="flex items-center justify-center gap-3 mb-4">
           <h2 className="text-headline-1 text-neutral-900">Experience Level</h2>
           {/* AI Indicator beside title */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
@@ -369,7 +369,7 @@ export function ExperienceStep({
             </span>
           </div>
         </div>
-        <p className="text-body-large text-neutral-600 mb-4">
+        <p className="text-body-large text-neutral-600 mb-12">
           Assign team members to different experience levels for each role. Mix and match to optimize your team composition.
         </p>
         

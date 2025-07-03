@@ -168,6 +168,8 @@ Data Quality Standards:
 - Align experience descriptions with local hiring practices
 - All salary components (base, total, benefits, taxes) must be ANNUAL (per year) figures
 
+Respond ONLY in English.
+
 Return ONLY valid JSON in this exact format:
 {
   "roles": {

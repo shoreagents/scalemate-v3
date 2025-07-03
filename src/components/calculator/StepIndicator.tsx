@@ -9,7 +9,8 @@ import {
   GraduationCap, 
   TrendingUp,
   Brain,
-  Sparkles
+  Sparkles,
+  MapPin
 } from 'lucide-react';
 
 interface StepIndicatorProps {
@@ -22,30 +23,36 @@ interface StepIndicatorProps {
 const STEPS = [
   {
     number: 1,
+    title: 'Location',
+    description: 'Set your business location',
+    icon: MapPin
+  },
+  {
+    number: 2,
     title: 'Portfolio Size',
     description: 'Select your property count',
     icon: Building
   },
   {
-    number: 2,
+    number: 3,
     title: 'Role Selection',
     description: 'Choose roles to offshore',
     icon: Users
   },
   {
-    number: 3,
+    number: 4,
     title: 'Task Selection',
     description: 'Select specific tasks',
     icon: CheckSquare
   },
   {
-    number: 4,
+    number: 5,
     title: 'Experience Level',
     description: 'Set team experience',
     icon: GraduationCap
   },
   {
-    number: 5,
+    number: 6,
     title: 'Results',
     description: 'View your savings',
     icon: TrendingUp
@@ -85,17 +92,17 @@ export function StepIndicator({
               <motion.button
                 onClick={() => isClickable && onStepClick?.(step.number as CalculatorStep)}
                 disabled={!isClickable}
-                whileHover={isClickable ? { scale: 1.05 } : {}}
-                whileTap={isClickable ? { scale: 0.95 } : {}}
                 className={`
-                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md
+                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md active:border-0 active:bg-white
                   ${isCurrent 
                     ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow' 
                     : isComplete
                     ? 'border-cyber-green-500 bg-gradient-to-br from-cyber-green-500 to-cyber-green-600 text-white shadow-cyber-glow'
-                    : 'border-neural-blue-200 bg-white text-neural-blue-400 hover:border-neural-blue-300'
+                    : isClickable
+                    ? 'border-neural-blue-200 bg-white text-neural-blue-400 hover:bg-gradient-to-br hover:from-neural-blue-500/20 hover:to-quantum-purple-500/20'
+                    : 'border-neural-blue-200 bg-white text-neural-blue-400'
                   }
-                  ${isClickable ? 'cursor-pointer hover:shadow-neural-glow' : 'cursor-not-allowed opacity-60'}
+                  ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
                 `}
               >
                 {isCurrent && (
@@ -144,17 +151,17 @@ export function StepIndicator({
               <motion.button
                 onClick={() => isClickable && onStepClick?.(step.number as CalculatorStep)}
                 disabled={!isClickable}
-                whileHover={isClickable ? { scale: 1.05 } : {}}
-                whileTap={isClickable ? { scale: 0.95 } : {}}
                 className={`
-                  relative flex items-center justify-center w-10 h-10 rounded-xl border-2 transition-all duration-300 shadow-md mb-2
+                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md mb-2 active:border-0 active:bg-white
                   ${isCurrent 
                     ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow' 
                     : isComplete
                     ? 'border-cyber-green-500 bg-gradient-to-br from-cyber-green-500 to-cyber-green-600 text-white shadow-cyber-glow'
-                    : 'border-neural-blue-200 bg-white text-neural-blue-400 hover:border-neural-blue-300'
+                    : isClickable
+                    ? 'border-neural-blue-200 bg-white text-neural-blue-400 hover:bg-gradient-to-br hover:from-neural-blue-500/20 hover:to-quantum-purple-500/20'
+                    : 'border-neural-blue-200 bg-white text-neural-blue-400'
                   }
-                  ${isClickable ? 'cursor-pointer hover:shadow-neural-glow' : 'cursor-not-allowed opacity-60'}
+                  ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
                 `}
               >
                 {isCurrent && (

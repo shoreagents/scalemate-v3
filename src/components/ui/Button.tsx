@@ -51,25 +51,25 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const getVariantStyles = () => {
-    const baseStyles = 'inline-flex items-center justify-center rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden transition-all duration-300';
+    const baseStyles = 'inline-flex items-center justify-center rounded-xl border font-medium focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden transition-all duration-300';
     
     const variantClasses = {
       // Neural Design System Variants
-      'neural-primary': 'bg-gradient-to-r from-neural-blue-500 via-quantum-purple-500 to-neural-blue-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-neural-blue-500/50 bg-[length:200%_100%] animate-gradient-x',
-      'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm hover:bg-gradient-to-r hover:from-neural-blue-100 hover:via-neural-blue-50 hover:to-neural-blue-100 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-quantum-purple-500/50',
-      'cyber-success': 'bg-gradient-to-r from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-cyber-green-500/50 bg-[length:200%_100%]',
-      'matrix-energy': 'bg-gradient-to-r from-matrix-orange-500 via-matrix-orange-600 to-matrix-orange-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-matrix-orange-500/50 bg-[length:200%_100%]',
-      'neural-ghost': 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:via-neural-blue-100 hover:to-neural-blue-50 hover:text-neural-blue-700 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-neural-blue-500/50',
-      'quantum-outline': 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:via-quantum-purple-100 hover:to-quantum-purple-50 hover:border-quantum-purple-400 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-quantum-purple-500/50',
-      'ai-destructive': 'bg-gradient-to-r from-red-500 via-red-600 to-red-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-red-500/50 bg-[length:200%_100%]',
+      'neural-primary': 'bg-gradient-to-l from-neural-blue-500 to-quantum-purple-500 text-white border-0 shadow-lg rounded-xl',
+      'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm',
+      'cyber-success': 'bg-gradient-to-l from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg',
+      'matrix-energy': 'bg-gradient-to-l from-matrix-orange-500 via-matrix-orange-600 to-matrix-orange-500 text-white border-0 shadow-lg',
+      'neural-ghost': 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:to-neural-blue-100 hover:text-neural-blue-700',
+      'quantum-outline': 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:to-quantum-purple-100 hover:border-quantum-purple-400',
+      'ai-destructive': 'bg-gradient-to-l from-red-500 via-red-600 to-red-500 text-white border-0 shadow-lg',
       
       // Legacy variants for backward compatibility
-      primary: 'bg-gradient-to-r from-neural-blue-500 via-quantum-purple-500 to-neural-blue-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-neural-blue-500/50 bg-[length:200%_100%]',
-      secondary: 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm hover:bg-gradient-to-r hover:from-neural-blue-100 hover:via-neural-blue-50 hover:to-neural-blue-100 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-quantum-purple-500/50',
-      accent: 'bg-gradient-to-r from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-cyber-green-500/50 bg-[length:200%_100%]',
-      ghost: 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:via-neural-blue-100 hover:to-neural-blue-50 hover:text-neural-blue-700 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-neural-blue-500/50',
-      outline: 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:via-quantum-purple-100 hover:to-quantum-purple-50 hover:border-quantum-purple-400 hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-quantum-purple-500/50',
-      destructive: 'bg-gradient-to-r from-red-500 via-red-600 to-red-500 text-white border-0 shadow-lg hover:bg-[length:200%_100%] hover:animate-gradient-x focus:ring-red-500/50 bg-[length:200%_100%]'
+      primary: 'bg-gradient-to-l from-neural-blue-500 via-quantum-purple-500 to-neural-blue-500 text-white border-0 shadow-lg',
+      secondary: 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm',
+      accent: 'bg-gradient-to-l from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg',
+      ghost: 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:to-neural-blue-100 hover:text-neural-blue-700',
+      outline: 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:to-quantum-purple-100 hover:border-quantum-purple-400',
+      destructive: 'bg-gradient-to-l from-red-500 via-red-600 to-red-500 text-white border-0 shadow-lg',
     };
 
     return combineClasses(

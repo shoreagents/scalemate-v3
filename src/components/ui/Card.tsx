@@ -92,4 +92,7 @@ export function Card({
       )}
     </div>
   );
-} 
+}
+
+// NOTE: This Card component does not apply any transition classes by default.
+// If you want transitions on hover/click, add them via the className prop at the usage site. 
