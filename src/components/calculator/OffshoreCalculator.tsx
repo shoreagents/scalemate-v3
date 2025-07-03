@@ -687,7 +687,7 @@ export function OffshoreCalculator({
       
       <div className="relative z-10">
         {/* Calculator Header */}
-        <div className="mb-8 px-8 py-112 text-center">
+        <div className="mb-8 px-8 py-12 text-center">
           <div className="mb-6">
             <h1 className="text-display-3 gradient-text-neural font-display leading-tight text-center">
               Offshore Scaling Calculator
