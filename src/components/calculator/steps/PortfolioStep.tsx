@@ -156,34 +156,16 @@ export function PortfolioStep({
       <div className="text-center mb-12">
         <div className="mb-6">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <h2 className="text-headline-1 text-neutral-900">
-              Portfolio Size
-            </h2>
-            {/* AI Indicator beside title */}
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-              isUsingDynamicData 
-                ? 'bg-purple-50 border border-purple-200'
-                : 'bg-gray-50 border border-gray-200'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                isLoadingIndicators 
-                  ? 'bg-purple-500 animate-pulse'
-                  : isUsingDynamicData 
-                    ? 'bg-purple-500'
-                    : 'bg-gray-500'
-              }`}></div>
-              <span className={`text-xs font-medium ${
-                isUsingDynamicData 
-                  ? 'text-purple-700'
-                  : 'text-gray-700'
-              }`}>
-                Powered by AI
-              </span>
+          <div className="w-12 h-12 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+              <Building className="lucide lucide-users w-5 h-5 text-white" />
             </div>
+            <h2 className="text-headline-1 text-neutral-900">
+              Tell us about your property portfolio
+            </h2>
           </div>
           
           <p className="text-body-large text-neutral-600">
-            Tell us about your property portfolio size and management structure.
+          Select a range or provide exact details for more accurate recommendations and savings calculations.
           </p>
         </div>
       </div>
@@ -266,11 +248,10 @@ export function PortfolioStep({
                     >
                       <div
                         className={`
-                          p-6 rounded-xl border cursor-pointer h-full flex flex-col
-                          ${isSelected 
-                            ? 'border-brand-primary-500 bg-brand-primary-50' 
-                            : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
-                          }
+                          p-6 rounded-xl border cursor-pointer flex flex-col transition-colors duration-300
+                          ${isSelected
+                            ? 'border-brand-primary-500 bg-brand-primary-50'
+                            : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'}
                         `}
                         onClick={() => handlePresetSelection(option.value)}
                       >
@@ -342,6 +323,7 @@ export function PortfolioStep({
               </div>
             )}
             {/* Need More Precision Card */}
+            <div className="max-w-4xl mx-auto">
             <button
               onClick={handleShowPreciseInput}
               className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group"
@@ -358,6 +340,7 @@ export function PortfolioStep({
                 <ArrowRight className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
               </div>
             </button>
+            </div>
           </motion.div>
         ) : (
           <motion.div
@@ -419,7 +402,8 @@ export function PortfolioStep({
                   <h4 className="text-lg font-semibold text-neutral-900">Annual Revenue</h4>
                 </div>
                 <div className="flex gap-3 items-end">
-                  <div className="flex-1">
+                  <div className="flex-1 flex items-center">
+                    <span className="text-neutral-500 text-lg mr-2">{getEffectiveCurrencySymbol(userLocation, manualLocation)}</span>
                     <input
                       type="number"
                       value={manualInput.annualRevenueMin ?? ''}
@@ -430,7 +414,8 @@ export function PortfolioStep({
                     />
                   </div>
                   <span className="pb-3 text-lg text-neutral-500">-</span>
-                  <div className="flex-1">
+                  <div className="flex-1 flex items-center">
+                    <span className="text-neutral-500 text-lg mr-2">{getEffectiveCurrencySymbol(userLocation, manualLocation)}</span>
                     <input
                       type="number"
                       value={manualInput.annualRevenueMax ?? ''}
@@ -445,21 +430,21 @@ export function PortfolioStep({
             </div>
 
             {/* Back to Quick Select Button */}
-            <div className="text-center">
-              <button
-                onClick={handleBackToQuickSelect}
-                className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group flex items-center justify-between mx-auto"
-              >
-                <div className="text-left">
-                  <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
-                    Prefer predefined options?
-                  </h3>
-                  <p className="text-sm text-neural-blue-600">
-                    Choose from our curated portfolio sizes for quick and easy selection
-                  </p>
-                </div>
-                <ArrowLeft className="w-5 h-5 text-neural-blue-500 group-hover:-translate-x-1 transition-transform duration-200" />
-              </button>
+            <div className="max-w-4xl mx-auto">
+            <button
+              onClick={handleBackToQuickSelect}
+              className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group flex items-center justify-between mx-auto"
+            >
+              <div className="text-left">
+                <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
+                  Prefer predefined options?
+                </h3>
+                <p className="text-sm text-neural-blue-600">
+                  Choose from our curated portfolio sizes for quick and easy selection
+                </p>
+              </div>
+              <ArrowLeft className="w-5 h-5 text-neural-blue-500 group-hover:-translate-x-1 transition-transform duration-200" />
+            </button>
             </div>
           </motion.div>
         )}

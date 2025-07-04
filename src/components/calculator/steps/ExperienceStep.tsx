@@ -348,26 +348,10 @@ export function ExperienceStep({
       {/* Header */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <h2 className="text-headline-1 text-neutral-900">Experience Level</h2>
-          {/* AI Indicator beside title */}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-            isUsingDynamicRoles 
-              ? 'bg-purple-50 border border-purple-200'
-              : 'bg-gray-50 border border-gray-200'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              isUsingDynamicRoles 
-                ? 'bg-purple-500'
-                : 'bg-gray-500'
-            }`}></div>
-            <span className={`text-xs font-medium ${
-              isUsingDynamicRoles 
-                ? 'text-purple-700'
-                : 'text-gray-700'
-            }`}>
-              Powered by AI
-            </span>
+        <div className="w-12 h-12 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <GraduationCap className="w-5 h-5 text-white" />
           </div>
+          <h2 className="text-headline-1 text-neutral-900">Distribute experience levels</h2>
         </div>
         <p className="text-body-large text-neutral-600 mb-12">
           Assign team members to different experience levels for each role. Mix and match to optimize your team composition.
@@ -697,8 +681,8 @@ export function ExperienceStep({
           <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
           <div className="relative z-10">
             <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">Total Summary</h3>
-              <p className="text-sm text-neutral-600">Your complete offshore team configuration and savings breakdown.</p>
+              <h3 className="text-lg font-bold text-neural-blue-900">Total Summary</h3>
+              <p className="text-sm text-neutral-600 mb-8">Your complete offshore team configuration and savings breakdown.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-center">
               <div className="lg:col-span-3">

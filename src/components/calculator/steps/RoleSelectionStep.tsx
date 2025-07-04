@@ -18,7 +18,8 @@ import {
   Plus, 
   Minus, 
   Sparkles,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { 
   calculateIndividualRoleSavings, 
@@ -604,30 +605,12 @@ export function RoleSelectionStep({
       {/* Header */}
       <div className="text-center mb-12">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <h2 className="text-headline-1 text-neutral-900">
-            Role Selection
-          </h2>
-          {/* AI Indicator beside title */}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-            isUsingDynamicRoles 
-              ? 'bg-purple-50 border border-purple-200'
-              : 'bg-gray-50 border border-gray-200'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              isLoadingRoles 
-                ? 'bg-purple-500 animate-pulse'
-                : isUsingDynamicRoles 
-                  ? 'bg-purple-500'
-                  : 'bg-gray-500'
-            }`}></div>
-            <span className={`text-xs font-medium ${
-              isUsingDynamicRoles 
-                ? 'text-purple-700'
-                : 'text-gray-700'
-            }`}>
-              Powered by AI
-            </span>
+        <div className="w-12 h-12 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <Users className="w-5 h-5 text-white" />
           </div>
+          <h2 className="text-headline-1 text-neutral-900">
+            Which roles do you want to offshore?
+          </h2>
         </div>
         <p className="text-body-large text-neutral-600">
           Search from our comprehensive role library or create custom roles. 
@@ -671,14 +654,15 @@ export function RoleSelectionStep({
             />
           </div>
           {/* Add Custom Role Button (always visible, disabled when form is open) */}
-          <button
+          <Button
             onClick={() => setShowCustomRoleForm(true)}
             disabled={showCustomRoleForm}
-            className={`px-6 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:shadow-neural-glow transition-all duration-200 flex items-center justify-center gap-2 font-medium whitespace-nowrap ${showCustomRoleForm ? 'opacity-50 cursor-not-allowed' : ''}`}
+            variant="neural-primary"
+            leftIcon={<Plus className="w-5 h-5" />}
+            className="whitespace-nowrap"
           >
-            <Plus className="w-5 h-5" />
             Add Custom Role
-          </button>
+          </Button>
         </div>
 
         {/* Filters */}
@@ -756,6 +740,7 @@ export function RoleSelectionStep({
       </div>
 
       {/* Role Cards Grid */}
+      <AnimatePresence>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {/* Show Create Custom Role Form as first card only if showCustomRoleForm is true */}
       {showCustomRoleForm && (
@@ -797,21 +782,22 @@ export function RoleSelectionStep({
             <div className="flex gap-3 mt-auto">
               <Button
                 type="button"
-              onClick={handleCustomRoleSubmit}
-              disabled={!customRoleForm.title.trim()}
-                className="px-4 py-2 bg-brand-primary-500 text-white rounded-lg hover:bg-brand-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Create Role
+                onClick={handleCustomRoleSubmit}
+                disabled={!customRoleForm.title.trim()}
+                variant="neural-primary"
+                className="px-4 py-2"
+              >
+                Create Role
               </Button>
               <Button
                 type="button"
-              onClick={() => setShowCustomRoleForm(false)}
-                variant="secondary"
-                className="px-4 py-2 rounded-lg transition-colors"
-            >
-              Cancel
+                onClick={() => setShowCustomRoleForm(false)}
+                variant="quantum-secondary"
+                className="px-4 py-2"
+              >
+                Cancel
               </Button>
-          </div>
+            </div>
         </motion.div>
       )}
         {/* Role Cards */}
@@ -826,11 +812,15 @@ export function RoleSelectionStep({
               key={role.id}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
               className="relative h-full"
             >
               <div
                 className={`
-                  p-6 rounded-xl border cursor-pointer h-full flex flex-col
+                  p-6 rounded-xl border cursor-pointer h-full flex flex-col transition-colors duration-300
                   ${isSelected 
                     ? 'border-brand-primary-500 bg-brand-primary-50' 
                     : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
@@ -846,24 +836,28 @@ export function RoleSelectionStep({
                       e.stopPropagation();
                       handleRemoveCustomRole(role.id);
                     }}
-                    className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-red-500 text-lg focus:outline-none z-20"
+                    className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-full text-neutral-400 hover:text-brand-primary-500 focus:outline-none z-20 transition-colors duration-200"
                     title="Remove Custom Role"
                   >
-                    ✖
+                    <X className="w-6 h-6" />
                   </button>
                 )}
                 {/* Selected Indicator */}
-                {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
-                  >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{ duration: 0.1, ease: 'easeInOut' }}
+                      className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
+                    >
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Role Header */}
                 <div className="mb-4">
@@ -1028,6 +1022,7 @@ export function RoleSelectionStep({
           );
         })}
       </div>
+      </AnimatePresence>
 
       {/* No Results */}
       {filteredRoles.length === 0 && (
@@ -1060,10 +1055,10 @@ export function RoleSelectionStep({
           
           <div className="relative z-10">
             <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
+              <h3 className="text-lg font-bold text-neural-blue-900">
                 Total Summary
               </h3>
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-neutral-600 mb-8">
                 Your complete offshore team configuration and savings breakdown.
               </p>
             </div>

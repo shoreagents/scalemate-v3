@@ -28,8 +28,9 @@ import {
   Sparkles,
   Target,
   Home,
-  Globe
+  Globe,
 } from 'lucide-react';
+import { Brain } from 'phosphor-react';
 import Link from 'next/link';
 import { LocationStep } from './steps/LocationStep';
 
@@ -193,7 +194,8 @@ export function OffshoreCalculator({
     rolesError,
     isLoading: isLoadingPortfolio,
     isUsingDynamicRoles,
-    isUsingDynamicData
+    isUsingDynamicData,
+    isLoading
   } = useQuoteCalculatorData(computedLocationForHook, manualLocation);
 
   // Get effective location (manual override or auto-detected)
@@ -708,16 +710,25 @@ export function OffshoreCalculator({
       
       <div className="relative z-10">
         {/* Calculator Header */}
-        <div className="mb-8 px-8 py-12 text-center">
-          <div className="mb-6">
+        <div className="mb-8 text-center">
+          <div className="mb-6 flex items-center justify-center gap-3">
             <h1 className="text-display-3 gradient-text-neural font-display leading-tight text-center">
               Offshore Scaling Calculator
             </h1>
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all duration-300 ${
+              isUsingDynamicData ? 'bg-purple-50 border-purple-200 shadow-[0_0_16px_4px_rgba(168,85,247,0.5)]' : 'bg-gray-50 border-gray-200'
+            }`}>
+              <Brain weight="duotone" className={`w-5 h-5 ${
+                isUsingDynamicData ? 'text-purple-500' : 'text-gray-400'
+              } ${isLoading ? 'animate-pulse' : ''}`} />
+              <span className={`text-xs font-medium ${
+                isUsingDynamicData ? 'text-purple-700' : 'text-gray-700'
+              }`}>
+                Powered by AI
+              </span>
+            </div>
           </div>
           
-          <p className="text-body-large text-neural-blue-600 max-w-3xl mx-auto leading-relaxed">
-            {getStepDescription(formData.currentStep)}
-          </p>
         </div>
 
         {/* Step Indicator */}
@@ -748,21 +759,86 @@ export function OffshoreCalculator({
 
         {/* Navigation */}
         {formData.currentStep < 6 && (
-          <Card 
-            variant="neural-elevated" 
-            className="mt-8 p-6"
-            hoverLift={false}
-          >
-            <>
-              {/* Desktop Layout */}
-              <div className="hidden sm:flex items-center justify-between">
-                <div className="flex items-center gap-4">
+          <div className="max-w-5xl mx-auto">
+            <Card 
+              variant="neural-elevated" 
+              className="mt-8 p-6 hover:shadow-[0_0_24px_6px_rgba(59,130,246,0.18)] transition-all duration-300"
+              hoverLift={false}
+            >
+              <>
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {formData.currentStep === 1 ? (
+                      <Link href="/">
+                        <Button
+                          variant="quantum-secondary"
+                          leftIcon={<Home className="h-4 w-4" />}
+                          className="w-40 h-12"
+                          disabled={isLoadingLocation}
+                        >
+                          Back to Home
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="quantum-secondary"
+                        onClick={prevStep}
+                        leftIcon={<ArrowLeft className="h-4 w-4" />}
+                        className="w-40 h-12"
+                        disabled={isLoadingRoles}
+                      >
+                        Previous
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-neural-blue-600 font-medium">
+                      Step {formData.currentStep} of 6
+                    </div>
+                    
+                    {formData.currentStep < 5 && (
+                      <Button
+                        variant="neural-primary"
+                        onClick={nextStep}
+                        disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
+                        rightIcon={<ArrowRight className="h-4 w-4" />}
+                        className="w-40 h-12"
+                      >
+                        Continue
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile Layout (stacked vertically) */}
+                <div className="flex sm:hidden flex-col items-center gap-4">
+                  {/* Step counter at top */}
+                  <div className="text-sm text-neural-blue-600 font-medium">
+                    Step {formData.currentStep} of 6
+                  </div>
+                  
+                  {/* Continue button */}
+                  {formData.currentStep < 5 && (
+                    <Button
+                      variant="neural-primary"
+                      onClick={nextStep}
+                      disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
+                      rightIcon={<ArrowRight className="h-4 w-4" />}
+                      className="w-full h-12"
+                    >
+                      Continue
+                    </Button>
+                  )}
+                  
+                  {/* Back/Previous button at bottom */}
                   {formData.currentStep === 1 ? (
-                    <Link href="/">
+                    <Link href="/" className="w-full">
                       <Button
                         variant="quantum-secondary"
                         leftIcon={<Home className="h-4 w-4" />}
-                        className="w-40 h-12"
+                        className="w-full h-12"
                         disabled={isLoadingLocation}
                       >
                         Back to Home
@@ -773,79 +849,16 @@ export function OffshoreCalculator({
                       variant="quantum-secondary"
                       onClick={prevStep}
                       leftIcon={<ArrowLeft className="h-4 w-4" />}
-                      className="w-40 h-12"
+                      className="w-full h-12"
                       disabled={isLoadingRoles}
                     >
                       Previous
                     </Button>
                   )}
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="text-sm text-neural-blue-600 font-medium">
-                    Step {formData.currentStep} of 6
-                  </div>
-                  
-                  {formData.currentStep < 5 && (
-                    <Button
-                      variant="neural-primary"
-                      onClick={nextStep}
-                      disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
-                      rightIcon={<ArrowRight className="h-4 w-4" />}
-                      className="w-40 h-12"
-                    >
-                      Continue
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Mobile Layout (stacked vertically) */}
-              <div className="flex sm:hidden flex-col items-center gap-4">
-                {/* Step counter at top */}
-                <div className="text-sm text-neural-blue-600 font-medium">
-                  Step {formData.currentStep} of 6
-                </div>
-                
-                {/* Continue button */}
-                {formData.currentStep < 5 && (
-                  <Button
-                    variant="neural-primary"
-                    onClick={nextStep}
-                    disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
-                    rightIcon={<ArrowRight className="h-4 w-4" />}
-                    className="w-full h-12"
-                  >
-                    Continue
-                  </Button>
-                )}
-                
-                {/* Back/Previous button at bottom */}
-                {formData.currentStep === 1 ? (
-                  <Link href="/" className="w-full">
-                    <Button
-                      variant="quantum-secondary"
-                      leftIcon={<Home className="h-4 w-4" />}
-                      className="w-full h-12"
-                      disabled={isLoadingLocation}
-                    >
-                      Back to Home
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="quantum-secondary"
-                    onClick={prevStep}
-                    leftIcon={<ArrowLeft className="h-4 w-4" />}
-                    className="w-full h-12"
-                    disabled={isLoadingRoles}
-                  >
-                    Previous
-                  </Button>
-                )}
-              </div>
-            </>
-          </Card>
+              </>
+            </Card>
+          </div>
         )}
       </div>
     </div>

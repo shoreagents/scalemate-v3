@@ -4,7 +4,7 @@ import React from 'react';
 import { Loader2, Brain, Zap, Target, Sparkles } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'neural-primary' | 'quantum-secondary' | 'cyber-success' | 'matrix-energy' | 'neural-ghost' | 'quantum-outline' | 'ai-destructive' | 'primary' | 'secondary' | 'accent' | 'ghost' | 'outline' | 'destructive';
+  variant?: 'neural-primary' | 'quantum-secondary' | 'cyber-success' | 'matrix-energy' | 'neural-ghost' | 'quantum-outline' | 'ai-destructive';
   size?: 'neural-sm' | 'neural-md' | 'neural-lg' | 'neural-xl' | 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   aiProcessing?: boolean;
@@ -55,21 +55,13 @@ export const Button: React.FC<ButtonProps> = ({
     
     const variantClasses = {
       // Neural Design System Variants
-      'neural-primary': 'bg-gradient-to-l from-neural-blue-500 to-quantum-purple-500 text-white border-0 shadow-lg rounded-xl',
-      'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm',
+      'neural-primary': 'bg-gradient-to-r from-blue-600 via-violet-700 to-blue-600 bg-[length:200%_100%] bg-[position:0%_50%] hover:bg-[position:100%_50%] disabled:hover:bg-[position:0%_50%] text-white transition-all duration-1000 ease-in-out disabled:transition-none',
+      'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-neural-blue-200 hover:border-neural-blue-400 hover:bg-neural-blue-100 disabled:hover:border-neural-blue-200 disabled:hover:bg-neural-blue-50 transition-all duration-300 disabled:transition-none',
       'cyber-success': 'bg-gradient-to-l from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg',
       'matrix-energy': 'bg-gradient-to-l from-matrix-orange-500 via-matrix-orange-600 to-matrix-orange-500 text-white border-0 shadow-lg',
-      'neural-ghost': 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:to-neural-blue-100 hover:text-neural-blue-700',
-      'quantum-outline': 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:to-quantum-purple-100 hover:border-quantum-purple-400',
+      'neural-ghost': 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:to-neural-blue-100 hover:text-neural-blue-700 disabled:hover:bg-transparent disabled:hover:text-neural-blue-600',
+      'quantum-outline': 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:to-quantum-purple-100 hover:border-quantum-purple-400 disabled:hover:bg-transparent disabled:hover:border-quantum-purple-300',
       'ai-destructive': 'bg-gradient-to-l from-red-500 via-red-600 to-red-500 text-white border-0 shadow-lg',
-      
-      // Legacy variants for backward compatibility
-      primary: 'bg-gradient-to-l from-neural-blue-500 via-quantum-purple-500 to-neural-blue-500 text-white border-0 shadow-lg',
-      secondary: 'bg-neural-blue-50 text-neural-blue-700 border-2 border-neural-blue-200 shadow-sm',
-      accent: 'bg-gradient-to-l from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg',
-      ghost: 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:to-neural-blue-100 hover:text-neural-blue-700',
-      outline: 'bg-transparent text-quantum-purple-600 border-2 border-quantum-purple-300 hover:bg-gradient-to-r hover:from-quantum-purple-50 hover:to-quantum-purple-100 hover:border-quantum-purple-400',
-      destructive: 'bg-gradient-to-l from-red-500 via-red-600 to-red-500 text-white border-0 shadow-lg',
     };
 
     return combineClasses(
@@ -91,20 +83,20 @@ export const Button: React.FC<ButtonProps> = ({
         sizeStyles[size],
         fullWidth && 'w-full',
         aiProcessing && 'ai-processing',
-        quantumShimmer && 'relative overflow-hidden',
+        'group',
         className
       )}
       disabled={disabled || loading || aiProcessing}
       {...props}
     >
-      {/* Neural shimmer effect for quantum buttons */}
-      {quantumShimmer && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer" />
-      )}
+      <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-neural-shimmer" />
       
       {/* Left icon or processing indicator */}
       {(leftIcon || loading || aiProcessing) && (
-        <span className="mr-2 -ml-1 relative z-10">
+        <span className={combineClasses(
+          'mr-2 -ml-1 relative z-10',
+          leftIcon && !loading && !aiProcessing && !disabled ? 'transition-transform duration-300 group-hover:scale-110' : undefined
+        )}>
           {getProcessingIcon() || leftIcon}
         </span>
       )}
@@ -126,7 +118,10 @@ export const Button: React.FC<ButtonProps> = ({
       
       {/* Right icon */}
       {rightIcon && !loading && !aiProcessing && (
-        <span className="ml-2 -mr-1 relative z-10">
+        <span className={combineClasses(
+          'ml-2 -mr-1 relative z-10',
+          variant === 'neural-primary' && !disabled && 'transition-transform duration-300 group-hover:translate-x-1'
+        )}>
           {rightIcon}
         </span>
       )}

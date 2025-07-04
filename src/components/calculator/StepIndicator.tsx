@@ -79,7 +79,7 @@ export function StepIndicator({
   return (
     <div className={`w-full mb-8 ${className}`}>
       {/* Neural Desktop Step Indicator (Large screens) */}
-      <div className="hidden lg:flex items-center justify-between">
+      <div className="hidden lg:flex items-center justify-center gap-4 xl:gap-4">
         {STEPS.map((step, index) => {
           const Icon = step.icon;
           const isComplete = isStepComplete(step.number as CalculatorStep);
@@ -89,7 +89,7 @@ export function StepIndicator({
           return (
             <motion.div 
               key={step.number} 
-              className="flex items-center"
+              className="flex items-center min-w-0 flex-1"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -99,29 +99,23 @@ export function StepIndicator({
                 onClick={() => isClickable && onStepClick?.(step.number as CalculatorStep)}
                 disabled={!isClickable}
                 className={`
-                  flex-none relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md active:border-0 active:bg-white
-                  aspect-square overflow-hidden p-0
+                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md flex-shrink-0
                   ${isCurrent 
                     ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow' 
                     : isComplete
                     ? 'border-cyber-green-500 bg-gradient-to-br from-cyber-green-500 to-cyber-green-600 text-white shadow-cyber-glow'
-                    : isClickable
-                    ? 'border-neural-blue-200 bg-white text-neural-blue-400 hover:bg-gradient-to-br hover:from-neural-blue-500/20 hover:to-quantum-purple-500/20'
-                    : 'border-neural-blue-200 bg-white text-neural-blue-400'
+                    : 'border-neural-blue-200 bg-white text-neural-blue-400 hover:border-brand-primary-500 hover:text-brand-primary-500 hover:scale-105 transition-transform'
                   }
                   ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
                 `}
               >
-                {isCurrent && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer rounded-xl" />
-                )}
                 <div className="flex items-center justify-center w-6 h-6">
                   <Icon className={`flex-shrink-0 relative z-10 ${step.iconClass}`} size={20} strokeWidth={1.5} />
                 </div>
               </motion.button>
 
               {/* Neural Step Info */}
-              <div className="ml-4 text-left">
+              <div className="ml-4 text-left min-w-0">
                 <div className={`
                   font-medium text-sm transition-colors duration-200 font-display
                   ${isCurrent ? 'text-neural-blue-600' : 'text-neural-blue-700'}
@@ -141,7 +135,7 @@ export function StepIndicator({
       </div>
 
       {/* Neural Tablet Step Indicator (Medium screens) */}
-      <div className="hidden md:flex lg:hidden items-center justify-between">
+      <div className="hidden md:flex lg:hidden items-center justify-center gap-4 md:gap-6 px-2">
         {STEPS.map((step, index) => {
           const Icon = step.icon;
           const isComplete = isStepComplete(step.number as CalculatorStep);
@@ -151,7 +145,7 @@ export function StepIndicator({
           return (
             <motion.div 
               key={step.number} 
-              className="flex flex-col items-center flex-1 text-center"
+              className="flex flex-col items-center flex-1 text-center min-w-0"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -161,22 +155,20 @@ export function StepIndicator({
                 onClick={() => isClickable && onStepClick?.(step.number as CalculatorStep)}
                 disabled={!isClickable}
                 className={`
-                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md mb-2 active:border-0 active:bg-white
+                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 mb-2 active:border-0 active:bg-white
                   aspect-square overflow-hidden p-0
+                  transition-all duration-300 ease-in-out
                   ${isCurrent 
-                    ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow' 
+                    ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500  text-white ' 
                     : isComplete
-                    ? 'border-cyber-green-500 bg-gradient-to-br from-cyber-green-500 to-cyber-green-600 text-white shadow-cyber-glow'
+                    ? 'border-cyber-green-500 bg-gradient-to-br from-cyber-green-500 to-cyber-green-600 text-white '
                     : isClickable
-                    ? 'border-neural-blue-200 bg-white text-neural-blue-400 hover:bg-gradient-to-br hover:from-neural-blue-500/20 hover:to-quantum-purple-500/20'
+                    ? 'border-neural-blue-200 bg-white text-neural-blue-400 hover:bg-white hover:border-blue-700 hover:text-blue-700 hover:scale-105 transition-transform'
                     : 'border-neural-blue-200 bg-white text-neural-blue-400'
                   }
                   ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}
                 `}
               >
-                {isCurrent && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer rounded-xl" />
-                )}
                 <div className="flex items-center justify-center w-6 h-6">
                   <Icon className={`flex-shrink-0 relative z-10 ${step.iconClass}`} size={20} strokeWidth={1.5} />
                 </div>
@@ -229,9 +221,6 @@ export function StepIndicator({
                   }
                 `}
               >
-                {isCurrent && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-neural-shimmer rounded-full" />
-                )}
               </motion.div>
             );
           })}

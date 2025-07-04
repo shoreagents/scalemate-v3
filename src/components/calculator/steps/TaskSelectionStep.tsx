@@ -282,32 +282,14 @@ export function TaskSelectionStep({
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center mb-12">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <h2 className="text-headline-1 text-neutral-900">Task Selection</h2>
-          {/* AI Indicator beside title */}
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-            isUsingDynamicRoles 
-              ? 'bg-purple-50 border border-purple-200'
-              : 'bg-gray-50 border border-gray-200'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              isLoadingRoles 
-                ? 'bg-purple-500 animate-pulse'
-                : isUsingDynamicRoles 
-                  ? 'bg-purple-500'
-                  : 'bg-gray-500'
-            }`}></div>
-            <span className={`text-xs font-medium ${
-              isUsingDynamicRoles 
-                ? 'text-purple-700'
-                : 'text-gray-700'
-            }`}>
-              Powered by AI
-            </span>
+      <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="w-12 h-12 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+            <CheckSquare className="w-4 h-4 text-white" />
           </div>
+          <h2 className="text-headline-1 text-neutral-900">Assign tasks for your selected roles</h2>
         </div>
         <p className="text-body-large text-neutral-600">
-          Choose which tasks you'd like to offshore for each role. You can also add custom tasks.
+          Choose which tasks you'd like to assign to each role. You can also add custom tasks.
         </p>
       </div>
 
@@ -328,7 +310,7 @@ export function TaskSelectionStep({
               {/* Role Header */}
               <button
                 onClick={() => toggleRole(roleId)}
-                className="w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                className="w-full px-6 py-4 bg-white hover:bg-gray-100 transition-colors flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
                   <span className="text-2xl">{role.icon}</span>
@@ -371,10 +353,10 @@ export function TaskSelectionStep({
                               key={task.id}
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              className={`p-4 border rounded-lg cursor-pointer ${
+                              className={`p-4 border rounded-lg cursor-pointer transition-colors duration-300 ${
                                 isSelected 
-                                  ? 'border-neural-blue-500 bg-neural-blue-50 ring-2 ring-neural-blue-100 shadow-lg' 
-                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                  ? 'border-neural-blue-500 bg-neural-blue-50' 
+                                  : 'border-neutral-200 hover:border-brand-primary-300 hover:bg-brand-primary-25'
                               }`}
                               onClick={() => handleTaskToggle(roleId, task.id)}
                             >
@@ -382,12 +364,35 @@ export function TaskSelectionStep({
                                 <div className="flex-1 space-y-2">
                                   <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-3">
-                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                      isSelected 
-                                        ? 'border-neural-blue-500 bg-neural-blue-500' 
-                                        : 'border-gray-300'
-                                    }`}>
-                                      {isSelected && <Check className="w-3 h-3 text-white" />}
+                                    <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center border-gray-300 relative">
+                                      {/* Animate the blue background */}
+                                      <AnimatePresence>
+                                        {isSelected && (
+                                          <motion.div
+                                            key="bg"
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            exit={{ scale: 0 }}
+                                            transition={{ duration: 0.15, ease: 'easeInOut' }}
+                                            className="absolute inset-0 rounded-full bg-neural-blue-500 z-0"
+                                          />
+                                        )}
+                                      </AnimatePresence>
+                                      {/* Animate the checkmark */}
+                                      <AnimatePresence>
+                                        {isSelected && (
+                                          <motion.div
+                                            key="checkmark"
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            exit={{ scale: 0 }}
+                                            transition={{ duration: 0.15, ease: 'easeInOut' }}
+                                            className="flex items-center justify-center z-10"
+                                          >
+                                            <Check className="w-3 h-3 text-white" />
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
                                     </div>
                                     <h4 className="font-medium text-gray-900">{task.name}</h4>
                                     </div>
@@ -478,7 +483,7 @@ export function TaskSelectionStep({
                           <div className="space-y-4 p-6 bg-gradient-to-r from-neural-blue-25 to-quantum-purple-25 rounded-xl border border-neural-blue-200">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <label className="block text-sm font-medium text-neural-blue-700 mb-2">
+                                <label className="block text-sm font-medium text-neutral-800 mb-2">
                                   Task Name
                                 </label>
                                 <Input
@@ -511,13 +516,13 @@ export function TaskSelectionStep({
                                   value={customTaskInputs[roleId]?.description || ''}
                                   onChange={(e) => updateCustomTaskInput(roleId, 'description', e.target.value)}
                                   rows={3}
-                                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                                  className="w-full p-3 border border-neutral-300 rounded-lg transition-colors"
                                 />
                               </div>
                             </div>
                             <div className="flex items-center justify-end gap-3 mt-4">
                               <Button
-                                variant="ghost"
+                                variant="quantum-secondary"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setShowAddCustom(prev => ({ ...prev, [roleId]: false }));
@@ -539,14 +544,31 @@ export function TaskSelectionStep({
                             </div>
                           </div>
                         ) : (
-                          <button
+                          <motion.button
                             onClick={(e) => {
                               e.stopPropagation();
                               setShowAddCustom(prev => ({ ...prev, [roleId]: true }));
                             }}
-                            className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 group"
+                            className="relative w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 group transition-colors duration-300 overflow-hidden"
+                            whileHover="hover"
+                            whileTap="tap"
+                            variants={{
+                              hover: {},
+                              tap: {}
+                            }}
                           >
-                            <div className="flex items-center justify-between">
+                            {/* Animated overlay for smooth background transition */}
+                            <motion.div
+                              layout
+                              initial={{ opacity: 0 }}
+                              variants={{
+                                hover: { opacity: 1 },
+                                tap: { opacity: 1 }
+                              }}
+                              transition={{ duration: 0.3 }}
+                              className="absolute inset-0 rounded-xl pointer-events-none bg-gradient-to-r from-neural-blue-100 to-quantum-purple-100 z-0"
+                            />
+                            <div className="flex items-center justify-between relative z-10">
                               <div className="text-left">
                                 <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
                                   Need something specific?
@@ -555,9 +577,18 @@ export function TaskSelectionStep({
                                   Add custom tasks tailored to your {role.title} role requirements
                                 </p>
                               </div>
-                              <Plus className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1" />
+                              <motion.div
+                                variants={{
+                                  hover: { scale: 1.2 },
+                                  tap: { scale: 0.95 }
+                                }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                                className="inline-flex"
+                              >
+                                <Plus className="w-5 h-5 text-neural-blue-500" />
+                              </motion.div>
                             </div>
-                          </button>
+                          </motion.button>
                         )}
                       </div>
                     </div>
@@ -582,7 +613,7 @@ export function TaskSelectionStep({
           
           <div className="relative z-10">
             <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-neural-blue-900 mb-2">
+            <h3 className="text-lg font-bold text-neural-blue-900 mb-8">
                 Selection Summary
               </h3>
             </div>
@@ -615,7 +646,7 @@ export function TaskSelectionStep({
                   const custom = customTasks[roleId] || [];
                   if (predefinedTasks.length === 0 && custom.length === 0) return null;
                   return (
-                    <div key={roleId} className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm">
+                                            <div key={roleId} className="p-4 border border-neutral-200 rounded-xl bg-white">
                       <div className="font-medium text-brand-primary-700 mb-1">{role.title}</div>
                       <ul className="list-disc list-inside ml-2 text-neutral-700">
                         {predefinedTasks.map((task: Task) => (

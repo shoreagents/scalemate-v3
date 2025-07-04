@@ -46,13 +46,16 @@ export function LocationStep({
   };
   
   return (
-    <div>
+    <div >
       {/* Header */}
       <div className="text-center mb-12">
         <div className="mb-6">
           <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-xl border-2 border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 flex items-center justify-center shadow-neural-glow">
+              <MapPin className="lucide lucide-users w-5 h-5 text-white" />
+            </div>
             <h2 className="text-headline-1 text-neutral-900">
-              Location
+              Where is your business located?
             </h2>
           </div>
           
@@ -73,17 +76,13 @@ export function LocationStep({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full p-16 rounded-xl bg-neural-blue-50/30 border border-neural-blue-100/50 relative overflow-hidden"
+          className="max-w-4xl mx-auto p-8 
+                          p-6 rounded-xl border h-full flex flex-col
+                          border-neutral-200 bg-white
+                        "
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neural-blue-300/20 to-transparent animate-neural-shimmer" />
-          <div className="absolute inset-0 bg-gradient-to-br from-neural-blue-400/10 via-quantum-purple-400/15 to-cyber-green-400/10 animate-neural-pulse" />
           
           <div className="relative z-10">
-            <div className="text-center mb-4">
-              <h3 className="text-xl font-semibold text-neutral-900 mb-8">
-                Where is your business primarily located?
-              </h3>
-                </div>
             
             <div className="flex items-center justify-center gap-4 flex-wrap">
               {/* Location Display or Error/Loading */}
@@ -98,13 +97,16 @@ export function LocationStep({
                   </div>
                   
                   {/* Change Button */}
-                  <button
+                  <Button
                     onClick={onLocationEditStart}
-                    className="px-4 py-2 text-neural-blue-600 hover:text-neural-blue-700 transition-colors font-medium flex items-center gap-2 border border-neural-blue-300 rounded-lg hover:bg-neural-blue-100 bg-white shadow-sm"
+                    variant="quantum-secondary"
+                    size="neural-lg"
+                    leftIcon={<Edit3 className="w-4 h-4" />}
+                    className="px-6 h-16 whitespace-nowrap flex-shrink-0 w-full md:w-auto"
                   >
-                    <Edit3 className="w-4 h-4" />
                     Change Location
-                  </button>
+                  </Button>
+                  
                 
                 {manualLocation && (
                   <button
@@ -158,8 +160,38 @@ export function LocationStep({
                 </div>
               </div>
             )}
+
+
+             {/* Why We Need Location */}
+          <div className="mt-8 p-8 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 rounded-xl border border-neural-blue-100 mx-auto">
+            <h3 className="text-xl font-semibold text-neural-blue-900 mb-6 flex items-center justify-center gap-3">
+              <Globe className="w-6 h-6" />
+              Why do we need your location?
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-base text-neural-blue-700">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-neural-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span>Show accurate salary comparisons</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-neural-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span>Calculate savings in your local currency</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-neural-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span>Provide region-specific recommendations</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-neural-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <span>Consider local regulatory requirements</span>
+              </div>
+            </div>
+          </div>
+
           </div>
             </motion.div>
+
+            
       </motion.div>
     </div>
   );
