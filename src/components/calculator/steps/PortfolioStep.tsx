@@ -195,7 +195,7 @@ export function PortfolioStep({
           >
             {/* Preset Portfolio Options or Skeleton */}
             {showPortfolioGridSkeleton ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="relative h-full">
                     <div className="w-full h-full p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col">
@@ -236,7 +236,7 @@ export function PortfolioStep({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {portfolioOptions.map((option) => {
                   const isSelected = value === option.value;
                   return (
@@ -248,7 +248,7 @@ export function PortfolioStep({
                     >
                       <div
                         className={`
-                          p-6 rounded-xl border cursor-pointer flex flex-col transition-colors duration-300
+                          p-6 rounded-xl border cursor-pointer flex flex-col h-full transition-colors duration-300
                           ${isSelected
                             ? 'border-brand-primary-500 bg-brand-primary-50'
                             : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'}

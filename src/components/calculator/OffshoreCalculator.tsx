@@ -716,7 +716,7 @@ export function OffshoreCalculator({
               Offshore Scaling Calculator
             </h1>
             <div className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all duration-300 ${
-              isUsingDynamicData ? 'bg-purple-50 border-purple-200 shadow-[0_0_16px_4px_rgba(168,85,247,0.5)]' : 'bg-gray-50 border-gray-200'
+              isUsingDynamicData ? 'bg-purple-50 border-purple-200 shadow-[0_0_16px_4px_rgba(168,85,247,0.2)]' : 'bg-gray-50 border-gray-200'
             }`}>
               <Brain weight="duotone" className={`w-5 h-5 ${
                 isUsingDynamicData ? 'text-purple-500' : 'text-gray-400'
