@@ -204,7 +204,13 @@ export function PortfolioStep({
 
       <AnimatePresence mode="wait">
         {!showPreciseInput ? (
-          <div key="quick-select">
+          <motion.div
+            key="quick-select"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
             {/* Preset Portfolio Options or Skeleton */}
             {showPortfolioGridSkeleton ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 auto-rows-fr">
@@ -256,17 +262,17 @@ export function PortfolioStep({
                       key={option.value}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="relative"
+                      className="relative h-full"
                     >
-                      <button
-                        onClick={() => handlePresetSelection(option.value)}
+                      <div
                         className={`
-                          w-full h-full p-6 rounded-xl border-2 text-left flex flex-col
+                          p-6 rounded-xl border cursor-pointer h-full flex flex-col
                           ${isSelected 
-                            ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
+                            ? 'border-brand-primary-500 bg-brand-primary-50' 
                             : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
                           }
                         `}
+                        onClick={() => handlePresetSelection(option.value)}
                       >
                         {/* Selected Indicator */}
                         {isSelected && (
@@ -329,7 +335,7 @@ export function PortfolioStep({
                             {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -352,7 +358,7 @@ export function PortfolioStep({
                 <ArrowRight className="w-5 h-5 text-neural-blue-500 group-hover:translate-x-1 transition-transform duration-200" />
               </div>
             </button>
-          </div>
+          </motion.div>
         ) : (
           <motion.div
             key="precise-input"
@@ -375,7 +381,7 @@ export function PortfolioStep({
             {/* Three Input Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {/* Property Count Card */}
-              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 hover:border-brand-primary-300 hover:bg-brand-primary-25">
+              <div className="p-6 rounded-xl border border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25 transition-colors">
                 <div className="flex items-center gap-2 mb-4">
                   <Building className="w-5 h-5 text-brand-primary-600" />
                   <h4 className="text-lg font-semibold text-neutral-900">Property Count</h4>
@@ -384,15 +390,14 @@ export function PortfolioStep({
                   type="number"
                   value={manualInput.propertyCount || ''}
                   onChange={(e) => handleManualInputChange('propertyCount', parseInt(e.target.value) || 0)}
-                  className="w-full p-3 border border-neutral-300 rounded-lg text-lg font-medium text-neutral-900 focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
                   placeholder="0"
                   min="0"
                 />
-                <p className="text-sm text-neutral-500 mt-2">Total properties under management</p>
               </div>
 
               {/* Current Team Size Card */}
-              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 hover:border-brand-primary-300 hover:bg-brand-primary-25">
+              <div className="p-6 rounded-xl border border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25 transition-colors">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-brand-primary-600" />
                   <h4 className="text-lg font-semibold text-neutral-900">Current Team Size</h4>
@@ -401,32 +406,41 @@ export function PortfolioStep({
                   type="number"
                   value={manualInput.currentTeamSize || ''}
                   onChange={(e) => handleManualInputChange('currentTeamSize', parseInt(e.target.value) || 0)}
-                  className="w-full p-3 border border-neutral-300 rounded-lg text-lg font-medium text-neutral-900 focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
                   placeholder="0"
                   min="0"
                 />
-                <p className="text-sm text-neutral-500 mt-2">Full-time employees currently</p>
               </div>
 
               {/* Annual Revenue Card */}
-              <div className="bg-white rounded-xl border-2 border-neutral-200 p-6 hover:border-brand-primary-300 hover:bg-brand-primary-25">
+              <div className="p-6 rounded-xl border border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25 transition-colors">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-5 h-5 text-brand-primary-600" />
                   <h4 className="text-lg font-semibold text-neutral-900">Annual Revenue</h4>
                 </div>
-                <select
-                  value={manualInput.annualRevenue || ''}
-                  onChange={(e) => handleManualInputChange('annualRevenue', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full p-3 border border-neutral-300 rounded-lg text-lg font-medium text-neutral-900 focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
-                >
-                  <option value="">Select range...</option>
-                  {getRevenueOptions().map((option) => (
-                    <option key={option.label} value={option.value || ''}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-sm text-neutral-500 mt-2">Annual revenue range</p>
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      value={manualInput.annualRevenueMin ?? ''}
+                      onChange={(e) => handleManualInputChange('annualRevenueMin', parseInt(e.target.value) || 0)}
+                      className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                      placeholder="Min"
+                      min="0"
+                    />
+                  </div>
+                  <span className="pb-3 text-lg text-neutral-500">-</span>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      value={manualInput.annualRevenueMax ?? ''}
+                      onChange={(e) => handleManualInputChange('annualRevenueMax', parseInt(e.target.value) || 0)}
+                      className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                      placeholder="Max"
+                      min="0"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -434,10 +448,17 @@ export function PortfolioStep({
             <div className="text-center">
               <button
                 onClick={handleBackToQuickSelect}
-                className="text-brand-primary-600 hover:text-brand-primary-700 font-medium flex items-center gap-2 mx-auto"
+                className="w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 hover:from-neural-blue-100 hover:to-quantum-purple-100 transition-colors transition-background duration-200 group flex items-center justify-between mx-auto"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Quick Select
+                <div className="text-left">
+                  <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
+                    Prefer predefined options?
+                  </h3>
+                  <p className="text-sm text-neural-blue-600">
+                    Choose from our curated portfolio sizes for quick and easy selection
+                  </p>
+                </div>
+                <ArrowLeft className="w-5 h-5 text-neural-blue-500 group-hover:-translate-x-1 transition-transform duration-200" />
               </button>
             </div>
           </motion.div>

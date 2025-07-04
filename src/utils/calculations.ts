@@ -875,7 +875,7 @@ export const calculateAllRoleRatesAndSummary = async (
           const monthlyDivisor = savingsView === 'monthly' ? 12 : 1;
           roleRates[role.id] = { 
             local: avgLocal / monthlyDivisor, 
-            phConverted: avgPH / monthlyDivisor
+            phConverted: avgPH / monthlyDivisor 
           };
         } else {
           roleRates[role.id] = { local: 0, phConverted: 0 };
@@ -903,9 +903,9 @@ export const calculateAllRoleRatesAndSummary = async (
         const roleSalaryData = getSalaryDataFromRoles(roles, role?.id);
         const philippineData = roleSalaryData?.Philippines;
         if (philippineData) {
-          const entryPH = philippineData.entry.base * size;
-          const moderatePH = philippineData.moderate.base * size;
-          const experiencedPH = philippineData.experienced.base * size;
+                  const entryPH = philippineData.entry.base * size;
+        const moderatePH = philippineData.moderate.base * size;
+        const experiencedPH = philippineData.experienced.base * size;
           const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
           const displayRate = savingsView === 'monthly' 
             ? avgPH / 12

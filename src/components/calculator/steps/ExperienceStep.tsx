@@ -422,7 +422,7 @@ export function ExperienceStep({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`bg-white border-2 rounded-xl p-6 shadow-sm transition-all duration-200 ${
+              className={`bg-white border rounded-xl p-6 shadow-sm transition-all duration-200 ${
                 distribution.isComplete 
                   ? 'border-green-200 bg-green-50/30' 
                   : unassignedCount < 0 
@@ -474,7 +474,7 @@ export function ExperienceStep({
                   else if (option.level === 'experienced') bgTint = 'bg-purple-50';
 
                   return (
-                    <div key={option.level} className={`p-4 rounded-lg border-2 ${bgTint} shadow-sm`}>
+                    <div key={option.level} className={`p-4 rounded-lg border ${bgTint} shadow-sm`}>
                       {/* Experience Level Header (no gradient) */}
                       <div className="flex items-center justify-center gap-2 mb-4">
                         <span className={`text-xl ${option.color}`}>{option.icon}</span>

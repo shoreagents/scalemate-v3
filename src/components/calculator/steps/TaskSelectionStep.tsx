@@ -2,15 +2,19 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RoleId, CustomTask, TaskComplexity, LocationData, ManualLocation } from '@/types';
+import { RoleId, CustomTask, TaskComplexity, LocationData, ManualLocation, CustomRole } from '@/types';
 import { ROLES } from '@/utils/rolesData';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Plus, Check, CheckSquare, ChevronDown, ChevronUp, X, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Task } from '@/types/calculator';
 
 interface TaskSelectionStepProps {
   selectedRoles: Record<RoleId, boolean>;
   selectedTasks: Record<string, boolean>;
   customTasks: Record<RoleId, readonly CustomTask[]>;
+  customRoles: Record<string, CustomRole>;
   onChange: (selectedTasks: Record<string, boolean>, customTasks: Record<RoleId, readonly CustomTask[]>) => void;
   
   // Dynamic roles data
@@ -28,6 +32,7 @@ export function TaskSelectionStep({
   selectedRoles, 
   selectedTasks, 
   customTasks, 
+  customRoles,
   onChange,
   
   // Dynamic roles data
@@ -45,16 +50,33 @@ export function TaskSelectionStep({
     console.log('🔍 [TaskSelectionStep] Getting role data for:', roleId, {
       rolesExists: !!roles,
       rolesCount: roles ? Object.keys(roles).length : 0,
+      customRolesCount: Object.keys(customRoles || {}).length,
       isUsingDynamicRoles,
       isLoadingRoles
     });
+    
+    // Check custom roles first
+    if (customRoles && roleId in customRoles) {
+      const customRole = customRoles[roleId];
+      if (customRole) {
+        console.log('✅ [TaskSelectionStep] Found custom role data:', {
+          roleId,
+          title: customRole.title,
+          tasksCount: customRole.tasks?.length || 0
+        });
+        return {
+          ...customRole,
+          tasks: customRole.tasks || []
+        };
+      }
+    }
     
     // Use dynamic roles if available, otherwise fall back to static ROLES
     const availableRoles = roles || ROLES;
     
     if (roleId in availableRoles) {
       const enhancedRole = availableRoles[roleId as keyof typeof availableRoles];
-      console.log('✅ [TaskSelectionStep] Found role data with tasks:', {
+      console.log('✅ [TaskSelectionStep] Found predefined role data with tasks:', {
         roleId,
         tasksCount: enhancedRole.tasks?.length || 0,
         isDynamic: !!roles
@@ -454,21 +476,34 @@ export function TaskSelectionStep({
                       <div className="border-t pt-4">
                         {showAddCustom[roleId] ? (
                           <div className="space-y-4 p-6 bg-gradient-to-r from-neural-blue-25 to-quantum-purple-25 rounded-xl border border-neural-blue-200">
-                            <div className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-sm font-medium text-neural-blue-700 mb-2">
                                   Task Name
                                 </label>
-                                <input
+                                <Input
                                   type="text"
                                   placeholder="Enter task name..."
                                   value={customTaskInputs[roleId]?.name || ''}
                                   onChange={(e) => updateCustomTaskInput(roleId, 'name', e.target.value)}
-                                  className="w-full px-4 py-3 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white"
                                 />
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-neural-blue-700 mb-2">
+                                <label className="block text-sm font-medium text-neutral-800 mb-2">
+                                  Task Complexity Level
+                                </label>
+                                <Select
+                                  value={customTaskInputs[roleId]?.complexity || 'medium'}
+                                  onChange={(val: string) => updateCustomTaskInput(roleId, 'complexity', val)}
+                                  options={[
+                                    { value: 'low', label: 'Easy' },
+                                    { value: 'medium', label: 'Standard' },
+                                    { value: 'high', label: 'Complex' },
+                                  ]}
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-neutral-800 mb-2">
                                   Task Description
                                 </label>
                                 <textarea
@@ -476,47 +511,31 @@ export function TaskSelectionStep({
                                   value={customTaskInputs[roleId]?.description || ''}
                                   onChange={(e) => updateCustomTaskInput(roleId, 'description', e.target.value)}
                                   rows={3}
-                                  className="w-full px-4 py-3 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white resize-none"
+                                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
                                 />
                               </div>
-                                                              <div>
-                                  <label className="block text-sm font-medium text-neural-blue-700 mb-2">
-                                    Task Complexity Level
-                                  </label>
-                                  <select
-                                    value={customTaskInputs[roleId]?.complexity || 'medium'}
-                                    onChange={(e) => updateCustomTaskInput(roleId, 'complexity', e.target.value as TaskComplexity)}
-                                    className="w-full px-4 py-3 border border-neural-blue-200 rounded-lg focus:ring-2 focus:ring-neural-blue-500 focus:border-neural-blue-500 bg-white"
-                                  >
-                                    <option value="low">Easy</option>
-                                    <option value="medium">Standard</option>
-                                    <option value="high">Complex</option>
-                                  </select>
-                              </div>
                             </div>
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <Button
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowAddCustom(prev => ({ ...prev, [roleId]: false }));
-                                  }}
-                                  className="px-4 py-2"
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddCustomTask(roleId);
-                                  }}
-                                  disabled={!customTaskInputs[roleId]?.name.trim() || !customTaskInputs[roleId]?.description.trim()}
-                                  className="px-6 py-2 bg-cyber-green-500 hover:bg-cyber-green-600 text-white"
-                                >
-                                  Add Task
-                                </Button>
-                              </div>
+                            <div className="flex items-center justify-end gap-3 mt-4">
+                              <Button
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowAddCustom(prev => ({ ...prev, [roleId]: false }));
+                                }}
+                                className="px-4 py-2"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddCustomTask(roleId);
+                                }}
+                                disabled={!customTaskInputs[roleId]?.name.trim() || !customTaskInputs[roleId]?.description.trim()}
+                                className="px-6 py-2 bg-cyber-green-500 hover:bg-cyber-green-600 text-white"
+                              >
+                                Add Task
+                              </Button>
                             </div>
                           </div>
                         ) : (
@@ -582,6 +601,33 @@ export function TaskSelectionStep({
                 <div className="text-2xl font-bold text-cyber-green-600">
                   {Object.values(customTasks).reduce((sum, tasks) => sum + tasks.length, 0)}
                 </div>
+              </div>
+            </div>
+
+            {/* Assigned Tasks by Role */}
+            <div className="mt-8 text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeRoles.map((roleId) => {
+                  const role = getRoleData(roleId);
+                  // Get selected predefined tasks for this role
+                  const predefinedTasks = (role.tasks || []).filter((task: Task) => selectedTasks[`${roleId}-${task.id}`]);
+                  // Get custom tasks for this role
+                  const custom = customTasks[roleId] || [];
+                  if (predefinedTasks.length === 0 && custom.length === 0) return null;
+                  return (
+                    <div key={roleId} className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm">
+                      <div className="font-medium text-brand-primary-700 mb-1">{role.title}</div>
+                      <ul className="list-disc list-inside ml-2 text-neutral-700">
+                        {predefinedTasks.map((task: Task) => (
+                          <li key={task.id}>{task.name}</li>
+                        ))}
+                        {custom.map((task: CustomTask) => (
+                          <li key={task.id}><span className="italic">{task.name}</span> <span className="text-xs text-neutral-400">(Custom)</span></li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

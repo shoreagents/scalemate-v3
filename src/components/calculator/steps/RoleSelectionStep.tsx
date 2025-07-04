@@ -28,6 +28,8 @@ import {
   calculateDisplaySavings,
   calculateAllRoleRatesAndSummary
 } from '@/utils/calculations';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 /**
  * Precise number formatting that preserves exact decimal values without rounding
@@ -107,7 +109,7 @@ export function RoleSelectionStep({
     roles, 
     isLoadingRoles, 
     rolesError, 
-    isUsingDynamicRoles
+    isUsingDynamicRoles 
 }: RoleSelectionStepProps) {
   // All dynamic data now passed as props from parent to avoid duplicate API calls
   
@@ -247,7 +249,8 @@ export function RoleSelectionStep({
     const predefinedRoles = Object.values(availableRoles).slice(0, 3) as RoleData[];
     const customRolesList = Object.values(customRoles || {}) as RoleData[];
     
-    return [...predefinedRoles, ...customRolesList];
+    // Put custom roles first, then predefined roles
+    return [...customRolesList, ...predefinedRoles];
   }, [roles, customRoles, isLoadingRoles, isUsingDynamicRoles, rolesError]);
 
   // Remove the local getSavingsForRole function and replace with centralized version
@@ -324,8 +327,18 @@ export function RoleSelectionStep({
       return true;
     });
 
-    // Sort roles
+    // Sort roles - Custom roles always first, then apply sorting to predefined roles
     filtered.sort((a, b) => {
+      // Always put custom roles first
+      if (a.type === 'custom' && b.type !== 'custom') return -1;
+      if (b.type === 'custom' && a.type !== 'custom') return 1;
+      
+      // If both are custom roles, sort by creation date (newest first)
+      if (a.type === 'custom' && b.type === 'custom') {
+        return new Date(b.createdAt || new Date()).getTime() - new Date(a.createdAt || new Date()).getTime();
+      }
+      
+      // If both are predefined roles, apply the selected sorting
       switch (searchFilters.sortBy) {
         case 'name':
           return a.title.localeCompare(b.title);
@@ -334,10 +347,7 @@ export function RoleSelectionStep({
           const bSavings = getCachedRoleSavings(b);
           return bSavings.experienced - aSavings.experienced;
         case 'recent':
-          if (a.type === 'custom' && b.type === 'custom') {
-            return new Date(b.createdAt || new Date()).getTime() - new Date(a.createdAt || new Date()).getTime();
-          }
-          return a.type === 'custom' ? -1 : 1;
+          return 0; // Predefined roles don't have creation dates
         default:
           return 0;
       }
@@ -408,6 +418,18 @@ export function RoleSelectionStep({
       [customRoleId]: newCustomRole
     };
     
+    // Automatically select the newly created custom role
+    const newSelectedRoles = {
+      ...selectedRoles,
+      [customRoleId]: true
+    };
+    
+    // Set team size to 1 for the new custom role
+    const newTeamSize = {
+      ...teamSize,
+      [customRoleId]: 1
+    };
+    
     // Reset form
     setCustomRoleForm({
       title: '',
@@ -416,7 +438,7 @@ export function RoleSelectionStep({
     });
     setShowCustomRoleForm(false);
     
-    onChange(selectedRoles, teamSize, newCustomRoles, userLocation);
+    onChange(newSelectedRoles, newTeamSize, newCustomRoles, userLocation);
   };
 
   const getTotalTeamSize = () => {
@@ -563,6 +585,20 @@ export function RoleSelectionStep({
     updateRoleRatesAndSummary();
   }, [allRoles, selectedRoles, teamSize, locationCacheKey, roles, searchFilters.savingsView]);
 
+  const handleRemoveCustomRole = (roleId: string) => {
+    const newCustomRoles = { ...customRoles };
+    delete newCustomRoles[roleId];
+    
+    // Also clean up selectedRoles and teamSize to prevent the role from appearing in TaskSelectionStep
+    const newSelectedRoles = { ...selectedRoles };
+    delete newSelectedRoles[roleId];
+    
+    const newTeamSize = { ...teamSize };
+    delete newTeamSize[roleId];
+    
+    onChange(newSelectedRoles, newTeamSize, newCustomRoles, userLocation);
+  };
+
   return (
     <div>
       {/* Header */}
@@ -625,20 +661,20 @@ export function RoleSelectionStep({
         <div className="flex flex-col min-[468px]:flex-row gap-4">
           {/* Search Bar */}
           <div className="flex-1 relative">
-            <LucideSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
-            <input
+            <LucideSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400 z-10" />
+            <Input
               type="text"
               placeholder="Search roles (e.g., property manager, leasing, marketing...)"
               value={searchFilters.query}
               onChange={(e) => setSearchFilters(prev => ({ ...prev, query: e.target.value }))}
-              className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-primary-500 focus:border-brand-primary-500 transition-colors"
+              className="pl-10"
             />
           </div>
-          
-          {/* Add Custom Role Button */}
+          {/* Add Custom Role Button (always visible, disabled when form is open) */}
           <button
             onClick={() => setShowCustomRoleForm(true)}
-            className="px-6 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:shadow-neural-glow transition-all duration-200 flex items-center justify-center gap-2 font-medium whitespace-nowrap"
+            disabled={showCustomRoleForm}
+            className={`px-6 py-3 bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 text-white rounded-lg hover:shadow-neural-glow transition-all duration-200 flex items-center justify-center gap-2 font-medium whitespace-nowrap ${showCustomRoleForm ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Plus className="w-5 h-5" />
             Add Custom Role
@@ -719,74 +755,66 @@ export function RoleSelectionStep({
         </div>
       </div>
 
-      {/* Custom Role Form */}
+      {/* Role Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Show Create Custom Role Form as first card only if showCustomRoleForm is true */}
       {showCustomRoleForm && (
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+            key="custom-role-form"
+            initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl"
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="p-6 rounded-xl border bg-white border-neutral-200 flex flex-col justify-between"
         >
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                <span className="text-2xl">✨</span>
             </div>
-            <h3 className="text-lg font-semibold text-green-900">Create Custom Role</h3>
+              <h3 className="text-lg font-semibold text-neutral-900">Create Custom Role</h3>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-green-800 mb-1">Role Title*</label>
-              <input
+            <div className="grid grid-cols-1 mb-4">
+              <div className="w-full mb-4">
+                <label className="block text-sm font-medium text-neutral-800 mb-1">Role Title</label>
+                <Input
                 type="text"
                 placeholder="e.g., Property Data Analyst"
                 value={customRoleForm.title}
                 onChange={(e) => setCustomRoleForm(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-green-800 mb-1">
-                Estimated Local Salary ({getEffectiveCurrencySymbol(userLocation, manualLocation)})
-              </label>
-              <input
-                type="number"
-                value={customRoleForm.estimatedSalary}
-                onChange={(e) => setCustomRoleForm(prev => ({ ...prev, estimatedSalary: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-green-800 mb-1">Description</label>
+                <label className="block text-sm font-medium text-neutral-800 mb-1">Description</label>
               <textarea
                 placeholder="Describe the key responsibilities and tasks for this role..."
                 value={customRoleForm.description}
                 onChange={(e) => setCustomRoleForm(prev => ({ ...prev, description: e.target.value }))}
                 rows={3}
-                className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
               />
             </div>
           </div>
-          
-          <div className="flex gap-3">
-            <button
+            <div className="flex gap-3 mt-auto">
+              <Button
+                type="button"
               onClick={handleCustomRoleSubmit}
               disabled={!customRoleForm.title.trim()}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-brand-primary-500 text-white rounded-lg hover:bg-brand-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Create Role
-            </button>
-            <button
+              </Button>
+              <Button
+                type="button"
               onClick={() => setShowCustomRoleForm(false)}
-              className="px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-50 transition-colors"
+                variant="secondary"
+                className="px-4 py-2 rounded-lg transition-colors"
             >
               Cancel
-            </button>
+              </Button>
           </div>
         </motion.div>
       )}
-
-      {/* Role Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Role Cards */}
         {filteredRoles.map((role) => {
           const isSelected = selectedRoles[role.id];
           const currentTeamSize = teamSize[role.id] || 1;
@@ -802,14 +830,28 @@ export function RoleSelectionStep({
             >
               <div
                 className={`
-                  p-6 rounded-xl border-2 cursor-pointer h-full flex flex-col
+                  p-6 rounded-xl border cursor-pointer h-full flex flex-col
                   ${isSelected 
-                    ? 'border-brand-primary-500 bg-brand-primary-50 shadow-lg' 
+                    ? 'border-brand-primary-500 bg-brand-primary-50' 
                     : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
                   }
                 `}
                 onClick={() => handleRoleToggle(role.id)}
               >
+                {/* ✖ Remove Button for Custom Roles (top-right, only if not selected) */}
+                {role.type === 'custom' && !isSelected && (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleRemoveCustomRole(role.id);
+                    }}
+                    className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-red-500 text-lg focus:outline-none z-20"
+                    title="Remove Custom Role"
+                  >
+                    ✖
+                  </button>
+                )}
                 {/* Selected Indicator */}
                 {isSelected && (
                   <motion.div
@@ -825,13 +867,15 @@ export function RoleSelectionStep({
 
                 {/* Role Header */}
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 justify-between">
+                    <div className="flex items-center gap-2">
                     <div className="text-2xl">{role.icon}</div>
                     {role.type === 'custom' && (
                       <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
                         Custom
                       </span>
                     )}
+                    </div>
                   </div>
                   <h3 className={`
                     text-lg font-bold mb-1

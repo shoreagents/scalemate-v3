@@ -520,7 +520,27 @@ export function OffshoreCalculator({
       case 3: // Role selection step
         return Object.entries(formData.selectedRoles).some(([, selected]) => selected === true);
       case 4: // Task selection step
-        return Object.values(formData.selectedTasks).some(selected => selected === true);
+        // Check if each selected role has at least one task assigned
+        const selectedRoleIds = Object.entries(formData.selectedRoles)
+          .filter(([, selected]) => selected)
+          .map(([roleId]) => roleId);
+        
+        if (selectedRoleIds.length === 0) return false;
+        
+        // For each selected role, check if it has at least one task
+        return selectedRoleIds.every(roleId => {
+          // Check if role has any selected predefined tasks
+          const hasSelectedTasks = Object.entries(formData.selectedTasks)
+            .some(([taskKey, selected]) => {
+              const [taskRoleId] = taskKey.split('-');
+              return taskRoleId === roleId && selected;
+            });
+          
+          // Check if role has any custom tasks
+          const hasCustomTasks = (formData.customTasks[roleId] || []).length > 0;
+          
+          return hasSelectedTasks || hasCustomTasks;
+        });
       case 5: // Experience step
         return Object.keys(formData.roleExperienceDistribution).length > 0;
       default:
@@ -629,6 +649,7 @@ export function OffshoreCalculator({
             selectedRoles={formData.selectedRoles}
             selectedTasks={formData.selectedTasks}
             customTasks={formData.customTasks}
+            customRoles={formData.customRoles || {}}
             onChange={handleTaskSelectionChange}
             roles={roles}
             isLoadingRoles={isLoadingRoles}

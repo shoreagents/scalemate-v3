@@ -339,11 +339,10 @@ export interface StepStatus {
   readonly validationErrors: readonly ValidationError[];
 }
 
-
-
 // Manual portfolio input data
 export interface ManualPortfolioData {
   propertyCount: number;
   currentTeamSize: number;
-  annualRevenue?: number; // Direct revenue amount instead of range enum
+  annualRevenueMin?: number;
+  annualRevenueMax?: number;
 } 

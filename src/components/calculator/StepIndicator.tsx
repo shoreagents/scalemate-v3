@@ -25,37 +25,43 @@ const STEPS = [
     number: 1,
     title: 'Location',
     description: 'Set your business location',
-    icon: MapPin
+    icon: MapPin,
+    iconClass: 'scale-110'
   },
   {
     number: 2,
     title: 'Portfolio Size',
     description: 'Select your property count',
-    icon: Building
+    icon: Building,
+    iconClass: ''
   },
   {
     number: 3,
     title: 'Role Selection',
     description: 'Choose roles to offshore',
-    icon: Users
+    icon: Users,
+    iconClass: 'scale-105'
   },
   {
     number: 4,
     title: 'Task Selection',
     description: 'Select specific tasks',
-    icon: CheckSquare
+    icon: CheckSquare,
+    iconClass: ''
   },
   {
     number: 5,
     title: 'Experience Level',
     description: 'Set team experience',
-    icon: GraduationCap
+    icon: GraduationCap,
+    iconClass: 'scale-110'
   },
   {
     number: 6,
     title: 'Results',
     description: 'View your savings',
-    icon: TrendingUp
+    icon: TrendingUp,
+    iconClass: 'scale-105'
   }
 ] as const;
 
@@ -83,7 +89,7 @@ export function StepIndicator({
           return (
             <motion.div 
               key={step.number} 
-              className="flex items-center flex-1"
+              className="flex items-center"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -93,7 +99,8 @@ export function StepIndicator({
                 onClick={() => isClickable && onStepClick?.(step.number as CalculatorStep)}
                 disabled={!isClickable}
                 className={`
-                  relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md active:border-0 active:bg-white
+                  flex-none relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md active:border-0 active:bg-white
+                  aspect-square overflow-hidden p-0
                   ${isCurrent 
                     ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow' 
                     : isComplete
@@ -108,7 +115,9 @@ export function StepIndicator({
                 {isCurrent && (
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer rounded-xl" />
                 )}
-                <Icon className="w-5 h-5 relative z-10" />
+                <div className="flex items-center justify-center w-6 h-6">
+                  <Icon className={`flex-shrink-0 relative z-10 ${step.iconClass}`} size={20} strokeWidth={1.5} />
+                </div>
               </motion.button>
 
               {/* Neural Step Info */}
@@ -153,6 +162,7 @@ export function StepIndicator({
                 disabled={!isClickable}
                 className={`
                   relative flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 shadow-md mb-2 active:border-0 active:bg-white
+                  aspect-square overflow-hidden p-0
                   ${isCurrent 
                     ? 'border-neural-blue-500 bg-gradient-to-br from-neural-blue-500 to-quantum-purple-500 text-white shadow-neural-glow' 
                     : isComplete
@@ -167,7 +177,9 @@ export function StepIndicator({
                 {isCurrent && (
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-neural-shimmer rounded-xl" />
                 )}
-                <Icon className="w-4 h-4 relative z-10" />
+                <div className="flex items-center justify-center w-6 h-6">
+                  <Icon className={`flex-shrink-0 relative z-10 ${step.iconClass}`} size={20} strokeWidth={1.5} />
+                </div>
               </motion.button>
 
               {/* Neural Step Info */}
