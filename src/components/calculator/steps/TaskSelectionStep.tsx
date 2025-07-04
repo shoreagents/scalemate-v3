@@ -613,9 +613,12 @@ export function TaskSelectionStep({
           
           <div className="relative z-10">
             <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-neural-blue-900 mb-8">
-                Selection Summary
+            <h3 className="text-lg font-bold text-neural-blue-900">
+                Summary
               </h3>
+              <p className="text-sm text-neutral-600 mb-8">
+                Your complete offshore team configuration and tasks breakdown.
+              </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
