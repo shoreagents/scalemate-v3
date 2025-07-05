@@ -14,7 +14,6 @@ interface PortfolioStepProps {
   value: PortfolioSize | '';
   manualData?: ManualPortfolioData | undefined;
   onChange: (value: PortfolioSize | '', manualData?: ManualPortfolioData | undefined, portfolioIndicators?: Record<PortfolioSize, PortfolioIndicator>) => void;
-  showPortfolioGridSkeleton?: boolean;
   
   // Data passed from parent to avoid duplicate API calls
   portfolioIndicators: Record<PortfolioSize, PortfolioIndicator>;
@@ -32,7 +31,6 @@ export function PortfolioStep({
   value, 
   manualData, 
   onChange,
-  showPortfolioGridSkeleton = false,
   
   // Data from parent
   portfolioIndicators,
@@ -194,43 +192,28 @@ export function PortfolioStep({
             transition={{ duration: 0.3 }}
           >
             {/* Preset Portfolio Options or Skeleton */}
-            {showPortfolioGridSkeleton ? (
+            {isLoadingIndicators ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="relative h-full">
-                    <div className="w-full h-full p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col">
-                      {/* Portfolio Size - Fixed Height */}
-                      <div className="mb-4">
-                        <div className="h-6 bg-gray-200 rounded mb-1 animate-pulse" />
-                        <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                  <div key={i} className="relative w-full h-full p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col">
+                    {/* Skeleton lines (info lines) */}
+                    <div>
+                      <div className="h-6 bg-gray-200 rounded mb-3 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded mb-3 animate-pulse w-2/3" />
+                      <div className="h-4 bg-gray-200 rounded mb-3 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded mb-6 animate-pulse w-4/5" />
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-8 bg-gray-200 rounded animate-pulse" />
                       </div>
-                      {/* Description - Auto-adjusting Container */}
-                      <div className="flex-1 mb-4">
-                        <div className="h-4 bg-gray-200 rounded mb-2 animate-pulse" />
-                        <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
-                      </div>
-                      {/* Stats Grid - Fixed Position */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="text-center p-3 rounded-lg bg-white/80">
-                          <div className="flex items-center justify-center mb-1">
-                            <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
-                            <div className="h-4 bg-gray-200 rounded w-8 animate-pulse" />
-                          </div>
-                          <div className="h-3 bg-gray-200 rounded w-16 mx-auto animate-pulse" />
-                        </div>
-                        <div className="text-center p-3 rounded-lg bg-white/80">
-                          <div className="flex items-center justify-center mb-1">
-                            <div className="w-4 h-4 bg-gray-200 rounded mr-1 animate-pulse" />
-                            <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
-                          </div>
-                          <div className="h-3 bg-gray-200 rounded w-20 mx-auto animate-pulse" />
-                        </div>
-                      </div>
-                      {/* Revenue Range - Fixed Position at Bottom */}
                       <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
                         <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
                         <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
                       </div>
+                    </div>
+                    {/* Centered Spinner Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-neural-blue-500 border-t-transparent opacity-60" />
                     </div>
                   </div>
                 ))}
@@ -238,89 +221,89 @@ export function PortfolioStep({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {portfolioOptions.map((option) => {
-                  const isSelected = value === option.value;
-                  return (
-                    <motion.div
-                      key={option.value}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="relative h-full"
+                const isSelected = value === option.value;
+                return (
+                  <motion.div
+                    key={option.value}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative h-full"
+                  >
+                    <div
+                      className={`
+                        p-6 rounded-xl border cursor-pointer flex flex-col h-full transition-colors duration-300
+                        ${isSelected
+                          ? 'border-brand-primary-500 bg-brand-primary-50'
+                          : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'}
+                      `}
+                      onClick={() => handlePresetSelection(option.value)}
                     >
-                      <div
-                        className={`
-                          p-6 rounded-xl border cursor-pointer flex flex-col h-full transition-colors duration-300
-                          ${isSelected
-                            ? 'border-brand-primary-500 bg-brand-primary-50'
-                            : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'}
-                        `}
-                        onClick={() => handlePresetSelection(option.value)}
-                      >
-                        {/* Selected Indicator */}
-                        {isSelected && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
-                          >
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </motion.div>
-                        )}
-                        {/* Portfolio Size - Fixed Height */}
-                        <div className="mb-4">
-                          <div className={`
-                            text-xl font-bold mb-1
-                            ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
-                          `}>
-                            {option.label}
-                          </div>
-                          <div className={`
-                            text-sm font-medium uppercase tracking-wider
-                            ${isSelected ? 'text-brand-primary-600' : 'text-neutral-500'}
-                          `}>
-                            {option.tier} Portfolio
-                          </div>
+                      {/* Selected Indicator */}
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
+                        >
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </motion.div>
+                      )}
+                      {/* Portfolio Size - Fixed Height */}
+                      <div className="mb-4">
+                        <div className={`
+                          text-xl font-bold mb-1
+                          ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
+                        `}>
+                          {option.label}
                         </div>
-                        {/* Description - Auto-adjusting Container */}
-                        <div className="flex-1 mb-4 flex items-start">
-                          <p className="text-sm text-neutral-600 leading-relaxed">
-                            {option.description}
-                          </p>
-                        </div>
-                        {/* Stats Grid - Fixed Position */}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div className="text-center p-3 rounded-lg bg-white/80">
-                            <div className="flex items-center justify-center mb-1">
-                              <Users className={`w-4 h-4 mr-1 ${getPortfolioIconColor(option.tier)}`} />
-                              <span className="text-sm font-medium text-neutral-900">
-                                {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
-                              </span>
-                            </div>
-                            <div className="text-xs text-neutral-500">Team Size</div>
-                          </div>
-                          <div className="text-center p-3 rounded-lg bg-white/80">
-                            <div className="flex items-center justify-center mb-1">
-                              <Zap className={`w-4 h-4 mr-1 flex-shrink-0 ${getPortfolioIconColor(option.tier)}`} />
-                              <span className="text-sm font-medium text-neutral-900 capitalize">
-                                {option.implementationComplexity}
-                              </span>
-                            </div>
-                            <div className="text-xs text-neutral-500">Complexity</div>
-                          </div>
-                        </div>
-                        {/* Revenue Range - Fixed Position at Bottom */}
-                        <div className="pt-3 border-t border-neutral-100 text-xs text-neutral-500">
-                          <span>Revenue Range:</span>
-                          <div className="font-bold mt-1">
-                            {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </div>
+                        <div className={`
+                          text-sm font-medium uppercase tracking-wider
+                          ${isSelected ? 'text-brand-primary-600' : 'text-neutral-500'}
+                        `}>
+                          {option.tier} Portfolio
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                      {/* Description - Auto-adjusting Container */}
+                      <div className="flex-1 mb-4 flex items-start">
+                        <p className="text-sm text-neutral-600 leading-relaxed">
+                          {option.description}
+                        </p>
+                      </div>
+                      {/* Stats Grid - Fixed Position */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="text-center p-3 rounded-lg bg-white/80">
+                          <div className="flex items-center justify-center mb-1">
+                            <Users className={`w-4 h-4 mr-1 ${getPortfolioIconColor(option.tier)}`} />
+                            <span className="text-sm font-medium text-neutral-900">
+                              {Object.values(option.recommendedTeamSize).reduce((a, b) => a + b, 0)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-neutral-500">Team Size</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-white/80">
+                          <div className="flex items-center justify-center mb-1">
+                            <Zap className={`w-4 h-4 mr-1 flex-shrink-0 ${getPortfolioIconColor(option.tier)}`} />
+                            <span className="text-sm font-medium text-neutral-900 capitalize">
+                              {option.implementationComplexity}
+                            </span>
+                          </div>
+                          <div className="text-xs text-neutral-500">Complexity</div>
+                        </div>
+                      </div>
+                      {/* Revenue Range - Fixed Position at Bottom */}
+                      <div className="pt-3 border-t border-neutral-100 text-xs text-neutral-500">
+                        <span>Revenue Range:</span>
+                        <div className="font-bold mt-1">
+                          {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.min.toLocaleString(undefined, { maximumFractionDigits: 0 })} - {getEffectiveCurrencySymbol(userLocation, manualLocation)}{option.averageRevenue.max.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
             )}
             {/* Need More Precision Card */}
             <div className="max-w-4xl mx-auto">

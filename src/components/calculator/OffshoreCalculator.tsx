@@ -787,7 +787,7 @@ export function OffshoreCalculator({
             }`}>
               <Brain weight="duotone" className={`w-5 h-5 ${
                 isUsingDynamicData ? 'text-purple-500' : 'text-gray-400'
-              } ${isLoading ? 'animate-pulse' : ''}`} />
+              }`} />
               <span className={`text-xs font-medium ${
                 isUsingDynamicData ? 'text-purple-700' : 'text-gray-700'
               }`}>
@@ -869,7 +869,8 @@ export function OffshoreCalculator({
                       <Button
                         variant="neural-primary"
                         onClick={nextStep}
-                        disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
+                        disabled={!canProceedFromStep(formData.currentStep) || 
+                                  (formData.currentStep === 1 ? isLoadingLocation : false)}
                         rightIcon={<ArrowRight className="h-4 w-4" />}
                         className="w-40 h-12"
                       >
@@ -891,7 +892,8 @@ export function OffshoreCalculator({
                     <Button
                       variant="neural-primary"
                       onClick={nextStep}
-                      disabled={!canProceedFromStep(formData.currentStep) || isLoadingLocation || isLoadingRoles}
+                      disabled={!canProceedFromStep(formData.currentStep) || 
+                                (formData.currentStep === 1 ? isLoadingLocation : false)}
                       rightIcon={<ArrowRight className="h-4 w-4" />}
                       className="w-full h-12"
                     >

@@ -708,9 +708,6 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isPlanLoading && (
-                <Loader2 className="w-5 h-5 text-neural-blue-600 animate-spin" />
-              )}
               {planError && (
                 <Button
                   variant="ghost"
@@ -742,15 +739,7 @@ export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
                 className="overflow-hidden"
               >
                 <div className="mt-6">
-                  {isPlanLoading && (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="text-center">
-                        <Loader2 className="w-10 h-10 text-neural-blue-600 animate-spin mx-auto mb-4" />
-                        <p className="text-body text-neutral-600">Generating your personalized implementation plan...</p>
-                        <p className="text-body-small text-neutral-500 mt-2">This may take a few moments</p>
-                      </div>
-                    </div>
-                  )}
+
 
                   {planError && (
                     <div className="text-center py-12">

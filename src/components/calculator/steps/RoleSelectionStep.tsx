@@ -740,289 +740,362 @@ export function RoleSelectionStep({
       </div>
 
       {/* Role Cards Grid */}
-      <AnimatePresence>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {/* Show Create Custom Role Form as first card only if showCustomRoleForm is true */}
-      {showCustomRoleForm && (
-        <motion.div
-            key="custom-role-form"
-            initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="p-6 rounded-xl border bg-white border-neutral-200 flex flex-col justify-between"
-        >
-          <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                <span className="text-2xl">✨</span>
-            </div>
-              <h3 className="text-lg font-semibold text-neutral-900">Create Custom Role</h3>
-          </div>
-            <div className="grid grid-cols-1 mb-4">
-              <div className="w-full mb-4">
-                <label className="block text-sm font-medium text-neutral-800 mb-1">Role Title</label>
-                <Input
-                type="text"
-                placeholder="e.g., Property Data Analyst"
-                value={customRoleForm.title}
-                onChange={(e) => setCustomRoleForm(prev => ({ ...prev, title: e.target.value }))}
-              />
-            </div>
-            <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-neutral-800 mb-1">Description</label>
-              <textarea
-                placeholder="Describe the key responsibilities and tasks for this role..."
-                value={customRoleForm.description}
-                onChange={(e) => setCustomRoleForm(prev => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
-              />
-            </div>
-          </div>
-            <div className="flex gap-3 mt-auto">
-              <Button
-                type="button"
-                onClick={handleCustomRoleSubmit}
-                disabled={!customRoleForm.title.trim()}
-                variant="neural-primary"
-                className="px-4 py-2"
-              >
-                Create Role
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setShowCustomRoleForm(false)}
-                variant="quantum-secondary"
-                className="px-4 py-2"
-              >
-                Cancel
-              </Button>
-            </div>
-        </motion.div>
-      )}
-        {/* Role Cards */}
-        {filteredRoles.map((role) => {
-          const isSelected = selectedRoles[role.id];
-          const currentTeamSize = teamSize[role.id] || 1;
-          const savings = getCachedRoleSavings(role);
-          const costs = calculateRoleCosts(role, currentTeamSize, userLocation, manualLocation, roles, searchFilters.savingsView);
-          
-          return (
-            <motion.div
-              key={role.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ duration: 0.22, ease: 'easeInOut' }}
-              className="relative h-full"
-            >
-              <div
-                className={`
-                  p-6 rounded-xl border cursor-pointer h-full flex flex-col transition-colors duration-300
-                  ${isSelected 
-                    ? 'border-brand-primary-500 bg-brand-primary-50' 
-                    : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
-                  }
-                `}
-                onClick={() => handleRoleToggle(role.id)}
-              >
-                {/* ✖ Remove Button for Custom Roles (top-right, only if not selected) */}
-                {role.type === 'custom' && !isSelected && (
-                  <button
-                    type="button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleRemoveCustomRole(role.id);
-                    }}
-                    className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-full text-neutral-400 hover:text-brand-primary-500 focus:outline-none z-20 transition-colors duration-200"
-                    title="Remove Custom Role"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                )}
-                {/* Selected Indicator */}
-                <AnimatePresence>
-                  {isSelected && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      transition={{ duration: 0.1, ease: 'easeInOut' }}
-                      className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
-                    >
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Role Header */}
+      {isLoadingRoles ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="relative h-full">
+              <div className="p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col h-full">
+                {/* Role Header Skeleton */}
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2 justify-between">
                     <div className="flex items-center gap-2">
-                    <div className="text-2xl">{role.icon}</div>
-                    {role.type === 'custom' && (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                        Custom
-                      </span>
-                    )}
+                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
                     </div>
                   </div>
-                  <h3 className={`
-                    text-lg font-bold mb-1
-                    ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
-                  `}>
-                    {role.title}
-                  </h3>
-                  <p className="text-sm text-neutral-600">
-                    {role.description}
-                  </p>
+                  <div className="h-6 bg-gray-200 rounded mb-2 animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-4/5" />
                 </div>
 
-                {/* Enhanced Savings Preview with Location Comparison */}
-                {(userLocation || manualLocation) && (
-                  <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
-                    <div className="text-center mb-4">
-                      <span className="text-sm font-semibold text-green-800">
-                        {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost Comparison
-                        {isSelected && (
-                          <span className="block text-xs text-green-600">
-                            for {currentTeamSize} Team {currentTeamSize === 1 ? 'Member' : 'Members'}
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                {/* Savings Preview Skeleton */}
+                <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
+                  <div className="text-center mb-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mx-auto mb-2" />
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-24 mx-auto" />
+                  </div>
 
-                    {/* Location vs Philippines Comparison */}
-                    <div className="space-y-2">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-green-700 font-medium">
-                            {getDisplayCountryName(userLocation, manualLocation)} Rate:
-                          </span>
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-green-900">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{formatNumberPrecise(roleRates[role.id]?.local ?? 0, { showDecimals: false })}
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-20" />
+                        <div className="text-right">
+                          <div className="h-5 bg-gray-200 rounded animate-pulse w-16 mb-1" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-24" />
+                      <div className="text-right">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-14 mb-1" />
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-12" />
+                      </div>
+                    </div>
+                    <div className="border-t border-green-300 pt-2 mt-2">
+                      <div className="flex items-center justify-between">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
+                        <div className="text-right">
+                          <div className="h-5 bg-gray-200 rounded animate-pulse w-16 mb-1" />
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-12" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Team Size Selector Skeleton */}
+                <div className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
+                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
+                      <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Centered Spinner Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-neural-blue-500 border-t-transparent opacity-60" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <AnimatePresence>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Show Create Custom Role Form as first card only if showCustomRoleForm is true */}
+        {showCustomRoleForm && (
+          <motion.div
+              key="custom-role-form"
+              initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="p-6 rounded-xl border bg-white border-neutral-200 flex flex-col justify-between"
+          >
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">✨</span>
+              </div>
+                <h3 className="text-lg font-semibold text-neutral-900">Create Custom Role</h3>
+            </div>
+              <div className="grid grid-cols-1 mb-4">
+                <div className="w-full mb-4">
+                  <label className="block text-sm font-medium text-neutral-800 mb-1">Role Title</label>
+                  <Input
+                  type="text"
+                  placeholder="e.g., Property Data Analyst"
+                  value={customRoleForm.title}
+                  onChange={(e) => setCustomRoleForm(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-neutral-800 mb-1">Description</label>
+                <textarea
+                  placeholder="Describe the key responsibilities and tasks for this role..."
+                  value={customRoleForm.description}
+                  onChange={(e) => setCustomRoleForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                    className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                />
+              </div>
+            </div>
+              <div className="flex gap-3 mt-auto">
+                <Button
+                  type="button"
+                  onClick={handleCustomRoleSubmit}
+                  disabled={!customRoleForm.title.trim()}
+                  variant="neural-primary"
+                  className="px-4 py-2"
+                >
+                  Create Role
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setShowCustomRoleForm(false)}
+                  variant="quantum-secondary"
+                  className="px-4 py-2"
+                >
+                  Cancel
+                </Button>
+              </div>
+          </motion.div>
+        )}
+          {/* Role Cards */}
+          {filteredRoles.map((role) => {
+            const isSelected = selectedRoles[role.id];
+            const currentTeamSize = teamSize[role.id] || 1;
+            const savings = getCachedRoleSavings(role);
+            const costs = calculateRoleCosts(role, currentTeamSize, userLocation, manualLocation, roles, searchFilters.savingsView);
+            
+            return (
+              <motion.div
+                key={role.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.22, ease: 'easeInOut' }}
+                className="relative h-full"
+              >
+                <div
+                  className={`
+                    p-6 rounded-xl border cursor-pointer h-full flex flex-col transition-colors duration-300
+                    ${isSelected 
+                      ? 'border-brand-primary-500 bg-brand-primary-50' 
+                      : 'border-neutral-200 bg-white hover:border-brand-primary-300 hover:bg-brand-primary-25'
+                    }
+                  `}
+                  onClick={() => handleRoleToggle(role.id)}
+                >
+                  {/* ✖ Remove Button for Custom Roles (top-right, only if not selected) */}
+                  {role.type === 'custom' && !isSelected && (
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleRemoveCustomRole(role.id);
+                      }}
+                      className="absolute top-4 right-4 w-6 h-6 flex items-center justify-center rounded-full text-neutral-400 hover:text-brand-primary-500 focus:outline-none z-20 transition-colors duration-200"
+                      title="Remove Custom Role"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  )}
+                  {/* Selected Indicator */}
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={{ duration: 0.1, ease: 'easeInOut' }}
+                        className="absolute top-4 right-4 w-6 h-6 rounded-full bg-brand-primary-500 flex items-center justify-center"
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Role Header */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2 justify-between">
+                      <div className="flex items-center gap-2">
+                      <div className="text-2xl">{role.icon}</div>
+                      {role.type === 'custom' && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                          Custom
+                        </span>
+                      )}
+                      </div>
+                    </div>
+                    <h3 className={`
+                      text-lg font-bold mb-1
+                      ${isSelected ? 'text-brand-primary-700' : 'text-neutral-900'}
+                    `}>
+                      {role.title}
+                    </h3>
+                    <p className="text-sm text-neutral-600">
+                      {role.description}
+                    </p>
+                  </div>
+
+                  {/* Enhanced Savings Preview with Location Comparison */}
+                  {(userLocation || manualLocation) && (
+                    <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
+                      <div className="text-center mb-4">
+                        <span className="text-sm font-semibold text-green-800">
+                          {searchFilters.savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost Comparison
+                          {isSelected && (
+                            <span className="block text-xs text-green-600">
+                              for {currentTeamSize} Team {currentTeamSize === 1 ? 'Member' : 'Members'}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Location vs Philippines Comparison */}
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-green-700 font-medium">
+                              {getDisplayCountryName(userLocation, manualLocation)} Rate:
+                            </span>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-green-900">
+                                {getEffectiveCurrencySymbol(userLocation, manualLocation)}{formatNumberPrecise(roleRates[role.id]?.local ?? 0, { showDecimals: false })}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-green-700 font-medium">Philippines Rate:</span>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-green-900">
-                            ₱{(() => {
-                              const roleSalaryData = roles?.[role.id]?.salary;
-                              const philippineData = roleSalaryData?.Philippines;
-                              if (philippineData) {
-                                const entryPH = philippineData.entry.base * currentTeamSize;
-                                const moderatePH = philippineData.moderate.base * currentTeamSize;
-                                const experiencedPH = philippineData.experienced.base * currentTeamSize;
-                                const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
-                                const displayRate = searchFilters.savingsView === 'monthly' 
-                                                  ? avgPH / 12
-                : avgPH;
-                                                                  return formatNumberPrecise(displayRate, { showDecimals: false });
-                              }
-                              return '0';
-                            })()}
-                          </div>
-                          <div className="text-xs text-green-600">
-                            {roleRates[role.id]?.phConverted !== undefined && (
-                              <span>
-                                ≈ {getEffectiveCurrencySymbol(userLocation, manualLocation)}{formatNumberPrecise(roleRates[role.id]?.phConverted ?? 0, { showDecimals: false })}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t border-green-300 pt-2 mt-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
+                          <span className="text-xs text-green-700 font-medium">Philippines Rate:</span>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-green-600">
-                              {getEffectiveCurrencySymbol(userLocation, manualLocation)}{(() => {
-                                const local = roleRates[role.id]?.local ?? 0;
-                                const phConverted = roleRates[role.id]?.phConverted ?? 0;
-                                const savings = Math.trunc(local) - Math.trunc(phConverted);
-                                return formatNumberPrecise(savings, { showDecimals: false });
+                            <div className="text-sm font-bold text-green-900">
+                              ₱{(() => {
+                                const roleSalaryData = roles?.[role.id]?.salary;
+                                const philippineData = roleSalaryData?.Philippines;
+                                if (philippineData) {
+                                  const entryPH = philippineData.entry.base * currentTeamSize;
+                                  const moderatePH = philippineData.moderate.base * currentTeamSize;
+                                  const experiencedPH = philippineData.experienced.base * currentTeamSize;
+                                  const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
+                                  const displayRate = searchFilters.savingsView === 'monthly' 
+                                                    ? avgPH / 12
+                      : avgPH;
+                                                                      return formatNumberPrecise(displayRate, { showDecimals: false });
+                                }
+                                return '0';
                               })()}
                             </div>
                             <div className="text-xs text-green-600">
-                              {(() => {
-                                const local = Math.trunc(roleRates[role.id]?.local ?? 0);
-                                const phConverted = Math.trunc(roleRates[role.id]?.phConverted ?? 0);
-                                if (local > 0) {
-                                  const savings = local - phConverted;
-                                  const percentage = (savings / local) * 100;
-                                  return `${percentage.toFixed(1)}% Savings`;
-                                }
-                                return '0.0% savings';
-                              })()}
+                              {roleRates[role.id]?.phConverted !== undefined && (
+                                <span>
+                                  ≈ {getEffectiveCurrencySymbol(userLocation, manualLocation)}{formatNumberPrecise(roleRates[role.id]?.phConverted ?? 0, { showDecimals: false })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="border-t border-green-300 pt-2 mt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-green-800">Role Cost Savings:</span>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-green-600">
+                                {getEffectiveCurrencySymbol(userLocation, manualLocation)}{(() => {
+                                  const local = roleRates[role.id]?.local ?? 0;
+                                  const phConverted = roleRates[role.id]?.phConverted ?? 0;
+                                  const savings = Math.trunc(local) - Math.trunc(phConverted);
+                                  return formatNumberPrecise(savings, { showDecimals: false });
+                                })()}
+                              </div>
+                              <div className="text-xs text-green-600">
+                                {(() => {
+                                  const local = Math.trunc(roleRates[role.id]?.local ?? 0);
+                                  const phConverted = Math.trunc(roleRates[role.id]?.phConverted ?? 0);
+                                  if (local > 0) {
+                                    const savings = local - phConverted;
+                                    const percentage = (savings / local) * 100;
+                                    return `${percentage.toFixed(1)}% Savings`;
+                                  }
+                                  return '0.0% savings';
+                                })()}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Team Size Selector */}
-                <AnimatePresence>
-                  {isSelected && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamSizeChange(role.id, -1);
-                            }}
-                            className={`
-                              w-8 h-8 rounded-full flex items-center justify-center transition-colors
-                              ${currentTeamSize > 0 
-                                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                                : 'bg-neutral-100 text-neutral-400'
-                              }
-                            `}
-                            disabled={currentTeamSize <= 0}
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          
-                          <span className="w-8 text-center font-bold text-cyber-green-700">
-                            {currentTeamSize}
-                          </span>
-                          
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTeamSizeChange(role.id, 1);
-                            }}
-                            className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
                   )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-      </AnimatePresence>
+
+                  {/* Team Size Selector */}
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="border-t border-cyber-green-200 pt-4 bg-cyber-green-25 -mx-6 px-6 pb-2 rounded-b-xl overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-cyber-green-700">Team Size:</span>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTeamSizeChange(role.id, -1);
+                              }}
+                              className={`
+                                w-8 h-8 rounded-full flex items-center justify-center transition-colors
+                                ${currentTeamSize > 0 
+                                  ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                                  : 'bg-neutral-100 text-neutral-400'
+                                }
+                              `}
+                              disabled={currentTeamSize <= 0}
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            
+                            <span className="w-8 text-center font-bold text-cyber-green-700">
+                              {currentTeamSize}
+                            </span>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTeamSizeChange(role.id, 1);
+                              }}
+                              className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+        </AnimatePresence>
+      )}
 
       {/* No Results */}
       {filteredRoles.length === 0 && (

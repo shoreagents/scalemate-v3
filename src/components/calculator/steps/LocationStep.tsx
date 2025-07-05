@@ -112,21 +112,12 @@ export function LocationStep({
                 </>
             ) : (
                 <>
-                  {/* Error or Loading State */}
+                  {/* Error State */}
                   <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
-                    {isLoadingLocation ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-neural-blue-500 border-t-transparent"></div>
-                    ) : null}
-                    {isLoadingLocation ? (
-                      <span className="text-neutral-700 font-medium">
-                        Detecting your location...
-                      </span>
-                    ) : (
-                      <span className="text-neutral-700 font-medium">
-                        {locationError || 'Unable to detect location'}
-                  </span>
-                    )}
-                </div>
+                    <span className="text-neutral-700 font-medium">
+                      {locationError || 'Unable to detect location'}
+                    </span>
+                  </div>
                   
                   {/* Set Location Manually Button - Always Visible */}
                   <Button
