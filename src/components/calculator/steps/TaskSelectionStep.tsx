@@ -268,6 +268,27 @@ export function TaskSelectionStep({
     }
   };
 
+  // Before rendering the grid, compute the rolesWithTasks array and gridClass
+  const rolesWithTasks = activeRoles.filter((roleId) => {
+    const role = getRoleData(roleId);
+    const predefinedTasks = (role.tasks || []).filter((task: Task) => selectedTasks[`${roleId}-${task.id}`]);
+    const custom = customTasks[roleId] || [];
+    return predefinedTasks.length > 0 || custom.length > 0;
+  });
+  let gridClass = 'grid grid-cols-1 gap-4 justify-center';
+  if (rolesWithTasks.length === 2) {
+    gridClass = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 justify-center';
+  } else if (rolesWithTasks.length >= 3) {
+    gridClass = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+  }
+
+  let gridWrapperClass = '';
+  if (rolesWithTasks.length === 1) {
+    gridWrapperClass = 'max-w-md mx-auto';
+  } else if (rolesWithTasks.length === 2) {
+    gridWrapperClass = 'max-w-2xl mx-auto';
+  }
+
   if (activeRoles.length === 0) {
     return (
       <div className="text-center py-12">
@@ -549,7 +570,7 @@ export function TaskSelectionStep({
                               e.stopPropagation();
                               setShowAddCustom(prev => ({ ...prev, [roleId]: true }));
                             }}
-                            className="relative w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 group transition-colors duration-300 overflow-hidden"
+                            className="relative w-full p-6 rounded-xl border-2 border-dashed border-neural-blue-300 bg-gradient-to-r from-neural-blue-50 to-quantum-purple-50 hover:border-neural-blue-400 group transition-colors duration-300 overflow-hidden flex items-center justify-center"
                             whileHover="hover"
                             whileTap="tap"
                             variants={{
@@ -568,25 +589,17 @@ export function TaskSelectionStep({
                               transition={{ duration: 0.3 }}
                               className="absolute inset-0 rounded-xl pointer-events-none bg-gradient-to-r from-neural-blue-100 to-quantum-purple-100 z-0"
                             />
-                            <div className="flex items-center justify-between relative z-10">
-                              <div className="text-left">
-                                <h3 className="text-lg font-bold text-neural-blue-900 mb-1">
-                                  Need something specific?
-                                </h3>
-                                <p className="text-sm text-neural-blue-600">
-                                  Add custom tasks tailored to your {role.title} role requirements
-                                </p>
-                              </div>
-                              <motion.div
-                                variants={{
-                                  hover: { scale: 1.2 },
-                                  tap: { scale: 0.95 }
-                                }}
+                            <div className="flex items-center justify-center gap-3 relative z-10">
+                              <motion.span
+                                variants={{ hover: { scale: 1.2 }, tap: { scale: 0.95 } }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                                 className="inline-flex"
                               >
-                                <Plus className="w-5 h-5 text-neural-blue-500" />
-                              </motion.div>
+                                <Plus className="w-7 h-7 text-neural-blue-500" />
+                              </motion.span>
+                              <h3 className="text-lg font-bold text-neural-blue-900">
+                                Add Custom Task for {role.title}
+                              </h3>
                             </div>
                           </motion.button>
                         )}
@@ -613,15 +626,47 @@ export function TaskSelectionStep({
           
           <div className="relative z-10">
             <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-neural-blue-900">
+              <h3 className="text-lg font-bold text-neural-blue-900">
                 Summary
               </h3>
               <p className="text-sm text-neutral-600 mb-8">
                 Your complete offshore team configuration and tasks breakdown.
               </p>
+              <div className="text-sm text-gray-600 font-bold text-center mb-2">Selected Roles and Tasks</div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className={gridWrapperClass}>
+              <div className={gridClass}>
+                {rolesWithTasks.map((roleId) => {
+                  const role = getRoleData(roleId);
+                  const predefinedTasks = (role.tasks || []).filter((task: Task) => selectedTasks[`${roleId}-${task.id}`]);
+                  const custom = customTasks[roleId] || [];
+                  return (
+                    <div key={roleId} className="p-4 border border-neutral-200 rounded-xl bg-white w-full max-w-[400px] mx-auto">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">{role.icon}</span>
+                        <span className="font-medium text-gray-800">{role.title}</span>
+                      </div>
+                      <ul className="list-disc list-inside text-sm text-neutral-600">
+                        {predefinedTasks.map((task: Task) => (
+                          <li key={task.id} className="flex items-center gap-2 mb-1">
+                            <Check className="w-4 h-4 text-neural-blue-600 flex-shrink-0" />
+                            <span>{task.name}</span>
+                          </li>
+                        ))}
+                        {custom.map((task: CustomTask) => (
+                          <li key={task.id} className="flex items-center gap-2 mb-1">
+                            <Check className="w-4 h-4 text-neural-blue-600 flex-shrink-0" />
+                            <span className="italic">{task.name}</span> <span className="text-xs text-neutral-400">(Custom)</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mt-10">
               <div>
                 <div className="text-sm text-gray-600 font-bold">Total Tasks</div>
                 <div className="text-2xl font-bold text-neural-blue-600">{getTotalSelectedTasks()}</div>
@@ -631,37 +676,10 @@ export function TaskSelectionStep({
                 <div className="text-2xl font-bold text-quantum-purple-600">{activeRoles.length}</div>
               </div>
               <div>
-              <div className="text-sm text-gray-600 font-bold">Custom Tasks</div>
+                <div className="text-sm text-gray-600 font-bold">Custom Tasks</div>
                 <div className="text-2xl font-bold text-cyber-green-600">
                   {Object.values(customTasks).reduce((sum, tasks) => sum + tasks.length, 0)}
                 </div>
-              </div>
-            </div>
-
-            {/* Assigned Tasks by Role */}
-            <div className="mt-8 text-left">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeRoles.map((roleId) => {
-                  const role = getRoleData(roleId);
-                  // Get selected predefined tasks for this role
-                  const predefinedTasks = (role.tasks || []).filter((task: Task) => selectedTasks[`${roleId}-${task.id}`]);
-                  // Get custom tasks for this role
-                  const custom = customTasks[roleId] || [];
-                  if (predefinedTasks.length === 0 && custom.length === 0) return null;
-                  return (
-                                            <div key={roleId} className="p-4 border border-neutral-200 rounded-xl bg-white">
-                      <div className="font-medium text-brand-primary-700 mb-1">{role.title}</div>
-                      <ul className="list-disc list-inside ml-2 text-neutral-700">
-                        {predefinedTasks.map((task: Task) => (
-                          <li key={task.id}>{task.name}</li>
-                        ))}
-                        {custom.map((task: CustomTask) => (
-                          <li key={task.id}><span className="italic">{task.name}</span> <span className="text-xs text-neutral-400">(Custom)</span></li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </div>

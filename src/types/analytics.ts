@@ -34,6 +34,7 @@ export type AnalyticsEventType =
   | 'scroll_depth'
   | 'time_on_step'
   | 'calculator_restart'       // NEW: if they start over
+  | 'calculator_restore'       // NEW: if they restore from cache
   | 'error_occurred'
   | 'api_call_failed'
   | 'cache_hit'

@@ -119,11 +119,16 @@ export function LocationSelector({
   const isValid = selectedLocation.country;
 
   return (
-    <div className="w-full">
+    <motion.div
+      className="w-full"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Search and Buttons in Same Row */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
         {/* Country Search/Dropdown */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 w-full">
           <div className="relative group">
             <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200" />
             <input
@@ -134,7 +139,6 @@ export function LocationSelector({
                 const value = e.target.value;
                 setSearchQuery(value);
                 handleDropdownToggle(true);
-                
                 // Only clear selection if user is actively typing and it's different
                 if (value && value !== selectedLocation.country) {
                   setSelectedLocation(prev => ({ ...prev, country: '' }));
@@ -147,14 +151,16 @@ export function LocationSelector({
               }}
               placeholder="Search countries..."
               disabled={disabled}
-              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:!outline-none focus:!ring-0 focus:!shadow-none focus:!box-shadow-none focus:border-blue-500 active:!outline-none active:!ring-0 active:!shadow-none disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full pl-10 pr-10 h-14 border border-gray-300 rounded-lg text-lg min-w-[180px] focus:!outline-none focus:!ring-0 focus:!shadow-none focus:!box-shadow-none focus:border-blue-500 active:!outline-none active:!ring-0 active:!shadow-none disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
             />
             <button
               onClick={() => handleDropdownToggle(!showCountryDropdown)}
               disabled={disabled}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed transition-colors"
+              tabIndex={-1}
+              aria-label="Toggle country dropdown"
             >
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-5 h-5" />
             </button>
           </div>
 
@@ -193,14 +199,7 @@ export function LocationSelector({
                         onMouseDown={(e) => e.preventDefault()} // Prevent blur on click
                         className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between group border-b border-gray-100 last:border-b-0"
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 truncate">
-                            {country.name.common}
-                          </div>
-                          <div className="text-xs text-gray-500 truncate">
-                            {country.region} • {country.subregion}
-                          </div>
-                        </div>
+                        <span className="font-medium text-gray-900 truncate">{country.name.common}</span>
                         {selectedLocation.country === country.name.common && (
                           <Check className="w-4 h-4 text-blue-600 flex-shrink-0 ml-2" />
                         )}
@@ -219,9 +218,8 @@ export function LocationSelector({
           onClick={onCancel}
           disabled={disabled}
           variant="quantum-secondary"
-          size="neural-md"
+          className="h-14 border border-gray-300 rounded-lg text-lg min-w-[180px] px-6 whitespace-nowrap w-full md:w-auto"
           leftIcon={<X className="w-4 h-4" />}
-          className="whitespace-nowrap"
         >
           Cancel
         </Button>
@@ -229,9 +227,8 @@ export function LocationSelector({
           onClick={onSave}
           disabled={!isValid || disabled}
           variant="neural-primary"
-          size="neural-md"
+          className="h-14 border border-gray-300 rounded-lg text-lg min-w-[180px] px-6 whitespace-nowrap w-full md:w-auto"
           leftIcon={<Check className="w-4 h-4" />}
-          className="whitespace-nowrap"
         >
           Save Location
         </Button>
@@ -252,6 +249,6 @@ export function LocationSelector({
           </div>
         </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 } 

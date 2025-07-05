@@ -55,8 +55,8 @@ export const Button: React.FC<ButtonProps> = ({
     
     const variantClasses = {
       // Neural Design System Variants
-      'neural-primary': 'bg-gradient-to-r from-blue-600 via-violet-700 to-blue-600 bg-[length:200%_100%] bg-[position:0%_50%] hover:bg-[position:100%_50%] disabled:hover:bg-[position:0%_50%] text-white transition-all duration-1000 ease-in-out disabled:transition-none',
-      'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-neural-blue-200 hover:border-neural-blue-400 hover:bg-neural-blue-100 disabled:hover:border-neural-blue-200 disabled:hover:bg-neural-blue-50 transition-all duration-300 disabled:transition-none',
+      'neural-primary': 'bg-gradient-to-r from-violet-700 to-blue-600 text-white relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-600 before:to-violet-700 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300 disabled:before:opacity-0 after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:translate-x-[-100%] hover:after:translate-x-[100%] after:transition-transform after:duration-1000 after:ease-in-out disabled:after:translate-x-[-100%]',
+      'quantum-secondary': 'bg-neural-blue-50 text-neural-blue-700 border-neural-blue-200 hover:border-neural-blue-400 hover:bg-neural-blue-100 disabled:hover:border-neural-blue-200 disabled:hover:bg-neural-blue-50 disabled:transition-none',
       'cyber-success': 'bg-gradient-to-l from-cyber-green-500 via-cyber-green-600 to-cyber-green-500 text-white border-0 shadow-lg',
       'matrix-energy': 'bg-gradient-to-l from-matrix-orange-500 via-matrix-orange-600 to-matrix-orange-500 text-white border-0 shadow-lg',
       'neural-ghost': 'bg-transparent text-neural-blue-600 border-transparent hover:bg-gradient-to-r hover:from-neural-blue-50 hover:to-neural-blue-100 hover:text-neural-blue-700 disabled:hover:bg-transparent disabled:hover:text-neural-blue-600',
@@ -89,8 +89,6 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading || aiProcessing}
       {...props}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-neural-shimmer" />
-      
       {/* Left icon or processing indicator */}
       {(leftIcon || loading || aiProcessing) && (
         <span className={combineClasses(

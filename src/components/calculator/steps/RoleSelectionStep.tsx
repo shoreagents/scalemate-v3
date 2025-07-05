@@ -1099,36 +1099,36 @@ export function RoleSelectionStep({
                 
                 return (
                   <>
-                    <div>
-                      <div className="text-sm text-gray-600 font-bold mb-2">
-                        {getDisplayCountryName(userLocation, manualLocation)} {displayPeriod} Cost
-                      </div>
+                    <div className="flex flex-col justify-end items-center">
                       <div className="text-xl font-bold text-red-600">
                         {currencySymbol}{formatNumberPrecise(summaryData.totalLocalCost ?? 0, { showDecimals: false })}
                       </div>
+                      <div className="text-sm text-gray-600 font-bold mt-1">
+                        {getDisplayCountryName(userLocation, manualLocation)} {displayPeriod} Cost
+                      </div>
                     </div>
                     
-                    <div>
-                      <div className="text-sm text-gray-600 font-bold mb-2">
-                        Philippines {displayPeriod} Cost
-                      </div>
+                    <div className="flex flex-col justify-end items-center">
                       <div className="text-xl font-bold text-blue-600">
                         ₱{formatNumberPrecise(summaryData.totalPhilippinesCostPHP ?? 0, { showDecimals: false })}
                       </div>
                       <div className="text-xs text-blue-500">
                         {summaryPhilippinesCostConverted}
                       </div>
+                      <div className="text-sm text-gray-600 font-bold mt-1">
+                        Philippines {displayPeriod} Cost
+                      </div>
                     </div>
                     
-                    <div>
-                      <div className="text-sm text-gray-600 font-bold mb-2">
-                         {displayPeriod} Savings
-                      </div>
+                    <div className="flex flex-col justify-end items-center">
                       <div className="text-xl font-bold text-green-600">
                         {currencySymbol}{formatNumberPrecise(summaryData.totalSavings ?? 0, { showDecimals: false })}
                       </div>
                       <div className="text-xs text-green-500">
                         {summaryData.percentage.toFixed(1)}% Savings
+                      </div>
+                      <div className="text-sm text-gray-600 font-bold mt-1">
+                        {displayPeriod} Savings
                       </div>
                     </div>
                   </>

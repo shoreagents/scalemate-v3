@@ -19,7 +19,7 @@ export interface SessionData {
 
 export interface SessionEvent {
   timestamp: Date;
-  type: 'page_view' | 'step_start' | 'step_complete' | 'role_select' | 'team_size_change' | 'calculation_complete' | 'exit_intent' | 'form_submit' | 'error' | 'portfolio_select' | 'calculation_start' | 'calculator_restart' | 'exit_popup_close' | 'back_to_top_click';
+  type: 'page_view' | 'step_start' | 'step_complete' | 'role_select' | 'team_size_change' | 'calculation_complete' | 'exit_intent' | 'form_submit' | 'error' | 'portfolio_select' | 'calculation_start' | 'calculator_restart' | 'calculator_restore' | 'exit_popup_close' | 'back_to_top_click';
   step?: number;
   data?: any;
   duration?: number;

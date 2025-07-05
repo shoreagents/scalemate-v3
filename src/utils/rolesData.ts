@@ -327,9 +327,9 @@ export const TASK_COMPLEXITY_MULTIPLIERS: Readonly<Record<TaskComplexity | 'cust
 
 // Experience levels configuration for the calculator
 export const EXPERIENCE_LEVELS_DATA = [
-  { level: 'entry', title: 'Entry Level', icon: '🌱', description: '0-2 years', bestFor: 'Basic tasks, learning opportunities', color: 'text-green-700' },
-  { level: 'moderate', title: 'Mid Level', icon: '🚀', description: '3-5 years', bestFor: 'Complex tasks, team leadership', color: 'text-blue-700' },
-  { level: 'experienced', title: 'Senior Level', icon: '⭐', description: '5+ years', bestFor: 'Strategic decisions, mentoring', color: 'text-purple-700' }
+  { level: 'entry', title: 'Entry Level', description: 'Fresh graduates and professionals with 0-2 years of experience', bestFor: 'Basic tasks, learning opportunities', color: 'text-green-700', timeToProductivity: '1-2 weeks' },
+  { level: 'moderate', title: 'Mid Level', description: 'Professionals with 2-5 years of experience and proven skills', bestFor: 'Complex tasks, team leadership', color: 'text-blue-700', timeToProductivity: '1 week' },
+  { level: 'experienced', title: 'Senior Level', description: 'Seasoned professionals with 5+ years and specialized expertise', bestFor: 'Strategic decisions, mentoring', color: 'text-purple-700', timeToProductivity: 'Immediate' }
 ] as const;
 
 // Backward compatibility function

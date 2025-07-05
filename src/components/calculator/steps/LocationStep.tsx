@@ -66,20 +66,13 @@ export function LocationStep({
       </div>
 
       {/* Location Selection Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full"
-      >
+      <div className="w-full">
         {/* Location Section with Background */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto p-8 
-                          p-6 rounded-xl border h-full flex flex-col
-                          border-neutral-200 bg-white
-                        "
+          transition={{ duration: 0.5 }}
+          className="max-w-4xl mx-auto p-6 rounded-xl border h-full flex flex-col border-neutral-200 bg-white"
         >
           
           <div className="relative z-10">
@@ -89,9 +82,9 @@ export function LocationStep({
               {getEffectiveLocation?.() ? (
                 <>
                   {/* Location Display */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neural-blue-200 shadow-sm">
-                    <span className="text-lg">🌏</span>
-                    <span className="font-medium text-neutral-900">
+                  <div className="flex-1 flex items-center justify-center gap-2 px-6 h-16 min-w-[320px] text-lg bg-white rounded-lg border border-neural-blue-200 shadow-sm">
+                    <span className="text-2xl">🌏</span>
+                    <span className="font-medium text-neutral-900 text-center">
                         {getEffectiveLocation?.()?.country_name}
                     </span>
                   </div>
@@ -111,7 +104,7 @@ export function LocationStep({
                 {manualLocation && (
                   <button
                     onClick={onLocationReset}
-                      className="text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors"
+                      className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
                   >
                       Use Current Location
                   </button>
@@ -149,7 +142,7 @@ export function LocationStep({
           {/* Location Edit Modal */}
           {isEditingLocation && (
               <div className="mt-6">
-                <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-lg">
+                <div className="bg-white border border-neutral-200 rounded-xl p-6 shadow-sm">
                   <LocationSelector
                     initialLocation={tempLocation || { country: '', currency: getDisplayCurrencyByCountry('') }}
                     onLocationChange={handleLocationChange}
@@ -189,10 +182,8 @@ export function LocationStep({
           </div>
 
           </div>
-            </motion.div>
-
-            
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 } 

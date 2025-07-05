@@ -120,15 +120,18 @@ function generateAIPrompt(location: LocationData) {
       "experienceLevels": [
         {
           "description": "[entry level description]",
-          "bestFor": "[entry level best for]"
+          "bestFor": "[entry level best for]",
+          "timeToProductivity": "[entry level time to productivity, e.g. '1-2 weeks']"
         },
         {
           "description": "[mid level description]", 
-          "bestFor": "[mid level best for]"
+          "bestFor": "[mid level best for]",
+          "timeToProductivity": "[mid level time to productivity, e.g. '1 week']"
         },
         {
           "description": "[senior level description]",
-          "bestFor": "[senior level best for]"
+          "bestFor": "[senior level best for]",
+          "timeToProductivity": "[senior level time to productivity, e.g. 'Immediate']"
         }
       ],
       "salary": {
@@ -156,7 +159,7 @@ Generate country-specific data for these property management roles:
 Critical Requirements:
 1. Role descriptions: Include local regulations, market conditions, and compliance requirements
 2. Tasks (10 per role): Focus on ${countryName}-specific laws, practices, and regulatory requirements
-3. Experience levels: Tailor descriptions and "best for" scenarios to local work culture and career progression
+3. Experience levels: Tailor descriptions, "best for" scenarios, and provide a realistic "time to productivity" (how quickly a new hire at this level typically becomes productive in this market)
 4. Salaries: Research current ${countryName} market rates (compare against Philippines baseline) - ALL ANNUAL/YEARLY amounts
 5. Icons: Select emojis that universally represent each role's primary function
 
@@ -166,6 +169,7 @@ Data Quality Standards:
 - Ensure salary figures reflect current market reality (${currentDate}) as ANNUAL amounts
 - Make task complexity ratings realistic for each activity
 - Align experience descriptions with local hiring practices
+- For each experience level, provide a realistic "time to productivity" (e.g. '1-2 weeks', 'Immediate') based on local market expectations
 - All salary components (base, total, benefits, taxes) must be ANNUAL (per year) figures
 
 Respond ONLY in English.
@@ -333,11 +337,14 @@ export async function POST(request: NextRequest) {
           const mergedExperienceLevels = staticExperienceLevels.map((staticLevel: any, index: number) => {
             const aiLevel = aiExperienceLevels[index];
             if (aiLevel) {
-              // Merge AI-generated description and bestFor with static structure
+              // Merge AI-generated description and bestFor with static structure, and include timeToProductivity
               return {
-                ...staticLevel,
+                level: staticLevel.level,
+                title: staticLevel.title,
                 description: aiLevel.description || staticLevel.description,
-                bestFor: aiLevel.bestFor || staticLevel.bestFor
+                bestFor: aiLevel.bestFor || staticLevel.bestFor,
+                color: staticLevel.color,
+                timeToProductivity: aiLevel.timeToProductivity || staticLevel.timeToProductivity
               };
             }
             return staticLevel;

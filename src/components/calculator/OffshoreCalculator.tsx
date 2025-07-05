@@ -6,6 +6,7 @@ import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel, C
 import { ManualLocation, IPLocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
 import { calculateSavings } from '@/utils/calculations';
 import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import { useCalculatorCache } from '@/hooks/useCalculatorCache';
 import { getDisplayCurrencyByCountryWithAPIFallback, getCurrencySymbol } from '@/utils/currency';
 import type { LocalMultiCountryRoleSalaryData } from '@/utils/calculations';
 
@@ -33,6 +34,7 @@ import {
 import { Brain } from 'phosphor-react';
 import Link from 'next/link';
 import { LocationStep } from './steps/LocationStep';
+import { RestoreProgressPopup } from './RestoreProgressPopup';
 
 
 
@@ -158,6 +160,37 @@ export function OffshoreCalculator({
 
   // Use global exit intent context
   const exitIntentContext = useExitIntentContext();
+
+  // Calculator cache functionality
+  const {
+    hasCachedData,
+    showRestorePopup,
+    cachedStep,
+    saveToCache,
+    loadFromCache,
+    clearCache,
+    restoreFromCache,
+    dismissRestorePopup,
+    isCheckingCache
+  } = useCalculatorCache();
+
+  const [canShowPopup, setCanShowPopup] = useState(false);
+
+  useEffect(() => {
+    if (!isCheckingCache) {
+      const timer = setTimeout(() => setCanShowPopup(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isCheckingCache]);
+
+  // Load cached data on mount
+  useEffect(() => {
+    const cachedData = loadFromCache();
+    if (cachedData) {
+      console.log('🔄 Restored calculator data from cache');
+      setFormData(cachedData);
+    }
+  }, [loadFromCache]);
 
   // Compute effective location for the hook (stable reference)
   const computedLocationForHook = useMemo(() => {
@@ -410,6 +443,9 @@ export function OffshoreCalculator({
     setFormData((prev: FormData) => {
       const updated = { ...prev, ...updates, lastUpdatedAt: new Date() };
       
+      // Auto-save to cache
+      saveToCache(updated);
+      
       // Track analytics for significant updates
       if (updates.currentStep && updates.currentStep !== prev.currentStep) {
         analytics.updateStep(updates.currentStep);
@@ -509,8 +545,22 @@ export function OffshoreCalculator({
       lastUpdatedAt: new Date()
     });
     setCalculationResult(null);
+    clearCache(); // Clear the cache when restarting
     analytics.trackEvent('calculator_restart');
     exitIntentContext.reset();
+  };
+
+  const handleRestoreFromCache = () => {
+    try {
+      const restoredData = restoreFromCache();
+      setFormData(restoredData);
+      analytics.trackEvent('calculator_restore', { step: restoredData.currentStep });
+      console.log('🔄 Restored calculator from cache');
+    } catch (error) {
+      console.error('Error restoring from cache:', error);
+      // Fallback to restart if restore fails
+      restartCalculator();
+    }
   };
 
   const canProceedFromStep = (step: CalculatorStep): boolean => {
@@ -704,6 +754,23 @@ export function OffshoreCalculator({
 
   return (
     <div className={`relative ${className}`}>
+      {/* Restore Progress Popup */}
+      {canShowPopup && (
+        <RestoreProgressPopup
+          isOpen={showRestorePopup}
+          onRestore={handleRestoreFromCache}
+          onRestart={restartCalculator}
+          onDismiss={dismissRestorePopup}
+          cachedStep={cachedStep || 1}
+          cachedData={{
+            ...(formData.portfolioSize && { portfolioSize: formData.portfolioSize }),
+            selectedRolesCount: Object.values(formData.selectedRoles).filter(Boolean).length,
+            ...(formData.userLocation?.country && { location: formData.userLocation.country }),
+            ...(manualLocation?.country && !formData.userLocation?.country && { location: manualLocation.country })
+          }}
+        />
+      )}
+
       {/* Background effects */}
       <div className="absolute inset-0 pattern-neural-grid opacity-5 pointer-events-none" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-neural-blue-400/10 to-quantum-purple-400/10 rounded-full blur-3xl animate-neural-float pointer-events-none" />

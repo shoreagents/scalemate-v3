@@ -7,7 +7,13 @@ import {
   Plus, 
   Minus, 
   ArrowRight,
-  GraduationCap
+  GraduationCap,
+  Award,
+  Target,
+  Lightbulb,
+  AlertTriangle,
+  X,
+  Users
 } from 'lucide-react';
 import { 
   calculateMultiLevelSavings, 
@@ -358,7 +364,7 @@ export function ExperienceStep({
         </p>
         
         {/* Progress and Savings View Row */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-neutral-900">
           Configure Each Role ({activeRoles.length} role{activeRoles.length !== 1 ? 's' : ''})
           </h3>
@@ -391,7 +397,7 @@ export function ExperienceStep({
         </div>
         
       {/* Role-by-Role Experience Distribution */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {activeRoles.map((role, index) => {
           const roleData = allRoles.find(r => r.id === role.id);
           const distribution = role.distribution;
@@ -431,20 +437,32 @@ export function ExperienceStep({
                 {/* Assigned Count Badge at Top */}
                 <div className="flex justify-end mb-2">
                   {distribution.totalAssigned === distribution.totalRequired ? (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold flex items-center gap-1">
-                      <Check className="w-4 h-4" /> Completed
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold min-w-[70px] text-center">
+                        <Check className="w-4 h-4" />
+                        Complete
+                      </span>
+                      <span className="text-xs font-normal mt-1 text-neutral-500 w-full text-right block">
+                        {distribution.totalAssigned} of {distribution.totalRequired} assigned
+                      </span>
+                    </div>
                   ) : (
-                    <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm font-semibold">
-                      {distribution.totalAssigned}/{distribution.totalRequired} Assigned
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold min-w-[70px] text-center">
+                        <X className="w-4 h-4 text-red-500" />
+                        Incomplete
+                      </span>
+                      <span className="text-xs font-normal mt-1 text-neutral-500 w-full text-right block">
+                        {distribution.totalAssigned} of {distribution.totalRequired} assigned
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Experience Level Distribution - 3 Column Layout */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {getExperienceLevels().map((option: any) => {
+                {(roleData?.experienceLevels || []).map((option: any) => {
                   const currentCount = distribution[option.level as ExperienceLevel];
                   const savings = roleData ? calculateRoleLevelSavings(roleData, option.level, userLocation, manualLocation, roles) : 0;
                   const totalSavingsForLevel = savings * currentCount;
@@ -453,47 +471,56 @@ export function ExperienceStep({
 
                   // Determine background tint class based on level
                   let bgTint = '';
-                  if (option.level === 'entry') bgTint = 'bg-gray-50';
+                  if (option.level === 'entry') bgTint = 'bg-green-50';
                   else if (option.level === 'moderate') bgTint = 'bg-blue-50';
                   else if (option.level === 'experienced') bgTint = 'bg-purple-50';
 
+                  let IconComponent = null;
+                  let iconColor = '';
+                  if (option.level === 'entry') { IconComponent = Lightbulb; iconColor = 'text-green-600'; }
+                  else if (option.level === 'moderate') { IconComponent = Target; iconColor = 'text-blue-600'; }
+                  else if (option.level === 'experienced') { IconComponent = Award; iconColor = 'text-purple-600'; }
+
                   return (
-                    <div key={option.level} className={`p-4 rounded-lg border ${bgTint} shadow-sm`}>
-                      {/* Experience Level Header (no gradient) */}
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <span className={`text-xl ${option.color}`}>{option.icon}</span>
+                    <div key={option.level} className={`p-6 rounded-lg border ${bgTint} shadow-sm flex flex-col`}>
+                      {/* Experience Level Header (icon top, centered) */}
+                      <div className="flex flex-col items-center justify-start mb-2">
+                        {IconComponent && <IconComponent className={`w-6 h-6 mb-2 mt-2 ${iconColor}`} />}
                         <h5 className={`font-bold text-lg ${option.color} mb-1`}>{option.title}</h5>
-                      </div>
-                      
-                      <div className="bg-white p-3 rounded-lg border text-left flex flex-col justify-center min-h-0 mb-6">
-                        <p className="text-xs text-neutral-600 leading-tight">
-                          <span className="font-bold">Description:</span> {option.description}
-                          <br />
-                          <span style={{ marginRight: '0.25rem', marginTop: '0.5rem', display: 'inline-block' }} className="font-bold">Best for:</span>{option.bestFor}
-                        </p>
+                        <div className="text-xs text-neutral-600 text-center min-h-[56px]">
+                          {option.description}
+                        </div>
                       </div>
 
                       {/* Counter Controls */}
-                      <div className="flex items-center justify-center gap-3 mt-6 mb-6">
+                      <div className="flex items-center justify-center gap-3 mb-2">
                         <button
                           onClick={() => updateRoleDistribution(role.id, option.level, currentCount - 1)}
                           disabled={!canDecrease}
-                          className="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-10 h-10 rounded-full border-2 border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-5 h-5" />
                         </button>
-                        <div className="w-8 text-center font-bold text-cyber-green-700 text-2xl">
-                          {currentCount}
+                        <div className="w-16 h-16 rounded-full bg-white/90 border-2 border-neutral-200 flex items-center justify-center">
+                          <span className="text-2xl font-bold text-neutral-800">{currentCount}</span>
                         </div>
                         <button
                           onClick={() => updateRoleDistribution(role.id, option.level, currentCount + 1)}
                           disabled={!canIncrease}
-                          className="w-8 h-8 rounded-full bg-cyber-green-100 text-cyber-green-600 hover:bg-cyber-green-200 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-10 h-10 rounded-full border-2 border-neutral-300 bg-white hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-5 h-5" />
                         </button>
                       </div>
 
+                      <div className="bg-white p-3 rounded-lg border text-center flex flex-col justify-center min-h-0 mb-2">
+                        <p className="text-xs text-neutral-600 leading-tight">
+                          <span className="font-bold">Time to Productivity: </span>
+                          {option.timeToProductivity}
+                          <br />
+                          <span className="font-bold">Best for: </span> {option.bestFor}
+                        </p>
+                      </div>
                       {/* Savings for This Level */}
                       <AnimatePresence>
                         {effectiveLocation && currentCount > 0 && (
@@ -597,8 +624,13 @@ export function ExperienceStep({
               </div>
 
               {/* Per-Role Summary Card */}
-              {(distribution.entry > 0 || distribution.moderate > 0 || distribution.experienced > 0) && (
-                <div className="mt-4">
+              {(distribution.entry > 0 || distribution.moderate > 0 || distribution.experienced > 0) && distribution.isComplete && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="mt-4"
+                >
                   <div className="bg-white/80 border border-green-200 rounded-lg p-4 text-center">
                     <div className="text-sm text-gray-600 font-bold mb-3">Role Total Breakdown</div>
                     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
@@ -616,7 +648,7 @@ export function ExperienceStep({
                           </div>
                           <div className="h-0" />
                         </div>
-                        <div className="text-xs text-gray-600 font-bold">Local Cost</div>
+                        <div className="text-xs text-gray-600 font-bold">{getDisplayCountryName(userLocation, manualLocation)} {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost</div>
                       </div>
                       <div className="flex-1 flex flex-col items-center justify-center">
                         <div className="text-lg font-bold text-blue-600">
@@ -637,7 +669,7 @@ export function ExperienceStep({
                             return '';
                           })()}
                         </div>
-                        <div className="text-xs text-gray-600 font-bold mt-1">Philippines Cost</div>
+                        <div className="text-xs text-gray-600 font-bold mt-1">Philippines {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost</div>
                       </div>
                       <div className="flex-1 flex flex-col items-center justify-center">
                         <div className="text-lg font-bold text-cyber-green-600">
@@ -663,12 +695,51 @@ export function ExperienceStep({
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
+              )}
+
+              {distribution.totalAssigned < distribution.totalRequired && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="mt-2 mb-2"
+                >
+                  <div className="px-6 py-3 rounded-lg border border-orange-200 bg-orange-50 flex items-center gap-2 text-orange-900 text-sm">
+                    <AlertTriangle className="w-5 h-5 text-orange-400" />
+                    {`Please assign ${distribution.totalRequired - distribution.totalAssigned} more experience level${distribution.totalRequired - distribution.totalAssigned !== 1 ? 's' : ''} to complete the role breakdown!`}
+                  </div>
+                </motion.div>
               )}
             </motion.div>
           );
         })}
       </div>
+
+      {/* Add after the role cards, before the summary card: */}
+      {(() => {
+        const totalRoles = activeRoles.length;
+        const completedRoles = activeRoles.filter(role => role.distribution.isComplete).length;
+        const allComplete = totalRoles > 0 && completedRoles === totalRoles;
+        return (
+          <div className="mt-8 w-full">
+            {!allComplete && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full flex flex-col items-center justify-center px-6 py-6 rounded-lg border border-red-200 bg-red-50 text-red-900"
+              >
+                <Users className="w-10 h-10 mb-2 text-red-500" />
+                <div className="text-lg font-bold mb-1">Complete All Role Assignments</div>
+                <div className="text-sm text-red-700 text-red-900 text-center">
+                  Please finish assigning experience levels to all team members so we can proceed to calculate your savings.
+                </div>
+              </motion.div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Total Summary Card (matches RoleSelectionStep) */}
       {allRolesConfigured && (
@@ -684,9 +755,9 @@ export function ExperienceStep({
               <h3 className="text-lg font-bold text-neural-blue-900">Summary</h3>
               <p className="text-sm text-neutral-600 mb-8">Your complete offshore team configuration and savings breakdown.</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-center items-end">
               <div className="lg:col-span-3">
-                <div className="text-sm text-gray-600 font-bold text-center mb-2">Selected Experience Level</div>
+                <div className="text-sm text-gray-600 font-bold text-center mb-2">Selected Roles and Experience Level</div>
                 {(() => {
                   const rolesWithLevels = activeRoles.filter(role => {
                     const { entry, moderate, experienced } = role.distribution;
@@ -714,21 +785,21 @@ export function ExperienceStep({
                                 <div className="flex flex-wrap gap-2 justify-center">
                                   {role.distribution.entry > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 text-gray-700 text-xs font-medium gap-1 border border-gray-200">
-                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'entry')?.icon}</span>
+                                      <span className="mr-1"><Lightbulb className="w-4 h-4 text-green-600" /></span>
                                       Entry Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-700 font-bold text-xs">{role.distribution.entry}</span>
                                     </span>
                                   )}
                                   {role.distribution.moderate > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium gap-1 border border-blue-200">
-                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'moderate')?.icon}</span>
+                                      <span className="mr-1"><Target className="w-4 h-4 text-blue-600" /></span>
                                       Mid Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-700 font-bold text-xs">{role.distribution.moderate}</span>
                                     </span>
                                   )}
                                   {role.distribution.experienced > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-medium gap-1 border border-purple-200">
-                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'experienced')?.icon}</span>
+                                      <span className="mr-1"><Award className="w-4 h-4 text-purple-600" /></span>
                                       Senior Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-purple-200 text-purple-700 font-bold text-xs">{role.distribution.experienced}</span>
                                     </span>
@@ -748,21 +819,21 @@ export function ExperienceStep({
                                 <div className="flex flex-wrap gap-2 justify-center">
                                   {role.distribution.entry > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 text-gray-700 text-xs font-medium gap-1 border border-gray-200">
-                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'entry')?.icon}</span>
+                                      <span className="mr-1"><Lightbulb className="w-4 h-4 text-green-600" /></span>
                                       Entry Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-700 font-bold text-xs">{role.distribution.entry}</span>
                                     </span>
                                   )}
                                   {role.distribution.moderate > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium gap-1 border border-blue-200">
-                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'moderate')?.icon}</span>
+                                      <span className="mr-1"><Target className="w-4 h-4 text-blue-600" /></span>
                                       Mid Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-blue-200 text-blue-700 font-bold text-xs">{role.distribution.moderate}</span>
                                     </span>
                                   )}
                                   {role.distribution.experienced > 0 && (
                                     <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-medium gap-1 border border-purple-200">
-                                      <span className="mr-1">{getExperienceLevels().find((level: any) => level.level === 'experienced')?.icon}</span>
+                                      <span className="mr-1"><Award className="w-4 h-4 text-purple-600" /></span>
                                       Senior Level
                                       <span className="ml-1 flex items-center justify-center w-5 h-5 rounded-full bg-purple-200 text-purple-700 font-bold text-xs">{role.distribution.experienced}</span>
                                     </span>
@@ -777,16 +848,14 @@ export function ExperienceStep({
                   );
                 })()}
               </div>
-              <div>
-                <div className="text-sm text-gray-600 font-bold mb-2">{getDisplayCountryName(userLocation, manualLocation)} {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost</div>
+              <div className="flex flex-col justify-end items-center">
                 <div className="text-xl font-bold text-red-600">
                   {effectiveLocation?.currencySymbol || '$'}
                   {formatCostForView(getTotalLocalCost(), savingsView).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </div>
-                <div className="text-xs text-red-500">&nbsp;</div>
+                <div className="text-sm text-gray-600 font-bold mt-1">{getDisplayCountryName(userLocation, manualLocation)} {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost</div>
               </div>
-              <div>
-                <div className="text-sm text-gray-600 font-bold mb-2">Philippines {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost</div>
+              <div className="flex flex-col justify-end items-center">
                 <div className="text-xl font-bold text-blue-600">
                   ₱{formatCostForView(getTotalPhilippinesCost(), savingsView).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </div>
@@ -794,9 +863,9 @@ export function ExperienceStep({
                   ≈ {effectiveLocation?.currencySymbol || '$'}
                   {formatCostForView(totalPhilippinesCostConverted, savingsView).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </div>
+                <div className="text-sm text-gray-600 font-bold mt-1">Philippines {savingsView === 'monthly' ? 'Monthly' : 'Annual'} Cost</div>
               </div>
-              <div>
-                <div className="text-sm text-gray-600 font-bold mb-2">{savingsView === 'monthly' ? 'Monthly' : 'Annual'} Savings</div>
+              <div className="flex flex-col justify-end items-center">
                 <div className="text-xl font-bold text-cyber-green-600">
                   {effectiveLocation?.currencySymbol || '$'}
                   {formatCostForView(getTotalLocalCost() - totalPhilippinesCostConverted, savingsView).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
@@ -804,6 +873,7 @@ export function ExperienceStep({
                 <div className="text-xs text-cyber-green-500">
                   {calculateTotalSavingsPercentage(getTotalLocalCost() - totalPhilippinesCostConverted, getTotalLocalCost()).toFixed(1)}% Savings
                 </div>
+                <div className="text-sm text-gray-600 font-bold mt-1">{savingsView === 'monthly' ? 'Monthly' : 'Annual'} Savings</div>
               </div>
             </div>
           </div>

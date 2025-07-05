@@ -95,11 +95,13 @@
   html {
     @apply scroll-smooth;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    overflow-x: hidden !important;
   }
 
   body {
     @apply bg-white text-neural-blue-900 font-sans antialiased;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+    overflow-x: hidden !important;
   }
 
   /* Neural Scrollbar */
@@ -295,23 +297,23 @@
 
   /* Neural Button Variants */
   .btn-neural-primary {
-    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 border-0 rounded-xl shadow-lg hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow hover:-translate-y-0.5 active:scale-95 focus:ring-2 focus:ring-neural-blue-500/50 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-neural-blue-500 to-quantum-purple-500 border-0 rounded-xl shadow-lg hover:from-neural-blue-600 hover:to-quantum-purple-600 hover:shadow-neural-glow hover:-translate-y-0.5 active:scale-95 focus:ring-2 focus:ring-neural-blue-500/50;
   }
 
   .btn-quantum-secondary {
-    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-neural-blue-700 bg-neural-blue-50 border-2 border-neural-blue-200 rounded-xl shadow-sm hover:bg-neural-blue-100 hover:border-neural-blue-300 hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-quantum-purple-500/50 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-neural-blue-700 bg-neural-blue-50 border-2 border-neural-blue-200 rounded-xl shadow-sm hover:bg-neural-blue-100 hover:border-neural-blue-300 hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-quantum-purple-500/50;
   }
 
   .btn-cyber-success {
-    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 border-0 rounded-xl shadow-lg hover:from-cyber-green-600 hover:to-cyber-green-700 hover:shadow-cyber-glow hover:-translate-y-0.5 active:scale-95 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-cyber-green-500 to-cyber-green-600 border-0 rounded-xl shadow-lg hover:from-cyber-green-600 hover:to-cyber-green-700 hover:shadow-cyber-glow hover:-translate-y-0.5 active:scale-95;
   }
 
   .btn-matrix-energy {
-    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-matrix-orange-500 to-matrix-orange-600 border-0 rounded-xl shadow-lg hover:from-matrix-orange-600 hover:to-matrix-orange-700 hover:shadow-matrix-glow hover:-translate-y-0.5 active:scale-95 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-matrix-orange-500 to-matrix-orange-600 border-0 rounded-xl shadow-lg hover:from-matrix-orange-600 hover:to-matrix-orange-700 hover:shadow-matrix-glow hover:-translate-y-0.5 active:scale-95;
   }
 
   .btn-neural-ghost {
-    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-neural-blue-600 bg-transparent border-transparent rounded-xl hover:bg-neural-blue-50 hover:text-neural-blue-700 hover:shadow-sm hover:-translate-y-0.5 focus:ring-2 focus:ring-neural-blue-500/50 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-neural-blue-600 bg-transparent border-transparent rounded-xl hover:bg-neural-blue-50 hover:text-neural-blue-700 hover:shadow-sm hover:-translate-y-0.5 focus:ring-2 focus:ring-neural-blue-500/50;
   }
 
   /* Legacy button classes (for backward compatibility) */
