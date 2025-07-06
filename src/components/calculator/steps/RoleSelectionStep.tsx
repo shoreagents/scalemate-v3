@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CustomRole } from '@/types/calculator';
 import { LocationData, ManualLocation } from '@/types/location';
 import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
+import { useCustomRoleData } from '@/hooks/useCustomRoleData';
 import { ROLES } from '@/utils/rolesData';
 import { 
   getCurrencySymbol, 
@@ -31,6 +32,7 @@ import {
 } from '@/utils/calculations';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import pluralize from 'pluralize';
 
 /**
  * Precise number formatting that preserves exact decimal values without rounding
@@ -98,6 +100,10 @@ interface SavingsRange {
   range: string;
 }
 
+// Extend CustomRole locally to include locationKey for tracking
+import type { CustomRole as BaseCustomRole } from '@/types/calculator';
+type CustomRoleWithLocation = BaseCustomRole & { locationKey?: string };
+
 export function RoleSelectionStep({ 
   selectedRoles, 
   customRoles,
@@ -118,7 +124,9 @@ export function RoleSelectionStep({
   const locationCacheKey = useMemo(() => {
     const country = manualLocation?.country || userLocation?.country || 'US';
     const currency = manualLocation?.currency || userLocation?.currency || 'USD';
-    return `${country}-${currency}`;
+    const key = `${country}-${currency}`;
+    console.log(`🔄 [RoleSelectionStep] locationCacheKey changed to: ${key}`);
+    return key;
   }, [manualLocation?.country, manualLocation?.currency, userLocation?.country, userLocation?.currency]);
 
   // Create stable location objects to prevent infinite re-renders in async functions
@@ -219,9 +227,22 @@ export function RoleSelectionStep({
     description: '',
     estimatedSalary: 50000
   });
+  const [duplicateRoleError, setDuplicateRoleError] = useState<string | null>(null);
+  const [updatingCustomRoles, setUpdatingCustomRoles] = useState<Set<string>>(new Set());
+  const isUpdatingRef = useRef(false);
 
-  // All available roles (predefined + additional + custom) - Limited to first 3
-  const allRoles = useMemo(() => {
+  // Custom role API integration
+  const { 
+    customRole, 
+    isLoading: isLoadingCustomRole, 
+    error: customRoleError, 
+    generateCustomRole, 
+    clearCustomRole,
+    isUsingDynamicData: isUsingDynamicCustomRole 
+  } = useCustomRoleData(userLocation, manualLocation);
+
+  // Create merged roles object that includes both predefined and custom roles
+  const mergedRoles = useMemo(() => {
     // Smart fallback logic based on API state
     let availableRoles;
     
@@ -247,16 +268,42 @@ export function RoleSelectionStep({
       console.log('📋 [RoleSelectionStep] Using static roles (fallback)');
     }
     
-    const predefinedRoles = Object.values(availableRoles).slice(0, 3) as RoleData[];
+    // Merge predefined roles with custom roles
+    const merged: Record<string, any> = { ...availableRoles };
+    
+    // Add custom roles to the merged object
+    Object.entries(customRoles || {}).forEach(([roleId, customRole]) => {
+      merged[roleId] = {
+        id: roleId,
+        title: customRole.title,
+        description: customRole.description,
+        icon: customRole.icon,
+        type: 'custom',
+        category: 'custom',
+        salary: customRole.salary, // Include AI-generated salary data
+        tasks: customRole.tasks || [],
+        experienceLevels: customRole.experienceLevels || [],
+        createdAt: customRole.createdAt,
+        aiGenerated: customRole.aiGenerated
+      };
+    });
+    
+    console.log('🔗 [RoleSelectionStep] Merged roles:', Object.keys(merged));
+    return merged;
+  }, [roles, customRoles, isLoadingRoles, isUsingDynamicRoles, rolesError]);
+
+  // All available roles (predefined + additional + custom) - Limited to first 3
+  const allRoles = useMemo(() => {
+    const predefinedRoles = Object.values(mergedRoles).slice(0, 3) as RoleData[];
     const customRolesList = Object.values(customRoles || {}) as RoleData[];
     
     // Put custom roles first, then predefined roles
     return [...customRolesList, ...predefinedRoles];
-  }, [roles, customRoles, isLoadingRoles, isUsingDynamicRoles, rolesError]);
+  }, [mergedRoles, customRoles]);
 
   // Remove the local getSavingsForRole function and replace with centralized version
   const getRoleSavings = async (role: any) => {
-    return await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, roles);
+    return await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, mergedRoles);
   };
 
   // Add state for role savings
@@ -270,7 +317,7 @@ export function RoleSelectionStep({
       for (const role of allRoles) {
         if (role.id) {
           try {
-            const savings = await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, roles);
+            const savings = await calculateIndividualRoleSavings(role, stableUserLocation, stableManualLocation, mergedRoles);
             newSavings[role.id] = savings;
           } catch (error) {
             console.error('Error calculating savings for role:', role.id, error);
@@ -288,7 +335,7 @@ export function RoleSelectionStep({
     };
 
     updateRoleSavings();
-  }, [allRoles, teamSize, locationCacheKey, roles]);
+  }, [allRoles, teamSize, locationCacheKey, mergedRoles]);
 
   // Helper function to get cached savings for a role
   const getCachedRoleSavings = (role: any) => {
@@ -302,7 +349,7 @@ export function RoleSelectionStep({
 
   // Update total savings calculation to use centralized function
   const getTotalSavings = () => {
-    return calculateTotalSavings(selectedRoles, teamSize, allRoles, stableUserLocation, stableManualLocation, roles);
+    return calculateTotalSavings(selectedRoles, teamSize, allRoles, stableUserLocation, stableManualLocation, mergedRoles);
   };
 
   // Update sorting logic to use cached savings
@@ -391,55 +438,141 @@ export function RoleSelectionStep({
     onChange(newSelectedRoles, newTeamSize, customRoles, userLocation);
   };
 
-  const handleCustomRoleSubmit = () => {
+  const handleCustomRoleSubmit = async () => {
     if (!customRoleForm.title.trim()) return;
     
-    const customRoleId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const newCustomRole: CustomRole = {
-      id: customRoleId,
-      title: customRoleForm.title.trim(),
-      description: customRoleForm.description.trim(),
-      category: 'custom',
-      icon: '✨',
-      type: 'custom',
-      tasks: [],
-      requiredSkills: [],
-      optionalSkills: [],
-      estimatedSalary: {
-        local: customRoleForm.estimatedSalary,
-                  philippine: customRoleForm.estimatedSalary * 0.3 // Rough 70% savings estimate
-      },
-      complexity: 'medium',
-      createdAt: new Date(),
-      aiGenerated: false
-    };
+    if (!customRoleForm.description.trim()) {
+      setDuplicateRoleError('Role description is required');
+      return;
+    }
     
-    const newCustomRoles = {
-      ...customRoles,
-      [customRoleId]: newCustomRole
-    };
+    // Check if role name already exists (case-insensitive, ignore spaces, singular/plural)
+    const normalizeRoleName = (str: string) =>
+      (str || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .split(' ')
+        .map(word => pluralize.singular(word))
+        .join('')
+        .trim();
+    const normalizedNewRole = normalizeRoleName(customRoleForm.title);
+    const existingRole = Object.values(mergedRoles).find(role => 
+      normalizeRoleName(role.title) === normalizedNewRole
+    );
     
-    // Automatically select the newly created custom role
-    const newSelectedRoles = {
-      ...selectedRoles,
-      [customRoleId]: true
-    };
+    if (existingRole) {
+      setDuplicateRoleError(`Role '${customRoleForm.title.trim()}' already exists. Choose a different role.`);
+      return;
+    }
     
-    // Set team size to 1 for the new custom role
-    const newTeamSize = {
-      ...teamSize,
-      [customRoleId]: 1
-    };
+    // Clear any previous duplicate error
+    setDuplicateRoleError(null);
     
-    // Reset form
-    setCustomRoleForm({
-      title: '',
-      description: '',
-      estimatedSalary: 50000
-    });
-    setShowCustomRoleForm(false);
+    // Generate custom role data using AI API
+    const generatedCustomRole = await generateCustomRole(
+      customRoleForm.title.trim(), 
+      customRoleForm.description.trim()
+    );
     
-    onChange(newSelectedRoles, newTeamSize, newCustomRoles, userLocation);
+    if (generatedCustomRole) {
+      const customRoleId = generatedCustomRole.id;
+      const newCustomRole: CustomRole = {
+        id: customRoleId,
+        title: generatedCustomRole.title,
+        description: generatedCustomRole.description,
+        category: 'custom',
+        icon: generatedCustomRole.icon,
+        type: 'custom',
+        tasks: generatedCustomRole.tasks || [],
+        requiredSkills: [],
+        optionalSkills: [],
+        estimatedSalary: {
+          local: customRoleForm.estimatedSalary,
+          philippine: customRoleForm.estimatedSalary * 0.3 // Rough 70% savings estimate
+        },
+        complexity: 'medium',
+        createdAt: new Date(),
+        aiGenerated: true,
+        // Add AI-generated salary data
+        salary: generatedCustomRole.salary,
+        experienceLevels: generatedCustomRole.experienceLevels
+      };
+      
+      const newCustomRoles = {
+        ...customRoles,
+        [customRoleId]: newCustomRole
+      };
+      
+      // Automatically select the newly created custom role
+      const newSelectedRoles = {
+        ...selectedRoles,
+        [customRoleId]: true
+      };
+      
+      // Set team size to 1 for the new custom role
+      const newTeamSize = {
+        ...teamSize,
+        [customRoleId]: 1
+      };
+      
+      // Reset form
+      setCustomRoleForm({
+        title: '',
+        description: '',
+        estimatedSalary: 50000
+      });
+      setShowCustomRoleForm(false);
+      
+      onChange(newSelectedRoles, newTeamSize, newCustomRoles, userLocation);
+    } else {
+      // Fallback to basic custom role if AI generation fails
+      const customRoleId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newCustomRole: CustomRole = {
+        id: customRoleId,
+        title: customRoleForm.title.trim(),
+        description: customRoleForm.description.trim(),
+        category: 'custom',
+        icon: '✨',
+        type: 'custom',
+        tasks: [],
+        requiredSkills: [],
+        optionalSkills: [],
+        estimatedSalary: {
+          local: customRoleForm.estimatedSalary,
+          philippine: customRoleForm.estimatedSalary * 0.3 // Rough 70% savings estimate
+        },
+        complexity: 'medium',
+        createdAt: new Date(),
+        aiGenerated: false
+      };
+      
+      const newCustomRoles = {
+        ...customRoles,
+        [customRoleId]: newCustomRole
+      };
+      
+      // Automatically select the newly created custom role
+      const newSelectedRoles = {
+        ...selectedRoles,
+        [customRoleId]: true
+      };
+      
+      // Set team size to 1 for the new custom role
+      const newTeamSize = {
+        ...teamSize,
+        [customRoleId]: 1
+      };
+      
+      // Reset form
+      setCustomRoleForm({
+        title: '',
+        description: '',
+        estimatedSalary: 50000
+      });
+      setShowCustomRoleForm(false);
+      
+      onChange(newSelectedRoles, newTeamSize, newCustomRoles, userLocation);
+    }
   };
 
   const getTotalTeamSize = () => {
@@ -468,7 +601,7 @@ export function RoleSelectionStep({
               currentTeamSize, 
               targetCurrency, 
               searchFilters.savingsView, 
-              roles
+              mergedRoles
             );
             newConversions[role.id] = conversion;
           } catch (error) {
@@ -482,7 +615,7 @@ export function RoleSelectionStep({
     };
 
     updatePhpConversions();
-  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, roles]);
+  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, mergedRoles]);
 
   // Update summary Philippines cost conversion
   useEffect(() => {
@@ -494,7 +627,7 @@ export function RoleSelectionStep({
           teamSize,
           stableUserLocation,
           stableManualLocation,
-          roles,
+          mergedRoles,
           searchFilters.savingsView,
           isUsingDynamicRoles
         );
@@ -507,7 +640,7 @@ export function RoleSelectionStep({
     };
 
     updateSummaryPhilippinesCost();
-  }, [selectedRoles, teamSize, allRoles, searchFilters.savingsView, locationCacheKey, roles]);
+  }, [selectedRoles, teamSize, allRoles, searchFilters.savingsView, locationCacheKey, mergedRoles]);
 
   const [roleDisplaySavings, setRoleDisplaySavings] = useState<Record<string, { displayAmount: number; percentage: string }>>({});
 
@@ -525,7 +658,7 @@ export function RoleSelectionStep({
               searchFilters.savingsView,
               stableUserLocation,
               stableManualLocation,
-              roles
+              mergedRoles
             );
             newDisplaySavings[role.id] = displayData;
           } catch (error) {
@@ -536,7 +669,7 @@ export function RoleSelectionStep({
       setRoleDisplaySavings(newDisplaySavings);
     };
     updateRoleDisplaySavings();
-  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, roles]);
+  }, [allRoles, teamSize, searchFilters.savingsView, locationCacheKey, mergedRoles]);
 
   // State for role rates and summary
   const [roleRates, setRoleRates] = useState<Record<string, { local: number; phConverted: number }>>({});
@@ -565,7 +698,7 @@ export function RoleSelectionStep({
           teamSize,
           stableUserLocation,
           stableManualLocation,
-          roles,
+          mergedRoles,
           searchFilters.savingsView,
           isUsingDynamicRoles
         );
@@ -584,7 +717,7 @@ export function RoleSelectionStep({
       }
     };
     updateRoleRatesAndSummary();
-  }, [allRoles, selectedRoles, teamSize, locationCacheKey, roles, searchFilters.savingsView]);
+  }, [allRoles, selectedRoles, teamSize, locationCacheKey, mergedRoles, searchFilters.savingsView]);
 
   const handleRemoveCustomRole = (roleId: string) => {
     const newCustomRoles = { ...customRoles };
@@ -599,6 +732,95 @@ export function RoleSelectionStep({
     
     onChange(newSelectedRoles, newTeamSize, newCustomRoles, userLocation);
   };
+
+  // Automatically re-fetch custom role data for all custom roles when location changes
+  useEffect(() => {
+    // Prevent multiple simultaneous updates
+    if (isUpdatingRef.current) {
+      console.log(`🔄 [RoleSelectionStep] Skipping effect - already updating`);
+      return;
+    }
+    
+    const effectId = Math.random().toString(36).substring(2, 9);
+    console.log(`🔄 [RoleSelectionStep] Location change effect triggered - Effect ID: ${effectId}`);
+    
+    // Build a location key for cache
+    const locationKey = `${manualLocation?.country || userLocation?.country || 'US'}|${manualLocation?.currency || userLocation?.currency || 'USD'}`;
+    
+    console.log(`🔄 [RoleSelectionStep] Location key: ${locationKey} - Effect ID: ${effectId}`);
+    console.log(`🔄 [RoleSelectionStep] Custom roles count: ${Object.keys(customRoles).length} - Effect ID: ${effectId}`);
+    
+    // Check if we have custom roles that need updating
+    const customRolesToUpdate = Object.entries(customRoles).filter(([roleId, customRole]) => {
+      const customRoleWithLoc = customRole as CustomRoleWithLocation;
+      const needsUpdate = !customRoleWithLoc.locationKey || customRoleWithLoc.locationKey !== locationKey;
+      console.log(`🔄 [RoleSelectionStep] Role ${customRole.title}: locationKey=${customRoleWithLoc.locationKey}, needsUpdate=${needsUpdate} - Effect ID: ${effectId}`);
+      return needsUpdate;
+    });
+
+    if (customRolesToUpdate.length === 0) {
+      console.log(`🔄 [RoleSelectionStep] No custom roles need location updates - Effect ID: ${effectId}`);
+      return;
+    }
+
+    console.log(`🔄 [RoleSelectionStep] Location changed, updating ${customRolesToUpdate.length} custom roles for location: ${locationKey} - Effect ID: ${effectId}`);
+
+    // Set updating state for all custom roles that need updating
+    const roleIdsToUpdate = customRolesToUpdate.map(([roleId]) => roleId);
+    setUpdatingCustomRoles(new Set(roleIdsToUpdate));
+    isUpdatingRef.current = true;
+
+    // Use an async function to handle the sequential processing
+    const updateCustomRoles = async () => {
+      // Process roles sequentially to avoid race conditions
+      for (const [roleId, customRole] of customRolesToUpdate) {
+        console.log(`🔄 [RoleSelectionStep] Updating custom role: ${customRole.title} (${roleId}) - Effect ID: ${effectId}`);
+        
+        const newCustomRole = await generateCustomRole(customRole.title, customRole.description);
+        if (newCustomRole) {
+          // Merge all required fields from the original customRole
+          const mergedCustomRole: CustomRoleWithLocation = {
+            ...customRole,
+            ...newCustomRole,
+            createdAt: typeof newCustomRole.createdAt === 'string' ? new Date(newCustomRole.createdAt) : newCustomRole.createdAt,
+            locationKey
+          };
+          const updatedCustomRoles = { ...customRoles, [roleId]: mergedCustomRole };
+          onChange(selectedRoles, teamSize, updatedCustomRoles, userLocation);
+          
+          console.log(`✅ [RoleSelectionStep] Updated custom role: ${customRole.title} - Effect ID: ${effectId}`);
+          console.log(`✅ [RoleSelectionStep] Updated custom roles count: ${Object.keys(updatedCustomRoles).length} - Effect ID: ${effectId}`);
+        } else {
+          console.log(`❌ [RoleSelectionStep] Failed to update custom role: ${customRole.title}`);
+        }
+        
+        // Remove this role from updating state
+        setUpdatingCustomRoles(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(roleId);
+          return newSet;
+        });
+      }
+      
+      // Clear the updating flag when all roles are processed
+      isUpdatingRef.current = false;
+    };
+
+    updateCustomRoles();
+  }, [locationCacheKey]);
+
+  // Clear updating state when no custom roles are being updated
+  useEffect(() => {
+    if (updatingCustomRoles.size === 0) {
+      return;
+    }
+    
+    // Check if all custom roles have been updated
+    const hasUpdatingRoles = Object.keys(customRoles).some(roleId => updatingCustomRoles.has(roleId));
+    if (!hasUpdatingRoles) {
+      setUpdatingCustomRoles(new Set());
+    }
+  }, [updatingCustomRoles, customRoles]);
 
   return (
     <div>
@@ -655,7 +877,10 @@ export function RoleSelectionStep({
           </div>
           {/* Add Custom Role Button (always visible, disabled when form is open) */}
           <Button
-            onClick={() => setShowCustomRoleForm(true)}
+            onClick={() => {
+              setShowCustomRoleForm(true);
+              setDuplicateRoleError(null); // Clear any previous duplicate error
+            }}
             disabled={showCustomRoleForm}
             variant="neural-primary"
             leftIcon={<Plus className="w-5 h-5" />}
@@ -837,7 +1062,14 @@ export function RoleSelectionStep({
                   type="text"
                   placeholder="e.g., Property Data Analyst"
                   value={customRoleForm.title}
-                  onChange={(e) => setCustomRoleForm(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => {
+                    setCustomRoleForm(prev => ({ ...prev, title: e.target.value }));
+                    // Clear duplicate error when user starts typing
+                    if (duplicateRoleError) {
+                      setDuplicateRoleError(null);
+                    }
+                  }}
+                  required
                 />
               </div>
               <div className="md:col-span-2">
@@ -845,27 +1077,58 @@ export function RoleSelectionStep({
                 <textarea
                   placeholder="Describe the key responsibilities and tasks for this role..."
                   value={customRoleForm.description}
-                  onChange={(e) => setCustomRoleForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) => {
+                    setCustomRoleForm(prev => ({ ...prev, description: e.target.value }));
+                    // Clear duplicate error when user starts typing
+                    if (duplicateRoleError) {
+                      setDuplicateRoleError(null);
+                    }
+                  }}
                   rows={3}
-                    className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
+                  required
+                  className="w-full p-3 border border-neutral-300 rounded-lg focus:border-brand-primary-500 focus:ring-2 focus:ring-brand-primary-200 transition-colors"
                 />
               </div>
             </div>
+              {/* Error Display */}
+              {(customRoleError || duplicateRoleError) && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="text-sm text-red-700">{customRoleError || duplicateRoleError}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3 mt-auto">
                 <Button
                   type="button"
                   onClick={handleCustomRoleSubmit}
-                  disabled={!customRoleForm.title.trim()}
+                  disabled={!customRoleForm.title.trim() || !customRoleForm.description.trim() || isLoadingCustomRole}
                   variant="neural-primary"
                   className="px-4 py-2"
                 >
-                  Create Role
+                  {isLoadingCustomRole ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generating...
+                    </div>
+                  ) : (
+                    'Create Role'
+                  )}
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => setShowCustomRoleForm(false)}
+                  onClick={() => {
+                    setShowCustomRoleForm(false);
+                    clearCustomRole(); // Clear any error state
+                    setDuplicateRoleError(null); // Clear duplicate error
+                  }}
                   variant="quantum-secondary"
                   className="px-4 py-2"
+                  disabled={isLoadingCustomRole}
                 >
                   Cancel
                 </Button>
@@ -878,6 +1141,75 @@ export function RoleSelectionStep({
             const currentTeamSize = teamSize[role.id] || 1;
             const savings = getCachedRoleSavings(role);
             const costs = calculateRoleCosts(role, currentTeamSize, userLocation, manualLocation, roles, searchFilters.savingsView);
+            const isUpdating = role.type === 'custom' && updatingCustomRoles.has(role.id);
+            
+            // Show skeleton card for custom roles that are being updated
+            if (isUpdating) {
+              return (
+                <motion.div
+                  key={role.id}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={{ duration: 0.22, ease: 'easeInOut' }}
+                  className="relative h-full"
+                >
+                  <div className="p-6 rounded-xl border-2 border-neutral-200 bg-white flex flex-col h-full">
+                    {/* Role Header Skeleton */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2 justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
+                          <div className="w-16 h-4 bg-purple-200 rounded animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="h-6 bg-gray-200 rounded mb-2 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-4/5" />
+                    </div>
+
+                    {/* Savings Preview Skeleton */}
+                    <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 mt-auto">
+                      <div className="text-center mb-4">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mx-auto mb-2" />
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-24 mx-auto" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="h-3 bg-gray-200 rounded animate-pulse w-20" />
+                            <div className="text-right">
+                              <div className="h-5 bg-gray-200 rounded animate-pulse w-16 mb-1" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-24" />
+                          <div className="text-right">
+                            <div className="h-4 bg-gray-200 rounded animate-pulse w-14 mb-1" />
+                            <div className="h-3 bg-gray-200 rounded animate-pulse w-12" />
+                          </div>
+                        </div>
+                        <div className="border-t border-green-300 pt-2 mt-2">
+                          <div className="flex items-center justify-between">
+                            <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
+                            <div className="text-right">
+                              <div className="h-5 bg-gray-200 rounded animate-pulse w-20 mb-1" />
+                              <div className="h-3 bg-gray-200 rounded animate-pulse w-16" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                  {/* Centered Spinner Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-neural-blue-500 border-t-transparent opacity-60" />
+                  </div>
+                </motion.div>
+              );
+            }
             
             return (
               <motion.div
@@ -987,7 +1319,8 @@ export function RoleSelectionStep({
                           <div className="text-right">
                             <div className="text-sm font-bold text-green-900">
                               ₱{(() => {
-                                const roleSalaryData = roles?.[role.id]?.salary;
+                                // Check both predefined roles and custom roles for salary data
+                                const roleSalaryData = roles?.[role.id]?.salary || customRoles?.[role.id]?.salary;
                                 const philippineData = roleSalaryData?.Philippines;
                                 if (philippineData) {
                                   const entryPH = philippineData.entry.base * currentTeamSize;
@@ -996,8 +1329,8 @@ export function RoleSelectionStep({
                                   const avgPH = (entryPH + moderatePH + experiencedPH) / 3;
                                   const displayRate = searchFilters.savingsView === 'monthly' 
                                                     ? avgPH / 12
-                      : avgPH;
-                                                                      return formatNumberPrecise(displayRate, { showDecimals: false });
+                                                    : avgPH;
+                                  return formatNumberPrecise(displayRate, { showDecimals: false });
                                 }
                                 return '0';
                               })()}
@@ -1108,7 +1441,10 @@ export function RoleSelectionStep({
             Try adjusting your search or filters, or create a custom role.
           </p>
           <button
-            onClick={() => setShowCustomRoleForm(true)}
+            onClick={() => {
+              setShowCustomRoleForm(true);
+              setDuplicateRoleError(null); // Clear any previous duplicate error
+            }}
             className="px-4 py-2 bg-brand-primary-500 text-white rounded-lg hover:bg-brand-primary-600 transition-colors"
           >
             Create Custom Role

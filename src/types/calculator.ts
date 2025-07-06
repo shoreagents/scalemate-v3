@@ -68,6 +68,9 @@ export interface CustomRole {
   readonly complexity: TaskComplexity;
   readonly createdAt: Date;
   readonly aiGenerated: boolean;
+  // AI-generated properties
+  readonly salary?: any; // AI-generated salary data
+  readonly experienceLevels?: any[]; // AI-generated experience levels
 }
 
 // Enhanced predefined role with multi-country data
@@ -231,6 +234,7 @@ export interface FormData {
   roleExperienceDistribution: Record<string, RoleExperienceDistribution>; // Multi-level experience per role
   teamSize: Record<string, number>; // Changed to string to support custom role IDs
   userLocation?: LocationData; // Auto-detected or selected user location
+  manualLocation?: ManualLocation; // Manual location selection
   // NO email or contact info - anonymous until premium signup
   currentStep: CalculatorStep;
   completedSteps: readonly CalculatorStep[];

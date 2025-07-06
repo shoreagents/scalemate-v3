@@ -131,6 +131,31 @@ export function ExperienceStep({
     return [...predefinedRoles, ...customRolesList];
   }, [roles, customRoles]);
 
+  // Create merged roles object for calculation functions (includes both predefined and custom roles)
+  const mergedRoles = React.useMemo(() => {
+    const availableRoles = roles || ROLES;
+    const merged = { ...availableRoles };
+    
+    // Add custom roles to the merged object
+    Object.entries(customRoles || {}).forEach(([roleId, customRole]) => {
+      merged[roleId] = {
+        id: roleId,
+        title: customRole.title,
+        description: customRole.description,
+        icon: customRole.icon,
+        type: 'custom',
+        category: 'custom',
+        salary: customRole.salary, // Include AI-generated salary data
+        tasks: customRole.tasks || [],
+        experienceLevels: customRole.experienceLevels || [],
+        createdAt: customRole.createdAt,
+        aiGenerated: customRole.aiGenerated
+      };
+    });
+    
+    return merged;
+  }, [roles, customRoles]);
+
   // Get exchange rate on mount and when location changes
   useEffect(() => {
     const fetchExchangeRate = async () => {
@@ -265,7 +290,7 @@ export function ExperienceStep({
   };
 
   const getTotalSavings = async () => {
-    const savings = await calculateMultiLevelSavings(activeRoles, allRoles, userLocation, manualLocation, roles);
+    const savings = await calculateMultiLevelSavings(activeRoles, allRoles, userLocation, manualLocation, mergedRoles);
     setTotalSavings(savings);
     return savings;
   };
@@ -277,14 +302,14 @@ export function ExperienceStep({
     if (allRolesConfigured) {
       getTotalSavings();
     }
-  }, [activeRoles, allRoles, userLocation, manualLocation, roles, allRolesConfigured]);
+  }, [activeRoles, allRoles, userLocation, manualLocation, mergedRoles, allRolesConfigured]);
 
   const getTotalLocalCost = () => {
-    return calculateMultiLevelLocalCost(activeRoles, allRoles, userLocation, manualLocation, roles);
+    return calculateMultiLevelLocalCost(activeRoles, allRoles, userLocation, manualLocation, mergedRoles);
   };
 
   const getTotalPhilippinesCost = () => {
-    return calculateMultiLevelPhilippinesCost(activeRoles, allRoles, roles);
+    return calculateMultiLevelPhilippinesCost(activeRoles, allRoles, mergedRoles);
   };
 
   // Update async calculations when dependencies change
@@ -312,7 +337,7 @@ export function ExperienceStep({
                 memberCount, 
                 userLocation, 
                 manualLocation, 
-                roles, 
+                mergedRoles, 
                 savingsView
               );
             }
@@ -324,7 +349,7 @@ export function ExperienceStep({
             role.distribution, 
             userLocation, 
             manualLocation, 
-            roles, 
+            mergedRoles, 
             savingsView
           );
         }
@@ -335,7 +360,7 @@ export function ExperienceStep({
           allRoles, 
           userLocation, 
           manualLocation, 
-          roles
+          mergedRoles
         );
         
         setIndividualLevelDisplays(newIndividualDisplays);
@@ -347,7 +372,7 @@ export function ExperienceStep({
     };
     
     updateCalculations();
-      }, [activeRoles, userLocation, manualLocation, roles, savingsView]);
+      }, [activeRoles, userLocation, manualLocation, mergedRoles, savingsView]);
 
   return (
     <div className="space-y-8">
@@ -464,7 +489,7 @@ export function ExperienceStep({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 {(roleData?.experienceLevels || []).map((option: any) => {
                   const currentCount = distribution[option.level as ExperienceLevel];
-                  const savings = roleData ? calculateRoleLevelSavings(roleData, option.level, userLocation, manualLocation, roles) : 0;
+                  const savings = roleData ? calculateRoleLevelSavings(roleData, option.level, userLocation, manualLocation, mergedRoles) : 0;
                   const totalSavingsForLevel = savings * currentCount;
                   const canDecrease = currentCount > 0;
                   const canIncrease = distribution.totalAssigned < distribution.totalRequired;

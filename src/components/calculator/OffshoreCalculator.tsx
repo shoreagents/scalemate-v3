@@ -189,6 +189,11 @@ export function OffshoreCalculator({
     if (cachedData) {
       console.log('🔄 Restored calculator data from cache');
       setFormData(cachedData);
+      // Also restore manual location if it was saved
+      if (cachedData.manualLocation) {
+        setManualLocation(cachedData.manualLocation);
+        console.log('📍 Restored manual location from cache:', cachedData.manualLocation.country);
+      }
     }
   }, [loadFromCache]);
 
@@ -254,6 +259,9 @@ export function OffshoreCalculator({
       setManualLocation(newManualLocation);
       setIsEditingLocation(false);
       
+      // Update FormData to include manual location for caching
+      updateFormData({ manualLocation: newManualLocation });
+      
       console.log('📍 Location manually overridden:', { country: tempLocation.country });
     }
   }, [tempLocation.country]);
@@ -289,6 +297,13 @@ export function OffshoreCalculator({
   const resetToAutoLocation = useCallback(() => {
     setManualLocation(null);
     setIsEditingLocation(false);
+    
+    // Clear manual location from FormData for caching
+    setFormData(prev => {
+      const { manualLocation, ...rest } = prev;
+      return rest;
+    });
+    
     console.log('📍 Reset to auto-detected location');
   }, []);
 

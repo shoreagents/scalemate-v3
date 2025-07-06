@@ -187,13 +187,14 @@ ${jsonTemplate}
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🚀 [ROLES] API endpoint called');
+  const requestId = Math.random().toString(36).substring(2, 9);
+  console.log(`🚀 [ROLES] API endpoint called - Request ID: ${requestId}`);
   
   try {
     const body: RolesRequest = await request.json();
     const { location } = body;
 
-    console.log('📥 [ROLES] Request received:', {
+    console.log(`📥 [ROLES] Request received - Request ID: ${requestId}:`, {
       location: location?.country,
       countryName: location?.countryName,
       currency: location?.currency,
@@ -212,17 +213,17 @@ export async function POST(request: NextRequest) {
     const cache = await loadCache();
     const cached = cache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log('💾 [ROLES] Returning cached data for:', location.country);
+      console.log(`💾 [ROLES] Returning cached data for: ${location.country} - Request ID: ${requestId}`);
       return NextResponse.json({ ...cached.data, cache: true });
     }
 
-    console.log('🔄 [ROLES] No cache hit, proceeding with AI generation');
+    console.log(`🔄 [ROLES] No cache hit, proceeding with AI generation - Request ID: ${requestId}`);
 
     const countryName = location.countryName || location.country;
     const currency = location.currency || 'USD';
     const currencySymbol = getCurrencySymbol(currency);
 
-    console.log('🌍 [ROLES] Processing roles request for:', {
+    console.log(`🌍 [ROLES] Processing roles request for - Request ID: ${requestId}:`, {
       country: location.country,
       countryName,
       currency
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
     // Generate AI prompt based on rolesData.ts structure
     const promptData = generateAIPrompt(location);
 
-    console.log(`🤖 [ROLES] Calling Anthropic API for role generation for country:`, countryName);
+    console.log(`🤖 [ROLES] Calling Anthropic API for role generation for country: ${countryName} - Request ID: ${requestId}`);
     
     // Call Anthropic API
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -269,12 +270,12 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to generate data');
     }
 
-    console.log('✅ [ROLES] Anthropic API call successful');
+    console.log(`✅ [ROLES] Anthropic API call successful - Request ID: ${requestId}`);
     
     const anthropicData = await anthropicResponse.json();
     const generatedContent = anthropicData.content[0].text;
 
-    console.log('📄 [ROLES] Received AI response, length:', generatedContent.length);
+    console.log(`📄 [ROLES] Received AI response, length: ${generatedContent.length} - Request ID: ${requestId}`);
 
     // Extract JSON from the response
     let parsedData;
@@ -282,7 +283,7 @@ export async function POST(request: NextRequest) {
       const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedData = JSON.parse(jsonMatch[0]);
-        console.log('✅ [ROLES] Successfully parsed AI response JSON');
+        console.log(`✅ [ROLES] Successfully parsed AI response JSON - Request ID: ${requestId}`);
       } else {
         throw new Error('No JSON found in response');
       }
@@ -361,8 +362,8 @@ export async function POST(request: NextRequest) {
 
     responseData.roles = enhancedRoles;
 
-    console.log(`✅ [ROLES] Role data generated and validated successfully for ${countryName}`);
-    console.log('📊 [ROLES] Response includes:', {
+    console.log(`✅ [ROLES] Role data generated and validated successfully for ${countryName} - Request ID: ${requestId}`);
+    console.log(`📊 [ROLES] Response includes - Request ID: ${requestId}:`, {
       roles: Object.keys(responseData.roles || {}),
       currency,
       currencySymbol,
@@ -378,16 +379,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(responseData);
 
   } catch (error) {
-    console.error(`❌ [ROLES] API error:`, error);
+    console.error(`❌ [ROLES] API error - Request ID: ${requestId}:`, error);
     
     // Fallback to static data when AI fails
     const body: RolesRequest = await request.json();
     const { location: fallbackLocation } = body;
     const fallbackCountryName = fallbackLocation?.countryName || fallbackLocation?.country || 'Unknown';
-    console.log('🔄 [ROLES] Falling back to static roles data for:', fallbackCountryName);
+    console.log(`🔄 [ROLES] Falling back to static roles data for: ${fallbackCountryName} - Request ID: ${requestId}`);
     const staticRoles = getStaticRoles();
     
-    console.log('📊 [ROLES] Fallback response includes:', {
+    console.log(`📊 [ROLES] Fallback response includes - Request ID: ${requestId}:`, {
       roles: Object.keys(staticRoles),
       currency: 'USD',
       currencySymbol: '$',
