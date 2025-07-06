@@ -8,7 +8,6 @@ import { calculateSavings } from '@/utils/calculations';
 import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { useCalculatorCache } from '@/hooks/useCalculatorCache';
 import { getDisplayCurrencyByCountryWithAPIFallback, getCurrencySymbol } from '@/utils/currency';
-import type { LocalMultiCountryRoleSalaryData } from '@/utils/calculations';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -22,7 +21,7 @@ import { useExitIntentContext } from '@/components/providers/ExitIntentProvider'
 import { analytics } from '@/utils/analytics';
 import { 
   ArrowLeft, 
-  ArrowRight, 
+  ArrowRight,
   Calculator,
   TrendingUp,
   Users,
@@ -609,7 +608,18 @@ export function OffshoreCalculator({
           return hasSelectedTasks || hasCustomTasks;
         });
       case 5: // Experience step
-        return Object.keys(formData.roleExperienceDistribution).length > 0;
+        const selectedRoleIdsForExperience = Object.entries(formData.selectedRoles)
+          .filter(([, selected]) => selected)
+          .map(([roleId]) => roleId);
+        
+        if (selectedRoleIdsForExperience.length === 0) return false;
+        
+        // Check if all selected roles have complete experience distributions
+        return selectedRoleIdsForExperience.every(roleId => {
+          const distribution = formData.roleExperienceDistribution[roleId];
+          return distribution && distribution.isComplete && 
+                 distribution.totalAssigned === distribution.totalRequired;
+        });
       default:
         return false;
     }
@@ -755,18 +765,6 @@ export function OffshoreCalculator({
     }
   };
 
-  const getStepDescription = (step: CalculatorStep): string => {
-    const descriptions = {
-      1: 'Set your business location for accurate cost comparisons',
-      2: 'Tell us about your property portfolio size and management structure',
-      3: 'Select the roles you want to offshore and team size requirements',
-      4: 'Choose specific tasks for each role to get accurate cost projections',
-      5: 'Set experience requirements to match your quality standards',
-      6: 'Your comprehensive savings breakdown and implementation guide'
-    };
-    return descriptions[step] || '';
-  };
-
   return (
     <div className={`relative ${className}`}>
       {/* Restore Progress Popup */}
@@ -810,7 +808,6 @@ export function OffshoreCalculator({
               </span>
             </div>
           </div>
-          
         </div>
 
         {/* Step Indicator */}
@@ -892,6 +889,27 @@ export function OffshoreCalculator({
                         Continue
                       </Button>
                     )}
+                    
+                    {formData.currentStep === 5 && (
+                      <Button
+                        variant="neural-primary"
+                        onClick={calculateSavingsAsync}
+                        disabled={!canProceedFromStep(formData.currentStep) || isCalculating}
+                        rightIcon={isCalculating ? undefined : <ArrowRight className="h-4 w-4" />}
+                        className="w-40 h-12"
+                      >
+                        {isCalculating ? (
+                          <span className="flex items-center gap-2">
+                            Generating
+                            <span className="dot-ellipsis">
+                              <span>.</span>
+                              <span>.</span>
+                              <span>.</span>
+                            </span>
+                          </span>
+                        ) : 'See Results'}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -913,6 +931,28 @@ export function OffshoreCalculator({
                       className="w-full h-12"
                     >
                       Continue
+                    </Button>
+                  )}
+                  
+                  {/* Calculate button for step 5 */}
+                  {formData.currentStep === 5 && (
+                    <Button
+                      variant="neural-primary"
+                      onClick={calculateSavingsAsync}
+                      disabled={!canProceedFromStep(formData.currentStep) || isCalculating}
+                      rightIcon={isCalculating ? undefined : <ArrowRight className="h-4 w-4" />}
+                      className="w-full h-12"
+                    >
+                      {isCalculating ? (
+                        <span className="flex items-center gap-2">
+                          Generating
+                          <span className="dot-ellipsis">
+                            <span>.</span>
+                            <span>.</span>
+                            <span>.</span>
+                          </span>
+                        </span>
+                      ) : 'See Results'}
                     </Button>
                   )}
                   
@@ -947,4 +987,4 @@ export function OffshoreCalculator({
       </div>
     </div>
   );
-} 
+}

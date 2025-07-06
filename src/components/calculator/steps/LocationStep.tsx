@@ -113,8 +113,9 @@ export function LocationStep({
             ) : (
                 <>
                   {/* Error State */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-neutral-200">
-                    <span className="text-neutral-700 font-medium">
+                  <div className="flex-1 flex items-center justify-center gap-2 px-6 h-16 min-w-[320px] text-lg bg-white rounded-lg border border-neural-blue-200 shadow-sm">
+                    <span className="text-2xl">🌏</span>
+                    <span className="font-medium text-neutral-900 text-center">
                       {locationError || 'Unable to detect location'}
                     </span>
                   </div>
@@ -123,8 +124,11 @@ export function LocationStep({
                   <Button
                   onClick={onLocationEditStart}
                     variant="neural-primary"
-                >
-                  Set Location Manually
+                    size="neural-lg"
+                    leftIcon={<Edit3 className="w-4 h-4" />}
+                    className="px-6 h-16 whitespace-nowrap flex-shrink-0 w-full md:w-auto"
+                  >
+                    Set Location Manually
                   </Button>
                 </>
             )}

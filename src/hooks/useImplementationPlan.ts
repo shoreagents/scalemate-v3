@@ -120,7 +120,7 @@ export function useImplementationPlan(
     if (shouldFetch && formData && calculationResult) {
       fetchImplementationPlan();
     }
-  }, [shouldFetch, formData.sessionId, calculationResult.totalSavings]); // Re-fetch when these key values change
+  }, [shouldFetch, formData.sessionId, calculationResult?.totalSavings]); // Re-fetch when these key values change
 
   const refetch = () => {
     fetchImplementationPlan();

@@ -321,6 +321,9 @@ function RoleBreakdown({ breakdown, formData, isExpanded, onToggle }: RoleBreakd
 }
 
 export function ResultsStep({ result, formData, onRestart }: ResultsStepProps) {
+  if (!result) {
+    return null; // Or: return <div>Loading results...</div>;
+  }
   const [isBreakdownExpanded, setIsBreakdownExpanded] = useState(false);
   const [showImplementationPlan, setShowImplementationPlan] = useState(false);
   const [showAIPlan, setShowAIPlan] = useState(false);

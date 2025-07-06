@@ -58,20 +58,6 @@ function formatNumberPrecise(num: number, options: {
   return `${formattedInteger}.${paddedDecimal}`;
 }
 
-// Rename the local type
-export type LocalMultiCountryRoleSalaryData = {
-  [country: string]: {
-    entry: { base: number; total: number };
-    moderate: { base: number; total: number };
-    experienced: { base: number; total: number };
-  };
-  Philippines: {
-    entry: { base: number; total: number };
-    moderate: { base: number; total: number };
-    experienced: { base: number; total: number };
-  };
-};
-
 /**
  * Helper function to extract salary data from nested roles.salary structure
  * This replaces the separate rolesSalaryComparison structure
@@ -92,18 +78,18 @@ const getSalaryData = (
 ) => {
   // Use dynamic data if available, otherwise fall back to static data
   // Create salary data from ROLES structure for backward compatibility
-  const staticSalaryData: Record<string, LocalMultiCountryRoleSalaryData> = {};
+  const staticSalaryData: Record<string, any> = {};
   Object.entries(ROLES).forEach(([roleId, role]) => {
-    staticSalaryData[roleId] = role.salary as unknown as LocalMultiCountryRoleSalaryData;
+    staticSalaryData[roleId] = role.salary;
   });
   
   // Extract salary data from roles structure
-  const salaryDataSource: Record<string, LocalMultiCountryRoleSalaryData> = {};
+  const salaryDataSource: Record<string, any> = {};
   if (dynamicRoles) {
     Object.keys(dynamicRoles).forEach(roleId => {
       const salaryData = getSalaryDataFromRoles(dynamicRoles, roleId);
       if (salaryData) {
-        salaryDataSource[roleId] = salaryData as unknown as LocalMultiCountryRoleSalaryData;
+        salaryDataSource[roleId] = salaryData;
       }
     });
   }
