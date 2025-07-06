@@ -12,7 +12,7 @@ import {
   LocationData
 } from '@/types';
 import { ROLES, TASK_COMPLEXITY_MULTIPLIERS } from './rolesData';
-import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol, getDisplayCurrencyByCountry, getDisplayCurrencyByCountryWithAPIFallback } from './currency';
+import { getBestExchangeRateMultiplier, getDirectExchangeRate, getCurrencySymbol, getDisplayCurrencyByCountry, getDisplayCurrencyByCountryWithAPIFallback, getCurrencyMultiplier } from './currency';
 import { ManualLocation } from '@/types/location';
 
 /**
@@ -1222,16 +1222,20 @@ export const calculateMultiLevelSavings = async (
     
     // Try to get local salary data, fall back to supported countries if not found
     let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
-    if (!localData) {
-      // Check if the country is one of our supported countries
-      const supportedCountries = ['Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines', 'United States'];
+    
+    // If AI API has data for user's country, use it (regardless of whether country is "supported")
+    if (localData) {
+      console.log('📊 Using AI API data for country:', effectiveCountry);
+    } else {
+      // AI API has no data for user's country, fall back to supported countries
+      const supportedCountries = ['United States', 'Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines'];
       const fallbackCountry = supportedCountries.find(country => roleSalaryData?.[country as keyof typeof roleSalaryData]);
       
       if (fallbackCountry) {
-        console.log('📊 No salary data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
+        console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
         localData = roleSalaryData?.[fallbackCountry as keyof typeof roleSalaryData];
       } else {
-        console.log('📊 No salary data for country:', effectiveCountry, '- falling back to US data');
+        console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to US data');
         localData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
       }
     }
@@ -1308,16 +1312,20 @@ export const calculateMultiLevelLocalCost = (
     
     // Try to get local salary data, fall back to supported countries if not found
     let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
-    if (!localData) {
-      // Check if the country is one of our supported countries
-      const supportedCountries = ['Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines', 'United States'];
+    
+    // If AI API has data for user's country, use it (regardless of whether country is "supported")
+    if (localData) {
+      console.log('📊 Using AI API data for country:', effectiveCountry);
+    } else {
+      // AI API has no data for user's country, fall back to supported countries
+      const supportedCountries = ['United States', 'Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines'];
       const fallbackCountry = supportedCountries.find(country => roleSalaryData?.[country as keyof typeof roleSalaryData]);
       
       if (fallbackCountry) {
-        console.log('📊 No salary data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
+        console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
         localData = roleSalaryData?.[fallbackCountry as keyof typeof roleSalaryData];
       } else {
-        console.log('📊 No salary data for country:', effectiveCountry, '- falling back to US data');
+        console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to US data');
         localData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
       }
     }
@@ -1431,17 +1439,24 @@ export const calculateIndividualLevelDisplay = async (
   
   // Try to get local salary data, fall back to supported countries if not found
   let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
-  if (!localData) {
-    // Check if the country is one of our supported countries
-    const supportedCountries = ['Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines', 'United States'];
+  let isUsingFallbackData = false;
+  
+  // If AI API has data for user's country, use it (regardless of whether country is "supported")
+  if (localData) {
+    console.log('📊 Using AI API data for country:', effectiveCountry);
+  } else {
+    // AI API has no data for user's country, fall back to supported countries
+    const supportedCountries = ['United States', 'Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines'];
     const fallbackCountry = supportedCountries.find(country => roleSalaryData?.[country as keyof typeof roleSalaryData]);
     
     if (fallbackCountry) {
-      console.log('📊 No salary data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
+      console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
       localData = roleSalaryData?.[fallbackCountry as keyof typeof roleSalaryData];
+      isUsingFallbackData = true;
     } else {
-      console.log('📊 No salary data for country:', effectiveCountry, '- falling back to US data');
+      console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to US data');
       localData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
+      isUsingFallbackData = true;
     }
   }
   
@@ -1455,17 +1470,17 @@ export const calculateIndividualLevelDisplay = async (
     const totalPhilippineCost = philippineSalary * memberCount;
     
     // Convert using live API rate for accurate conversion
-    const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
+    // If we're using fallback salary data, use USD currency for consistency
+    const effectiveCurrency = isUsingFallbackData ? 'USD' : getDisplayCurrencyByCountry(effectiveCountry);
     let conversionRate: number;
     try {
       conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
     } catch (error) {
       console.warn('Failed to get live exchange rate, using fallback:', error);
-      // Fallback to static rate if API fails
-      const staticRates: Record<string, number> = {
-        'USD': 0.018, 'EUR': 0.017, 'GBP': 0.014, 'AUD': 0.027, 'CAD': 0.024, 'SGD': 0.024,
-      };
-      conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
+      // Fallback to currency multiplier if API fails
+      const phpToUsdRate = 1 / getCurrencyMultiplier('PHP'); // 1/58.5 = 0.017
+      const targetCurrencyMultiplier = getCurrencyMultiplier(effectiveCurrency);
+      conversionRate = phpToUsdRate * targetCurrencyMultiplier;
     }
     
     // Use exact mathematical calculation and truncate to avoid rounding
@@ -1520,17 +1535,24 @@ export const calculateRoleBreakdownDisplay = async (
   
   // Try to get local salary data, fall back to supported countries if not found
   let localData = roleSalaryData?.[effectiveCountry as keyof typeof roleSalaryData];
-  if (!localData) {
-    // Check if the country is one of our supported countries
-    const supportedCountries = ['Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines', 'United States'];
+  let isUsingFallbackData = false;
+  
+  // If AI API has data for user's country, use it (regardless of whether country is "supported")
+  if (localData) {
+    console.log('📊 Using AI API data for country:', effectiveCountry);
+  } else {
+    // AI API has no data for user's country, fall back to supported countries
+    const supportedCountries = ['United States', 'Australia', 'Canada', 'United Kingdom', 'New Zealand', 'Singapore', 'Philippines'];
     const fallbackCountry = supportedCountries.find(country => roleSalaryData?.[country as keyof typeof roleSalaryData]);
     
     if (fallbackCountry) {
-      console.log('📊 No salary data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
+      console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to', fallbackCountry, 'data');
       localData = roleSalaryData?.[fallbackCountry as keyof typeof roleSalaryData];
+      isUsingFallbackData = true;
     } else {
-      console.log('📊 No salary data for country:', effectiveCountry, '- falling back to US data');
+      console.log('📊 No AI API data for country:', effectiveCountry, '- falling back to US data');
       localData = roleSalaryData?.["United States" as keyof typeof roleSalaryData];
+      isUsingFallbackData = true;
     }
   }
   
@@ -1550,17 +1572,17 @@ export const calculateRoleBreakdownDisplay = async (
     }
     
     // Convert using live API rate for accurate conversion
-    const effectiveCurrency = getDisplayCurrencyByCountry(effectiveCountry);
+    // If we're using fallback salary data, use USD currency for consistency
+    const effectiveCurrency = isUsingFallbackData ? 'USD' : getDisplayCurrencyByCountry(effectiveCountry);
     let conversionRate: number;
     try {
       conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
     } catch (error) {
       console.warn('Failed to get live exchange rate, using fallback:', error);
-      // Fallback to static rate if API fails
-      const staticRates: Record<string, number> = {
-        'USD': 0.018, 'EUR': 0.017, 'GBP': 0.014, 'AUD': 0.027, 'CAD': 0.024, 'SGD': 0.024,
-      };
-      conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
+      // Fallback to currency multiplier if API fails
+      const phpToUsdRate = 1 / getCurrencyMultiplier('PHP'); // 1/58.5 = 0.017
+      const targetCurrencyMultiplier = getCurrencyMultiplier(effectiveCurrency);
+      conversionRate = phpToUsdRate * targetCurrencyMultiplier;
     }
     
     // Use exact mathematical calculation and truncate to avoid rounding
@@ -1617,11 +1639,10 @@ export const getRoleSalaryDisplay = async (
       conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
     } catch (error) {
       console.warn('Failed to get live exchange rate, using fallback:', error);
-      // Fallback to static rate if API fails
-      const staticRates: Record<string, number> = {
-        'USD': 0.018, 'EUR': 0.017, 'GBP': 0.014, 'AUD': 0.027, 'CAD': 0.024, 'SGD': 0.024,
-      };
-      conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
+      // Fallback to currency multiplier if API fails
+      const phpToUsdRate = 1 / getCurrencyMultiplier('PHP'); // 1/58.5 = 0.017
+      const targetCurrencyMultiplier = getCurrencyMultiplier(effectiveCurrency);
+      conversionRate = phpToUsdRate * targetCurrencyMultiplier;
     }
     
     // Use exact mathematical calculation and truncate to avoid rounding
@@ -1647,11 +1668,10 @@ export const getRoleSalaryDisplay = async (
     conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
   } catch (error) {
     console.warn('Failed to get live exchange rate, using fallback:', error);
-    // Fallback to static rate if API fails
-    const staticRates: Record<string, number> = {
-      'USD': 0.018, 'EUR': 0.017, 'GBP': 0.014, 'AUD': 0.027, 'CAD': 0.024, 'SGD': 0.024,
-    };
-    conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
+    // Fallback to currency multiplier if API fails
+    const phpToUsdRate = 1 / getCurrencyMultiplier('PHP'); // 1/58.5 = 0.017
+    const targetCurrencyMultiplier = getCurrencyMultiplier(effectiveCurrency);
+    conversionRate = phpToUsdRate * targetCurrencyMultiplier;
   }
   
   // Use exact mathematical calculation and truncate to avoid rounding
@@ -1682,11 +1702,10 @@ export const calculateTotalPhilippinesCostConverted = async (
     conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);
   } catch (error) {
     console.warn('Failed to get live exchange rate, using fallback:', error);
-    // Fallback to static rate if API fails
-    const staticRates: Record<string, number> = {
-      'USD': 0.018, 'EUR': 0.017, 'GBP': 0.014, 'AUD': 0.027, 'CAD': 0.024, 'SGD': 0.024,
-    };
-    conversionRate = staticRates[effectiveCurrency] || staticRates['USD'] || 0.018;
+    // Fallback to currency multiplier if API fails
+    const phpToUsdRate = 1 / getCurrencyMultiplier('PHP'); // 1/58.5 = 0.017
+    const targetCurrencyMultiplier = getCurrencyMultiplier(effectiveCurrency);
+    conversionRate = phpToUsdRate * targetCurrencyMultiplier;
   }
   
   // Use exact mathematical calculation and truncate to avoid rounding
