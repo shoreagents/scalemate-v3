@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FormData, CalculationResult, CalculatorStep, RoleId, ExperienceLevel, CustomRole, CustomTask, RoleExperienceDistribution, ManualPortfolioData, PortfolioSize, PortfolioIndicator, LocationData } from '@/types';
 import { ManualLocation, IPLocationData, getCountryFromCode, createLocationDataFromManual } from '@/types/location';
-import { calculateSavings } from '@/utils/calculations';
 import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { useCalculatorCache } from '@/hooks/useCalculatorCache';
 import { getDisplayCurrencyByCountryWithAPIFallback, getCurrencySymbol } from '@/utils/currency';
@@ -34,6 +33,7 @@ import { Brain } from 'phosphor-react';
 import Link from 'next/link';
 import { LocationStep } from './steps/LocationStep';
 import { RestoreProgressPopup } from './RestoreProgressPopup';
+import { LoadingSpinner } from './ResultsLoader';
 
 
 
@@ -180,6 +180,7 @@ export function OffshoreCalculator({
       const timer = setTimeout(() => setCanShowPopup(true), 600);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isCheckingCache]);
 
   // Load cached data on mount
@@ -500,8 +501,6 @@ export function OffshoreCalculator({
 
   const calculateSavingsAsync = async () => {
     setIsCalculating(true);
-    analytics.trackEvent('calculation_start', formData);
-    
     try {
       // Processing stages simulation
       const processingStages = [
@@ -518,33 +517,12 @@ export function OffshoreCalculator({
         setProcessingStage(processingStages[i]!);
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
       }
-      
-      console.log('🚀 OffshoreCalculator: Calling calculateSavings with dynamic data:', {
-        hasDynamicRoles: !!roles,
-        userLocation: formData.userLocation?.country,
-        manualLocation: manualLocation?.country,
-        isLoadingRoles,
-        rolesError
-      });
-      
-      const result = await calculateSavings(
-        formData, 
-        Object.values(formData.portfolioIndicators || {}),
-        formData.userLocation || (manualLocation ? getEffectiveLocationForManual(manualLocation) : undefined),
-        roles // Pass dynamic roles data from API (with embedded salary data)
-      );
-      setCalculationResult(result);
+
       setProcessingStage('');
-      
       // Advance to step 6 (results) after calculation is complete
       updateFormData({ currentStep: 6 });
-      analytics.trackEvent('calculation_complete', { 
-        result
-      });
-      onComplete?.(result);
     } catch (error) {
-      console.error('Calculation error:', error);
-      analytics.trackEvent('error', { type: 'calculation_error', error: error?.toString() });
+      console.error('Processing error:', error);
     } finally {
       setIsCalculating(false);
       setProcessingStage('');
@@ -750,15 +728,13 @@ export function OffshoreCalculator({
             onCalculate={calculateSavingsAsync}
             isCalculating={isCalculating}
             isUsingDynamicRoles={isUsingDynamicRoles}
+            canProceedFromStep={(step: number) => canProceedFromStep(step as CalculatorStep)}
+            currentStep={formData.currentStep}
           />
         );
       case 6:
         return (
-          <ResultsStep
-            result={calculationResult!}
-            formData={formData}
-            onRestart={restartCalculator}
-          />
+          <ResultsStep />
         );
       default:
         return null;
@@ -781,6 +757,14 @@ export function OffshoreCalculator({
             ...(formData.userLocation?.country && { location: formData.userLocation.country }),
             ...(manualLocation?.country && !formData.userLocation?.country && { location: manualLocation.country })
           }}
+        />
+      )}
+
+      {/* Global Processing Overlay */}
+      {isCalculating && (
+        <LoadingSpinner
+          text={processingStage || "Calculating Savings..."}
+          show={isCalculating}
         />
       )}
 
@@ -895,19 +879,10 @@ export function OffshoreCalculator({
                         variant="neural-primary"
                         onClick={calculateSavingsAsync}
                         disabled={!canProceedFromStep(formData.currentStep) || isCalculating}
-                        rightIcon={isCalculating ? undefined : <ArrowRight className="h-4 w-4" />}
+                        rightIcon={<ArrowRight className="h-4 w-4" />}
                         className="w-40 h-12"
                       >
-                        {isCalculating ? (
-                          <span className="flex items-center gap-2">
-                            Generating
-                            <span className="dot-ellipsis">
-                              <span>.</span>
-                              <span>.</span>
-                              <span>.</span>
-                            </span>
-                          </span>
-                        ) : 'See Results'}
+                        See Results
                       </Button>
                     )}
                   </div>
@@ -940,19 +915,10 @@ export function OffshoreCalculator({
                       variant="neural-primary"
                       onClick={calculateSavingsAsync}
                       disabled={!canProceedFromStep(formData.currentStep) || isCalculating}
-                      rightIcon={isCalculating ? undefined : <ArrowRight className="h-4 w-4" />}
+                      rightIcon={<ArrowRight className="h-4 w-4" />}
                       className="w-full h-12"
                     >
-                      {isCalculating ? (
-                        <span className="flex items-center gap-2">
-                          Generating
-                          <span className="dot-ellipsis">
-                            <span>.</span>
-                            <span>.</span>
-                            <span>.</span>
-                          </span>
-                        </span>
-                      ) : 'See Results'}
+                      See Results
                     </Button>
                   )}
                   

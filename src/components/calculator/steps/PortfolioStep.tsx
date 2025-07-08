@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PortfolioSize, ManualPortfolioData, PortfolioIndicator } from '@/types';
 
-import { useQuoteCalculatorData, getDisplayCurrencyByCountry, getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
+import { getCurrencySymbol } from '@/hooks/useQuoteCalculatorData';
 import { getDisplayCurrencyByCountryWithAPIFallback } from '@/utils/currency';
 import { Building, TrendingUp, Users, ChevronDown, ArrowRight, Zap, ArrowLeft, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';

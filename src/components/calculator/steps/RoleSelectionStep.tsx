@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { CustomRole } from '@/types/calculator';
 import { LocationData, ManualLocation } from '@/types/location';
-import { useQuoteCalculatorData } from '@/hooks/useQuoteCalculatorData';
 import { useCustomRoleData } from '@/hooks/useCustomRoleData';
 import { ROLES } from '@/utils/rolesData';
 import { 

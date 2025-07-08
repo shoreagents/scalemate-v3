@@ -86,13 +86,7 @@ export function Footer({ className = '' }: FooterProps) {
                   placeholder="Enter your email address"
                   className="flex-1 px-4 py-3 rounded-xl bg-white text-neural-blue-900 placeholder:text-neural-blue-500 border-2 border-transparent focus:border-cyber-green-500 focus:outline-none transition-colors duration-300"
                 />
-                <Button
-                  variant="primary"
-                  className="bg-cyber-green-500 hover:bg-cyber-green-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2"
-                >
-                  Subscribe
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
+                
               </div>
             </div>
           </div>

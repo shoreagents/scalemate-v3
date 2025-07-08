@@ -1691,12 +1691,15 @@ export const calculateTotalPhilippinesCostConverted = async (
   allRoles: any[],
   userLocation?: LocationData,
   manualLocation?: ManualLocation | null,
-  rolesSalaryComparison?: any
+  rolesSalaryComparison?: any,
+  isUsingDynamicRoles?: boolean
 ): Promise<number> => {
   const totalPhpCost = calculateMultiLevelPhilippinesCost(activeRoles, allRoles, rolesSalaryComparison);
   
-  // Convert using live API rate for accurate conversion
-  const effectiveCurrency = manualLocation?.currency || userLocation?.currency || 'USD';
+  // Get effective country and currency using the same logic as ExperienceStep
+  const effectiveCountry = manualLocation?.country || userLocation?.country || 'United States';
+  const effectiveCurrency = getDisplayCurrencyByCountryWithAPIFallback(effectiveCountry, !isUsingDynamicRoles);
+  
   let conversionRate: number;
   try {
     conversionRate = await getDirectExchangeRate('PHP', effectiveCurrency);

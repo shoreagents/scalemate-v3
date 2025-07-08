@@ -26,6 +26,7 @@ import {
   calculateTotalSavingsPercentage,
   formatCostForView
 } from '@/utils/calculations';
+import { LoadingSpinner } from '../ResultsLoader';
 import { 
   getDirectExchangeRate, 
   getCurrencySymbol, 
@@ -40,6 +41,7 @@ import {
   ManualLocation
 } from '@/types';
 import { ROLES } from '@/utils/rolesData';
+import { Button } from '@/components/ui/Button';
 
 interface ExperienceStepProps {
   selectedRoles: Record<string, boolean>;
@@ -53,6 +55,8 @@ interface ExperienceStepProps {
   onCalculate: () => void;
   isCalculating: boolean;
   isUsingDynamicRoles?: boolean;
+  canProceedFromStep: (step: number) => boolean;
+  currentStep: number;
 }
 
 export function ExperienceStep({ 
@@ -64,7 +68,11 @@ export function ExperienceStep({
   manualLocation,
   roles,
   onRoleExperienceDistributionChange,
-  isUsingDynamicRoles = false
+  onCalculate,
+  isCalculating,
+  isUsingDynamicRoles = false,
+  canProceedFromStep,
+  currentStep
 }: ExperienceStepProps) {
   const [savingsView, setSavingsView] = useState<'annual' | 'monthly'>('annual');
   const [totalSavings, setTotalSavings] = useState<number>(0);
@@ -75,6 +83,7 @@ export function ExperienceStep({
   const [individualLevelDisplays, setIndividualLevelDisplays] = useState<Record<string, Record<ExperienceLevel, any>>>({});
   const [roleBreakdownDisplays, setRoleBreakdownDisplays] = useState<Record<string, any>>({});
   const [totalPhilippinesCostConverted, setTotalPhilippinesCostConverted] = useState<number>(0);
+  const [isCalculatingLocally, setIsCalculatingLocally] = useState(false);
 
   // Get effective location (manual takes priority)
   const effectiveLocation = React.useMemo(() => {
@@ -315,6 +324,9 @@ export function ExperienceStep({
   // Update async calculations when dependencies change
   useEffect(() => {
     const updateCalculations = async () => {
+      if (activeRoles.length === 0) return;
+      
+      setIsCalculatingLocally(true);
       try {
         // Update individual level displays
         const newIndividualDisplays: Record<string, Record<ExperienceLevel, any>> = {};
@@ -360,7 +372,8 @@ export function ExperienceStep({
           allRoles, 
           userLocation, 
           manualLocation, 
-          mergedRoles
+          mergedRoles,
+          isUsingDynamicRoles
         );
         
         setIndividualLevelDisplays(newIndividualDisplays);
@@ -368,6 +381,8 @@ export function ExperienceStep({
         setTotalPhilippinesCostConverted(totalConverted);
       } catch (error) {
         console.error('Error updating calculations:', error);
+      } finally {
+        setIsCalculatingLocally(false);
       }
     };
     
@@ -376,6 +391,15 @@ export function ExperienceStep({
 
   return (
     <div className="space-y-8">
+      {/* Loading Spinner - Only show local calculations, global is handled by parent */}
+      {isCalculatingLocally && !isCalculating && (
+        <LoadingSpinner
+          text="Calculating Experience Distribution"
+          subtext="Processing your team configuration and savings..."
+          show={isCalculatingLocally}
+        />
+      )}
+      
       {/* Header */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-3 mb-4">
@@ -903,6 +927,19 @@ export function ExperienceStep({
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* See Results Button */}
+      {currentStep === 5 && (
+        <Button
+          variant="neural-primary"
+          onClick={onCalculate}
+          disabled={!canProceedFromStep(currentStep) || isCalculating}
+          rightIcon={<ArrowRight className="h-4 w-4" />}
+          className="w-40 h-12"
+        >
+          See Results
+        </Button>
       )}
 
     </div>
