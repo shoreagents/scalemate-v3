@@ -929,18 +929,7 @@ export function ExperienceStep({
         </motion.div>
       )}
 
-      {/* See Results Button */}
-      {currentStep === 5 && (
-        <Button
-          variant="neural-primary"
-          onClick={onCalculate}
-          disabled={!canProceedFromStep(currentStep) || isCalculating}
-          rightIcon={<ArrowRight className="h-4 w-4" />}
-          className="w-40 h-12"
-        >
-          See Results
-        </Button>
-      )}
+
 
     </div>
   );
